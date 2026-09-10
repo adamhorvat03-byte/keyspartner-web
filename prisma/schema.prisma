@@ -1,0 +1,85 @@
+// ==============================================================================
+// Prisma Schéma: Realsoft Nehnuteľnosti (KEYS & PARTNERS a.s.)
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Podporuje aj "mysql" alebo "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  SALE     // Predaj
+  RENT     // Prenájom
+}
+
+enum PropertyType {
+  FLAT        // Byt
+  HOUSE       // Dom / Vila
+  LAND        // Pozemok
+  COMMERCIAL  // Komerčné priestory
+  OTHER       // Iné
+}
+
+enum PropertyStatus {
+  ACTIVE    // Aktívny inzerát
+  RESERVED  // Rezervovaný
+  SOLD      // Predaný / Prenajatý
+  INACTIVE  // Neaktívny / Vymazaný z Realsoftu
+}
+
+model Property {
+  id               String          @id @default(uuid())
+  
+  // Unikátne ID zo softvéru Realsoft (United Classifieds)
+  externalId       String          @unique @map("external_id") @db.VarChar(100)
+  
+  // Základné údaje inzerátu
+  title            String          @db.VarChar(255)
+  description      String?         @db.Text
+  price            Decimal         @db.Decimal(12, 2)
+  currency         String          @default("EUR") @db.VarChar(10)
+  
+  // Klasifikácia
+  transactionType  TransactionType @map("transaction_type")
+  propertyType     PropertyType    @map("property_type")
+  status           PropertyStatus  @default(ACTIVE)
+  
+  // Lokalita
+  locationCity     String          @map("location_city") @db.VarChar(100)
+  locationDistrict String?         @map("location_district") @db.VarChar(100)
+  locationStreet   String?         @map("location_street") @db.VarChar(150)
+  formattedAddress String?         @map("formatted_address") @db.VarChar(255)
+  gpsLat           Float?          @map("gps_lat")
+  gpsLng           Float?          @map("gps_lng")
+  
+  // Výmera (m2)
+  area             Float?          @map("area") // Úžitková / obytná plocha
+  areaLand         Float?          @map("area_land") // Pozemok
+  
+  // Galéria fotografií (pole URL adries)
+  images           String[]        @map("images")
+  
+  // Priradený maklér / poradca
+  agentName        String?         @map("agent_name") @db.VarChar(150)
+  agentPhone       String?         @map("agent_phone") @db.VarChar(50)
+  agentEmail       String?         @map("agent_email") @db.VarChar(150)
+  
+  // Pôvodný surový payload z Realsoftu (pre archiváciu a audit)
+  rawPayload       Json?           @map("raw_payload")
+  
+  // Časové pečiatky synchronizácie
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  // Indexy pre vysoký výkon filtrovania ponuky
+  @@index([status])
+  @@index([transactionType])
+  @@index([propertyType])
+  @@index([locationCity])
+  @@index([externalId])
+  @@map("properties")
+}

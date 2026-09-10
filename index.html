@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEYS & PARTNERS a.s. | Výnimočné realitné služby a nehnuteľnosti</title>
+    
+    <!-- Meta SEO -->
+    <meta name="description" content="KEYS & PARTNERS a.s. - divízia predaja nehnuteľností. Ponúkame bezpečný predaj, kúpu a prenájom nehnuteľností v Košiciach, Prešove a celom východnom Slovensku. Správny výber je kľúčom.">
+    <meta name="keywords" content="keys partners, realitna kancelaria kosice, reality presov, stavebne pozemky lubotice, nehnuteľnosti">
+    <meta name="author" content="Antigravity Redesign Team">
+    <link rel="canonical" href="https://keyspartner.netlify.app">
+    <meta property="og:url" content="https://keyspartner.netlify.app">
+    <meta property="og:title" content="KEYS & PARTNERS a.s. | Výnimočné realitné služby a nehnuteľnosti">
+    <meta property="og:description" content="KEYS & PARTNERS a.s. - divízia predaja nehnuteľností. Bezpečný predaj, kúpa a prenájom nehnuteľností v Košiciach a Prešove.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header / Navigácia -->
+    <header class="main-header">
+        <div class="container header-container">
+            <a href="#" class="logo">
+                <div class="logo-icon-container">
+                    <img src="logo-raw.png" class="logo-icon-img" alt="KEYS & PARTNERS">
+                </div>
+                <span class="logo-text">KEYS & PARTNERS</span>
+            </a>
+            
+            <nav class="nav-menu" id="navMenu">
+                <ul>
+                    <li><a href="#ponuka" class="active">Naša ponuka</a></li>
+                    <li><a href="#benefity">Prečo my</a></li>
+                    <li><a href="#makleri">Náš tím</a></li>
+                    <li><a href="#recenzie">Skúsenosti</a></li>
+                    <li><a href="#chcem-predat">Bezplatný odhad</a></li>
+                </ul>
+            </nav>
+            
+            <div class="header-actions">
+                <div class="header-social-links">
+                    <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Facebook profil" class="social-header-icon"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Instagram profil" class="social-header-icon"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+                <button class="theme-toggle" id="themeToggle" aria-label="Prepnúť tému">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <a href="#chcem-predat" class="btn btn-primary btn-add-listing">
+                    <i class="fa-solid fa-key"></i> <span>Chcem predať</span>
+                </a>
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Otvoriť menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Sekcia s Vyhľadávaním -->
+    <section class="hero-section">
+        <div class="hero-bg-overlay"></div>
+        <div class="container hero-container">
+            <div class="hero-content animate-fade-in-up">
+                <div class="badge-premium">
+                    <i class="fa-solid fa-star text-gold"></i> Správny výber je kľúčom
+                </div>
+                <h1>Predajte svoju nehnuteľnosť bezpečne a za maximálnu cenu</h1>
+                <p>Sme lokálni experti, ktorí sa postarajú o celý proces od profesionálneho nafotenia až po odovzdanie kľúčov.</p>
+            </div>
+            
+            <!-- Vyhľadávací a filtračný panel (Glassmorphic) -->
+            <div class="search-panel animate-fade-in-up delay-2">
+                <div class="search-tabs">
+                    <button class="search-tab-btn active" data-deal="vsetko">Všetko</button>
+                    <button class="search-tab-btn" data-deal="predaj">Na predaj</button>
+                    <button class="search-tab-btn" data-deal="prenajom">Na prenájom</button>
+                </div>
+                <div class="search-form">
+                    <div class="form-group search-input-group">
+                        <label for="searchQuery"><i class="fa-solid fa-location-dot"></i> Lokalita / Ulica</label>
+                        <input type="text" id="searchQuery" placeholder="Napr. Ľubotice, Sigord, Fintice, Košice...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="propertyType"><i class="fa-solid fa-house"></i> Typ</label>
+                        <select id="propertyType">
+                            <option value="vsetky">Všetky typy</option>
+                            <option value="byt">Byty</option>
+                            <option value="pozemi">Pozemky</option>
+                            <option value="komercne">Komerčné</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxPrice"><i class="fa-solid fa-euro-sign"></i> Max. cena</label>
+                        <input type="number" id="maxPrice" placeholder="Napr. 100 000">
+                    </div>
+                    
+                    <button class="btn btn-primary search-submit-btn" id="searchSubmit">
+                        <i class="fa-solid fa-magnifying-glass"></i> Vyhľadať
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Štatistiky pobočky (Reveal) -->
+    <section class="stats-section reveal">
+        <div class="container stats-container">
+            <div class="stat-item">
+                <h3 class="stat-number">2021</h3>
+                <p class="stat-label">Píšeme novú históriu realít</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="stat-number">100%</h3>
+                <p class="stat-label">Právna ochrana a garancia prevodu</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="stat-number">3D</h3>
+                <p class="stat-label">Virtuálne prehliadky pre vybrané ponuky</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="stat-number">Služby</h3>
+                <p class="stat-label">Špecializované realitné služby</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sekcia Naše výsledky v číslach (Reveal) -->
+    <section class="results-section reveal" id="vysledky">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Naše výsledky v číslach</h2>
+                <p class="section-subtitle">Dôvera našich klientov vyjadrená v dosiahnutých úspechoch</p>
+            </div>
+            
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-icon"><i class="fa-solid fa-house-chimney-user"></i></div>
+                    <h3 class="result-number">250+</h3>
+                    <p class="result-label">predaných nehnuteľností</p>
+                </div>
+                
+                <div class="result-card">
+                    <div class="result-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <h3 class="result-number">45+ mil. €</h3>
+                    <p class="result-label">hodnota predaných nehnuteľností</p>
+                </div>
+                
+                <div class="result-card">
+                    <div class="result-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                    <h3 class="result-number">15+ rokov</h3>
+                    <p class="result-label">skúseností na realitnom trhu</p>
+                </div>
+                
+                <div class="result-card">
+                    <div class="result-icon"><i class="fa-solid fa-face-smile"></i></div>
+                    <h3 class="result-number">100%</h3>
+                    <p class="result-label">spokojných klientov</p>
+                </div>
+            </div>
+            
+            <div class="results-story-text text-center">
+                <p>"Za každou nehnuteľnosťou je konkrétny príbeh. Naším cieľom je zabezpečiť profesionálny proces predaja, kvalitnú prezentáciu a maximálny výsledok pre našich klientov."</p>
+            </div>
+
+            <!-- Možnosť neskôr rozšíriť o konkrétne príklady predaných nehnuteľností -->
+            <!-- 
+            <div class="sold-properties-preview" style="margin-top: 48px; border-top: 1px solid var(--border-color); padding-top: 32px;">
+                <h4 class="text-center" style="margin-bottom: 24px; color: var(--text-primary); font-family: var(--font-heading); font-size: 1.25rem;">Vybrané realizované predaje</h4>
+                <div class="sold-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                    <div class="sold-card">
+                        <div class="sold-title">3-izbový byt po rekonštrukcii</div>
+                        <div class="sold-location"><i class="fa-solid fa-location-dot"></i> Prešov, Sídlisko III</div>
+                        <div class="sold-details">
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Predajná cena:</span>
+                                <span class="sold-detail-val">155 000 €</span>
+                            </div>
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Čas predaja:</span>
+                                <span class="sold-detail-val">14 dní</span>
+                            </div>
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Výsledok:</span>
+                                <span class="sold-detail-val">Predané za plnú cenu</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sold-card">
+                        <div class="sold-title">Stavebný pozemok</div>
+                        <div class="sold-location"><i class="fa-solid fa-location-dot"></i> Ľubotice</div>
+                        <div class="sold-details">
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Predajná cena:</span>
+                                <span class="sold-detail-val">95 000 €</span>
+                            </div>
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Čas predaja:</span>
+                                <span class="sold-detail-val">28 dní</span>
+                            </div>
+                            <div class="sold-detail-row">
+                                <span class="sold-detail-lbl">Výsledok:</span>
+                                <span class="sold-detail-val">Exkluzívny predaj</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            -->
+        </div>
+    </section>
+
+    <!-- Hlavná Ponuka Nehnuteľností (Reveal) -->
+    <section class="listings-section reveal" id="ponuka">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Portfólio našich nehnuteľností</h2>
+                    <p class="section-subtitle">Exkluzívne stavebné pozemky, byty a investičné príležitosti</p>
+                </div>
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-filter="vsetky">Všetky</button>
+                    <button class="filter-btn" data-filter="byt">Byty</button>
+                    <button class="filter-btn" data-filter="pozemi">Pozemky</button>
+                    <button class="filter-btn" data-filter="komercne">Komerčné</button>
+                </div>
+            </div>
+            
+            <!-- Grid nehnuteľností -->
+            <div class="listings-grid" id="listingsGrid">
+                <div class="loading-spinner">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Načítavam exkluzívne ponuky...
+                </div>
+            </div>
+            
+            <!-- Žiadne výsledky -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <i class="fa-solid fa-house-circle-xmark"></i>
+                <h3>Nenašli sa žiadne nehnuteľnosti</h3>
+                <p>Upravte svoje filtre alebo vyhľadávací dopyt pre zobrazenie výsledkov.</p>
+                <button class="btn btn-secondary" id="resetFilters">Zobraziť všetky ponuky</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sekcia Dôvera / Benefity (Reveal) -->
+    <section class="benefits-section reveal" id="benefity">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Prečo spolupracovať s KEYS & PARTNERS</h2>
+                <p class="section-subtitle">Staviame na korektnosti, istote a špičkovej prezentácii vášho majetku</p>
+            </div>
+            
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <h3>Lokálny trhový prehľad</h3>
+                    <p>Dokonale poznáme každú ulicu a štvrť v Prešove aj blízkom okolí. Vďaka tomu vieme presne určiť reálnu hodnotu vašej nehnuteľnosti. Pomôžeme vám vyhnúť sa zbytočnému čakaniu alebo podhodnoteniu.</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h3>Kompletný servis</h3>
+                    <p>Celý proces predaja vyriešime za vás od profesionálneho nafotenia až po zápis do katastra. Zmluvnú bezpečnosť garantujú naši renomovaní advokáti. Vy sa nemusíte o nič starať a iba odovzdáte kľúče.</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </div>
+                    <h3>Rýchlosť predaja</h3>
+                    <p>Vašu nehnuteľnosť predáme v priemere o 30 % rýchlejšie ako konkurencia. Využívame moderné 3D prehliadky a cielený marketing na sociálnych sieťach. Máme tiež internú databázu aktívnych investorov.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sekcia Maklérov (Reveal) -->
+    <section class="agents-section reveal" id="makleri">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Naše vedenie a vzťahoví manažéri</h2>
+                <p class="section-subtitle">Skúsení lídri pripravení sprevádzať vás celým obchodným procesom</p>
+            </div>
+            
+            <div class="agents-grid" id="agentsGrid">
+                <!-- Generované JavaScriptom -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Interaktívny formulár pre predávajúcich (Reveal) -->
+    <section class="submit-section reveal" id="chcem-predat">
+        <div class="submit-bg"></div>
+        <div class="container submit-container">
+            <div class="submit-info">
+                <h2>Zistite reálnu trhovú hodnotu vašej nehnuteľnosti zdarma.</h2>
+                <p>Plánujete predať byt, rodinný dom či pozemok? Zanechajte nám kontakt a naši vzťahoví manažéri pre vás vypracujú odborný trhový odhad.</p>
+                
+                <ul class="submit-advantages">
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Profesionálne spracovanie marketingu nehnuteľnosti</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Zmluvná a finančná bezpečnosť garantovaná advokátmi</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Prístup k internej databáze aktívnych investorov</li>
+                </ul>
+            </div>
+            
+            <div class="submit-form-container">
+                <!-- Formulár kalkulačky -->
+                <form class="submit-form" id="sellForm">
+                    <h3>Kalkulačka trhovej ceny</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;">
+                        Vyplňte údaje o nehnuteľnosti a získajte okamžitý orientačný odhad ceny na základe aktuálnych predajných dát.
+                    </p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ownerPropType">Typ nehnuteľnosti</label>
+                            <select id="ownerPropType">
+                                <option value="byt">Byt</option>
+                                <option value="dom">Rodinný dom</option>
+                                <option value="pozemi">Stavebný pozemok</option>
+                                <option value="komercny">Komerčný priestor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ownerPropLocSelect">Lokalita</label>
+                            <select id="ownerPropLocSelect">
+                                <option value="presov_sekcov">Prešov - Sekčov / Sídlisko II / Šváby</option>
+                                <option value="presov_centrum">Prešov - Centrum / Širšie centrum</option>
+                                <option value="kosice">Košice</option>
+                                <option value="lubotice">Ľubotice / Fintice</option>
+                                <option value="sigord">Sigord / Kokošovce / Hanušovce</option>
+                                <option value="ina">Iná lokalita...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Textové pole pre vlastnú lokalitu (zobrazí sa dynamicky) -->
+                    <div class="form-group" id="ownerPropLocTextGroup" style="display: none; margin-bottom: 16px;">
+                        <label for="ownerPropLocText">Ulica alebo obec</label>
+                        <input type="text" id="ownerPropLocText" placeholder="Napr. Sabinovská ulica, Prešov">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ownerPropArea">Rozloha v m²</label>
+                            <input type="number" id="ownerPropArea" required min="1" placeholder="Napr. 75">
+                        </div>
+                        <div class="form-group">
+                            <label for="ownerPropCond">Stav nehnuteľnosti</label>
+                            <select id="ownerPropCond">
+                                <option value="novostavba">Novostavba / Holobyt</option>
+                                <option value="kompletna">Kompletná rekonštrukcia</option>
+                                <option value="ciastocna">Čiastočná rekonštrukcia</option>
+                                <option value="povodne">Pôvodný stav</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ownerName">Meno</label>
+                            <input type="text" id="ownerName" required placeholder="Napr. Peter Duda">
+                        </div>
+                        <div class="form-group">
+                            <label for="ownerEmail">E-mailová adresa</label>
+                            <input type="email" id="ownerEmail" required placeholder="meno@domena.sk">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                        <i class="fa-solid fa-calculator"></i> Získať bezplatný odhad
+                    </button>
+                    <p class="form-disclaimer">Odoslaním údajov súhlasíte s bezplatným spracovaním a kontaktovaním.</p>
+                </form>
+                
+                <!-- Výsledok kalkulačky -->
+                <div class="calc-result" id="calculatorResult" style="display: none;">
+                    <div class="calc-result-header">
+                        <i class="fa-solid fa-circle-check success-icon"></i>
+                        <h3>Bezplatný odhad úspešne vygenerovaný!</h3>
+                        <p>Trhový odhad sme odoslali aj našim maklérom, ktorí pre vás overia presnosť trhových koeficientov.</p>
+                    </div>
+                    
+                    <div class="calc-price-card">
+                        <div class="calc-price-label">Odhadovaná trhová hodnota</div>
+                        <div class="calc-price-range">
+                            <span id="calcPriceMin">0</span> € – <span id="calcPriceMax">0</span> €
+                        </div>
+                        <div class="calc-progress-wrapper">
+                            <div class="calc-progress-bar">
+                                <div class="calc-progress-fill" id="calcProgressFill" style="width: 0%;"></div>
+                            </div>
+                            <div class="calc-progress-labels">
+                                <span>Rýchly predaj</span>
+                                <span>Optimálna cena</span>
+                                <span>Exkluzívny predaj</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="calc-summary">
+                        <h4>Zadané parametre:</h4>
+                        <ul>
+                            <li><i class="fa-solid fa-house-chimney text-gold"></i> <strong>Typ:</strong> <span id="summaryType">-</span></li>
+                            <li><i class="fa-solid fa-location-dot text-gold"></i> <strong>Lokalita:</strong> <span id="summaryLoc">-</span></li>
+                            <li><i class="fa-solid fa-ruler-combined text-gold"></i> <strong>Rozloha:</strong> <span id="summaryArea">-</span> m²</li>
+                            <li><i class="fa-solid fa-wrench text-gold"></i> <strong>Stav:</strong> <span id="summaryCond">-</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="calc-cta-box">
+                        <h4>Chcete získať oficiálny odhad a predať za maximum?</h4>
+                        <p>AI výpočet využíva priemerné trhové koeficienty v regióne. Pre presné nacenenie s ohľadom na špecifiká vašej nehnuteľnosti (balkón, orientácia, poschodie) je potrebná rýchla osobná obhliadka.</p>
+                        <div class="calc-cta-buttons">
+                            <button class="btn btn-primary" id="btnRequestInspection">
+                                <i class="fa-solid fa-calendar-check"></i> Dohodnúť bezplatnú obhliadku
+                            </button>
+                            <button class="btn btn-secondary" id="btnResetCalc" style="width: 100%; margin-top: 10px;">
+                                <i class="fa-solid fa-rotate-left"></i> Vypočítať znova
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Klientske recenzie (Reveal) -->
+    <section class="reviews-section reveal" id="recenzie">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">Hodnotenia našich partnerov</h2>
+                <p class="section-subtitle">Spokojnosť našich klientov a bezpečnosť obchodov sú našou vizitkou</p>
+            </div>
+            
+            <div class="reviews-grid">
+                <div class="review-card">
+                    <div class="review-rating">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="review-text">"Rýchly predaj bytu do dvoch týždňov vrátane 3D prehliadky a bezstarostného právneho servisu. Oceňujem vysoko profesionálny prístup."</p>
+                    <div class="review-author">
+                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4>Ing. Zuzana M.</h4>
+                            <span>Bývalá majiteľka bytu na Sídlisku II, Prešov</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="review-card">
+                    <div class="review-rating">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="review-text">"Profesionálny predaj bytu s výborným právnym servisom. Celá transakcia prebehla bezpečne, transparentne a v dohodnutom termíne."</p>
+                    <div class="review-author">
+                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4>Katarína S.</h4>
+                            <span>Predaj bytu, Prešov</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="review-card">
+                    <div class="review-rating">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="review-text">"Skvelá spolupráca pri kúpe pozemku. Oceňujem detailnú znalosť územného plánu a bezchybné zrealizovanie obchodu."</p>
+                    <div class="review-author">
+                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4>Ing. arch. Tomáš M.</h4>
+                            <span>Investičný nákup, Fintice</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modálne okno detailu nehnuteľnosti -->
+    <div class="modal" id="propertyModal">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose" aria-label="Zatvoriť"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body" id="modalBody">
+                <!-- Obsah sa generuje dynamicky pomocou JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Pätička webu -->
+    <footer class="main-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <div class="logo-icon-container">
+                        <img src="logo-raw.png" class="logo-icon-img" alt="KEYS & PARTNERS">
+                    </div>
+                    <span class="logo-text">KEYS & PARTNERS</span>
+                </a>
+                <p>Rokom 2021 sa začala písať nová história našej spoločnosti. Sme pripravení stať sa kľúčom k vášmu úspešnému realitnému obchodu.</p>
+                <div class="social-links">
+                    <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Centrála spoločnosti</h4>
+                <ul>
+                    <li><i class="fa-solid fa-location-dot"></i> Werferova 1, 040 11 Košice-Juh</li>
+                    <li><i class="fa-solid fa-phone"></i> <a href="tel:+421905785951">+421 905 785 951</a></li>
+                    <li><i class="fa-solid fa-envelope"></i> <a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a></li>
+                    <li><i class="fa-solid fa-business-time"></i> Po - Pia: 8:30 - 16:30</li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Naša pôsobnosť</h4>
+                <div class="branches-list">
+                    <a href="#">Košice - Mesto</a>
+                    <a href="#">Košice - Okolie</a>
+                    <a href="#">Prešov</a>
+                    <a href="#">Ľubotice</a>
+                    <a href="#">Fintice</a>
+                    <a href="#">Slánske vrchy</a>
+                    <a href="#">Sigord</a>
+                    <a href="#">Hanušovce</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container footer-bottom-container">
+                <p>&copy; 2026 KEYS & PARTNERS a.s. Všetky práva vyhradené. Realitné služby a sprostredkovanie nehnuteľností.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Spracovanie osobných údajov</a>
+                    <a href="#">Zmluvné podmienky</a>
+                    <a href="#">Právne informácie</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Script -->
+    <script src="app.js"></script>
+</body>
+</html>

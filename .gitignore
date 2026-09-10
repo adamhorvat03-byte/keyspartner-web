@@ -1,0 +1,17 @@
+# Environment variables
+.env
+.env.local
+
+# Archives
+*.zip
+
+# Dependencies & Build
+node_modules/
+.next/
+dist/
+build/
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store
