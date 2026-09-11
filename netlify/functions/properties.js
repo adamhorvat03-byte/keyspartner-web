@@ -154,15 +154,17 @@ function getPropertiesStore(context) {
 
 async function fetchBlobsProperties(storeInfo) {
   if (!storeInfo || !storeInfo.store) {
-    return { properties: [], error: storeInfo ? storeInfo.error : "No store" };
+    return { properties: [], keys: [], error: storeInfo ? storeInfo.error : "No store" };
   }
 
   try {
-    const { blobs } = await storeInfo.store.list();
-    if (!blobs || blobs.length === 0) {
-      return { properties: [], error: null };
+    const listRes = await storeInfo.store.list();
+    const blobs = (listRes && listRes.blobs) ? listRes.blobs : [];
+    if (blobs.length === 0) {
+      return { properties: [], keys: [], error: null };
     }
 
+    const keys = blobs.map(b => b.key);
     const items = await Promise.all(
       blobs.map(async (b) => {
         try {
@@ -179,10 +181,10 @@ async function fetchBlobsProperties(storeInfo) {
       })
     );
 
-    return { properties: items.filter(Boolean), error: null };
+    return { properties: items.filter(Boolean), keys, error: null };
   } catch (listErr) {
     console.error("[Blobs Read Error]:", listErr.message);
-    return { properties: [], error: listErr.message };
+    return { properties: [], keys: [], error: listErr.message };
   }
 }
 
@@ -248,7 +250,8 @@ export default async (req, context) => {
       runtime: "Functions v2 (Native)",
       blobsInitMode: storeInfo.mode,
       blobsError: blobResult.error,
-      blobsCount: (blobResult.properties || []).length
+      blobsCount: (blobResult.properties || []).length,
+      blobKeys: blobResult.keys || []
     },
     data: filtered,
     timestamp: new Date().toISOString()
