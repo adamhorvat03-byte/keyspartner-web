@@ -218,6 +218,7 @@ export default async (req, context) => {
   }
 
   // Spracovanie POST payloadu z Realsoftu
+  let storeInfo = null;
   let writeResults = [];
   try {
     let parsed = {};
@@ -227,7 +228,7 @@ export default async (req, context) => {
       console.warn("[REALSOFT WARN] Payload nie je platný JSON:", parseErr.message);
     }
 
-    const storeInfo = getPropertiesStore(context);
+    storeInfo = getPropertiesStore(context);
 
     const rawList = parsed.properties || parsed.listings || parsed.items || parsed.data;
     if (Array.isArray(rawList) && rawList.length > 0) {
@@ -250,8 +251,8 @@ export default async (req, context) => {
     message: "Object added",
     url: "https://keyspartner.netlify.app",
     processed: writeResults.length,
-    storeMode: storeInfo.mode,
-    storeError: storeInfo.error,
+    storeMode: storeInfo ? storeInfo.mode : "none",
+    storeError: storeInfo ? storeInfo.error : null,
     results: writeResults
   };
 
