@@ -1,12 +1,14 @@
 /**
  * ==============================================================================
  * Netlify Serverless Function: Verejné API pre nehnuteľnosti z Netlify Blobs
- * Umiestnenie: functions/properties.js
+ * Umiestnenie: netlify/functions/properties.js
  * Dostupné na: /api/properties a /.netlify/functions/properties
- * Podpora pre Netlify Functions v1 (AWS Lambda event) aj Functions v2 (Web API)
+ * Netlify Functions v2 (ESM) s automatickou injekciou Netlify Blobs
  * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
  * ==============================================================================
  */
+
+import { getStore } from "@netlify/blobs";
 
 const DEFAULT_PROPERTIES = [
   {
@@ -125,133 +127,65 @@ const DEFAULT_PROPERTIES = [
 ];
 
 /**
- * Bezpečná inicializácia Netlify Blobs úložiska
+ * Bezpečná inicializácia Netlify Blobs úložiska pre v2 aj v1
  */
-async function getPropertiesStore(context) {
-  let blobsModule = null;
-  try {
-    blobsModule = require("@netlify/blobs");
-  } catch (_e1) {
-    try {
-      blobsModule = await import("@netlify/blobs");
-    } catch (_e2) {
-      console.error("[Blobs Init] Modul @netlify/blobs nie je dostupný:", _e2.message);
-      return { store: null, error: _e2.message, mode: "none" };
-    }
-  }
-
-  const getStore = blobsModule.getStore || (blobsModule.default && blobsModule.default.getStore);
-  if (typeof getStore !== "function") {
-    return { store: null, error: "getStore not found", mode: "none" };
-  }
-
+function getPropertiesStore(context) {
   // 1. Kontext z Netlify Functions v2
   if (context && context.blobs && typeof context.blobs.getStore === "function") {
     try {
-      const store = context.blobs.getStore("properties");
-      return { store, error: null, mode: "context.blobs" };
-    } catch (ctxErr) {
-      console.warn("[Blobs Init] context.blobs.getStore zlyhalo:", ctxErr.message);
+      return { store: context.blobs.getStore("properties"), mode: "context.blobs", error: null };
+    } catch (e) {
+      console.warn("[Blobs] context.blobs.getStore zlyhalo:", e.message);
     }
   }
 
-  // 2. Extrakcia environment parametrov (SITE_ID a NETLIFY_FUNCTIONS_TOKEN)
-  const siteID = 
-    process.env.SITE_ID || 
-    process.env.NETLIFY_SITE_ID || 
-    (context && context.site && context.site.id) ||
-    (context && context.clientContext && context.clientContext.custom && context.clientContext.custom.siteID);
-
-  const token = 
-    process.env.NETLIFY_FUNCTIONS_TOKEN || 
-    process.env.NETLIFY_PURGE_API_TOKEN || 
-    process.env.NETLIFY_AUTH_TOKEN || 
-    process.env.NETLIFY_API_TOKEN ||
-    (context && context.clientContext && context.clientContext.identity && context.clientContext.identity.token);
-
-  // 3. Syntéza NETLIFY_BLOBS_CONTEXT ak chýba
-  if (!process.env.NETLIFY_BLOBS_CONTEXT && siteID && token) {
-    try {
-      const blobCtx = {
-        siteID: siteID,
-        token: token,
-        apiURL: "https://api.netlify.com"
-      };
-      process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(JSON.stringify(blobCtx)).toString("base64");
-    } catch (_ctxErr) {}
-  }
-
-  // 4. Pokus s explicitnou konfiguráciou (SITE_ID + TOKEN)
-  if (siteID && token) {
-    try {
-      const store = getStore({
-        name: "properties",
-        siteID: siteID,
-        token: token,
-        apiURL: "https://api.netlify.com",
-        consistency: "strong"
-      });
-      return { store, error: null, mode: "explicit-credentials" };
-    } catch (expErr) {
-      console.warn("[Blobs Init] getStore so SITE_ID a TOKEN zlyhalo:", expErr.message);
-    }
-  }
-
-  // 5. Pokus so štandardným getStore("properties", strong)
+  // 2. Štandardná zero-config inicializácia (v Functions v2 je automatická)
   try {
     const store = getStore("properties", { consistency: "strong" });
-    return { store, error: null, mode: "zero-config-strong" };
-  } catch (zcErr) {
-    console.warn("[Blobs Init] getStore('properties', strong) zlyhalo:", zcErr.message);
-  }
-
-  // 6. Pokus so základným getStore("properties")
-  try {
-    const store = getStore("properties");
-    return { store, error: null, mode: "zero-config" };
-  } catch (zcBasicErr) {
-    console.warn("[Blobs Init] getStore('properties') zlyhalo:", zcBasicErr.message);
-  }
-
-  // 7. Pokus len so siteID
-  if (siteID) {
+    return { store, mode: "zero-config-strong", error: null };
+  } catch (err1) {
     try {
-      const store = getStore({
-        name: "properties",
-        siteID: siteID,
-        consistency: "strong"
-      });
-      return { store, error: null, mode: "site-id-only" };
-    } catch (siteOnlyErr) {
-      console.warn("[Blobs Init] getStore len so SITE_ID zlyhalo:", siteOnlyErr.message);
+      const store = getStore("properties");
+      return { store, mode: "zero-config", error: null };
+    } catch (err2) {
+      // 3. Explicitné parametre ak sú k dispozícii
+      const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+      const userToken = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_API_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN;
+      if (siteID && userToken) {
+        try {
+          const store = getStore({ name: "properties", siteID, token: userToken, consistency: "strong" });
+          return { store, mode: "explicit-token", error: null };
+        } catch (eToken) {
+          return { store: null, mode: "failed", error: eToken.message };
+        }
+      }
+      return { store: null, mode: "failed", error: err2.message };
     }
   }
-
-  return { store: null, error: "Nepodarilo sa inicializovať @netlify/blobs", mode: "failed" };
 }
 
 /**
- * Bezpečné načítanie položiek z Blobs s fallbackom
+ * Načítanie inzerátov z Netlify Blobs
  */
-async function fetchBlobsProperties(storeInfo, context) {
+async function fetchBlobsProperties(storeInfo) {
   if (!storeInfo || !storeInfo.store) {
-    return { properties: [], error: storeInfo ? storeInfo.error : "No store", mode: "none" };
+    return { properties: [], error: storeInfo ? storeInfo.error : "No store" };
   }
 
-  const loadFromStore = async (activeStore) => {
-    const { blobs } = await activeStore.list();
+  try {
+    const { blobs } = await storeInfo.store.list();
     if (!blobs || blobs.length === 0) {
-      return [];
+      return { properties: [], error: null };
     }
 
     const items = await Promise.all(
       blobs.map(async (b) => {
         try {
-          if (typeof activeStore.getJSON === "function") {
-            const val = await activeStore.getJSON(b.key);
+          if (typeof storeInfo.store.getJSON === "function") {
+            const val = await storeInfo.store.getJSON(b.key);
             if (val) return val;
           }
-          const raw = await activeStore.get(b.key, { type: "json" });
+          const raw = await storeInfo.store.get(b.key, { type: "json" });
           if (raw) return typeof raw === "string" ? JSON.parse(raw) : raw;
           return null;
         } catch (_err) {
@@ -259,36 +193,19 @@ async function fetchBlobsProperties(storeInfo, context) {
         }
       })
     );
-    return items.filter(Boolean);
-  };
 
-  try {
-    const properties = await loadFromStore(storeInfo.store);
-    return { properties, error: null, mode: storeInfo.mode };
-  } catch (readErr) {
-    console.warn(`[Blobs Read] Prvé čítanie zlyhalo (${readErr.message}). Skúšam fallback so SITE_ID a TOKEN...`);
-    
-    const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID || (context && context.site && context.site.id);
-    const token = process.env.NETLIFY_FUNCTIONS_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
-    if (siteID && token) {
-      try {
-        const { getStore } = require("@netlify/blobs");
-        const fallbackStore = getStore({ name: "properties", siteID, token, apiURL: "https://api.netlify.com", consistency: "strong" });
-        const properties = await loadFromStore(fallbackStore);
-        return { properties, error: null, mode: "fallback-explicit" };
-      } catch (fbErr) {
-        return { properties: [], error: fbErr.message, mode: "fallback-failed" };
-      }
-    }
-    return { properties: [], error: readErr.message, mode: "read-failed" };
+    return { properties: items.filter(Boolean), error: null };
+  } catch (listErr) {
+    console.error("[Blobs Read Error]:", listErr.message);
+    return { properties: [], error: listErr.message };
   }
 }
 
 /**
- * Hlavný handler - univerzálny pre Functions v1 aj Functions v2
+ * Univerzálny handler podporujúci Web API (Functions v2) aj Lambda (Functions v1)
  */
-const mainHandler = async (arg1, arg2) => {
-  const isV2 = Boolean(arg1 && typeof arg1.text === "function" && typeof arg1.json === "function" && !arg1.httpMethod);
+async function universalHandler(arg1, arg2) {
+  const isV2 = Boolean(arg1 && typeof arg1.text === "function" && typeof arg1.json === "function");
 
   let query = {};
   let context = arg2 || {};
@@ -333,8 +250,8 @@ const mainHandler = async (arg1, arg2) => {
     return createResponse(200, "");
   }
 
-  const storeInfo = await getPropertiesStore(context);
-  const blobResult = await fetchBlobsProperties(storeInfo, context);
+  const storeInfo = getPropertiesStore(context);
+  const blobResult = await fetchBlobsProperties(storeInfo);
 
   let properties = [];
   let source = "default";
@@ -372,9 +289,8 @@ const mainHandler = async (arg1, arg2) => {
     count: filtered.length,
     source: source,
     diagnostics: {
-      runtime: isV2 ? "Functions v2" : "Functions v1",
+      runtime: isV2 ? "Functions v2 (Web API)" : "Functions v1 (Lambda)",
       blobsInitMode: storeInfo.mode,
-      blobsReadMode: blobResult.mode,
       blobsError: blobResult.error,
       blobsCount: (blobResult.properties || []).length,
       env: {
@@ -382,17 +298,13 @@ const mainHandler = async (arg1, arg2) => {
         hasFunctionsToken: Boolean(process.env.NETLIFY_FUNCTIONS_TOKEN),
         hasPurgeToken: Boolean(process.env.NETLIFY_PURGE_API_TOKEN),
         hasAuthToken: Boolean(process.env.NETLIFY_AUTH_TOKEN),
-        hasBlobsContext: Boolean(process.env.NETLIFY_BLOBS_CONTEXT),
-        availableNetlifyEnvKeys: Object.keys(process.env).filter(k => k.includes("NETLIFY") || k.includes("SITE") || k.includes("BLOB"))
+        hasBlobsContext: Boolean(process.env.NETLIFY_BLOBS_CONTEXT)
       }
     },
     data: filtered,
     timestamp: new Date().toISOString()
   });
-};
+}
 
-// Export pre oba režimy: Functions v1 (exports.handler) aj Functions v2 (default export)
-exports.handler = mainHandler;
-module.exports = mainHandler;
-module.exports.handler = mainHandler;
-module.exports.default = mainHandler;
+export const handler = universalHandler;
+export default universalHandler;

@@ -1,6 +1,7 @@
 {
   "name": "keyspartner-web",
   "version": "1.0.0",
+  "type": "module",
   "description": "KEYS & PARTNERS a.s. webová stránka s automatickou integráciou Realsoft cez Netlify Blobs",
   "main": "index.html",
   "scripts": {
