@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ==============================================================================
  * Netlify Serverless Function: Realsoft Webhook s ukladaním do Netlify Blobs
  * Umiestnenie: netlify/functions/realsoft-webhook.js
@@ -33,6 +33,32 @@ function getPropertiesStore(context) {
     } catch (err2) {
       return { store: null, mode: "failed", error: err2.message };
     }
+  }
+}
+
+/**
+ * Vyčistenie starých testovacích inzerátov (začínajúcich na RS-1789 alebo RS-TEST)
+ */
+async function cleanupTestListings(storeInfo) {
+  if (!storeInfo || !storeInfo.store || typeof storeInfo.store.list !== "function") return 0;
+  try {
+    const listRes = await storeInfo.store.list();
+    const blobs = (listRes && listRes.blobs) ? listRes.blobs : [];
+    let deletedCount = 0;
+    for (const b of blobs) {
+      const key = String(b.key || "");
+      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST")) {
+        try {
+          await storeInfo.store.delete(key);
+          deletedCount++;
+          console.log(`[CLEANUP] Úspešne odstránený testovací záznam: ${key}`);
+        } catch (_e) {}
+      }
+    }
+    return deletedCount;
+  } catch (err) {
+    console.warn("[CLEANUP] Chyba pri čistení testovacích záznamov:", err.message);
+    return 0;
   }
 }
 
@@ -116,7 +142,6 @@ function extractRooms(raw, titleText) {
     }
   }
 
-  // Fallback z názvu inzerátu (napr. "3-izbový byt")
   if (titleText && typeof titleText === "string") {
     const titleMatch = titleText.match(/(\d+)[ -]?izb/i);
     if (titleMatch) {
@@ -253,10 +278,279 @@ function extractAllImages(raw) {
 }
 
 /**
+ * Validácia: Obsahuje položka aspoň základné dáta skutočného inzerátu?
+ * Zabraňuje vytváraniu prázdnych dummy inzerátov pri testovacích pingoch.
+ */
+function hasRealPropertyData(raw) {
+  if (!raw || typeof raw !== "object") return false;
+  if (raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
+  if (raw.title || raw.name || raw.nazov || raw.headline) return true;
+  if (raw.price !== undefined || raw.cena !== undefined) return true;
+  if (raw.usable_area || raw.floor_area || raw.area || raw.vymera) return true;
+  return false;
+}
+
+/**
+ * Bezpečné čítanie surového textu z Requestu (podpora UTF-8 aj Windows-1250)
+ */
+async function readRawBody(req) {
+  try {
+    const text = await req.text();
+    if (text !== null && text !== undefined && text.length > 0) {
+      return text;
+    }
+  } catch (e1) {
+    console.warn("[READ BODY] req.text() zlyhalo:", e1.message);
+  }
+
+  try {
+    const text = await req.clone().text();
+    if (text !== null && text !== undefined && text.length > 0) {
+      return text;
+    }
+  } catch (_e2) {}
+
+  try {
+    const buffer = await req.clone().arrayBuffer();
+    if (buffer && buffer.byteLength > 0) {
+      try {
+        const utf8 = new TextDecoder("utf-8").decode(buffer);
+        if (utf8 && utf8.trim().length > 0) return utf8;
+      } catch (_e3) {}
+      try {
+        const win = new TextDecoder("windows-1250").decode(buffer);
+        if (win && win.trim().length > 0) return win;
+      } catch (_e4) {}
+    }
+  } catch (_e5) {}
+
+  return "";
+}
+
+/**
+ * Robustné parsovanie JSON reťazcov vrátane unquoted keys a single quotes
+ */
+function parseJsonLenient(input) {
+  if (!input || typeof input !== "string") return null;
+  let str = input.trim();
+  if (!str) return null;
+
+  // 1. Štandardný JSON.parse
+  try {
+    return JSON.parse(str);
+  } catch (_e1) {}
+
+  // 2. Ak je URL kódovaný (%7B...)
+  if (str.includes("%7B") || str.includes("%22") || str.includes("%20") || str.includes("%3A")) {
+    try {
+      const decoded = decodeURIComponent(str);
+      const res = parseJsonLenient(decoded);
+      if (res) return res;
+    } catch (_e2) {}
+  }
+
+  // 3. Bezpečný parser cez new Function pre objektové literály (unquoted keys, single quotes, trailing commas)
+  if ((str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"))) {
+    try {
+      const fn = new Function(`"use strict"; return (${str});`);
+      const val = fn();
+      if (val && typeof val === "object") {
+        return val;
+      }
+    } catch (_e3) {}
+  }
+
+  // 4. Regex oprava chýbajúcich úvodzoviek na kľúčoch a jednoduchých úvodzoviek
+  try {
+    let sanitized = str
+      .replace(/([{,]\s*)([a-zA-Z0-9_$-]+)\s*:/g, '$1"$2":')
+      .replace(/'([^']*)'/g, '"$1"')
+      .replace(/,\s*([\}\]])/g, '$1');
+    return JSON.parse(sanitized);
+  } catch (_e4) {}
+
+  return null;
+}
+
+/**
+ * Parsovanie urlencoded formulára (application/x-www-form-urlencoded)
+ */
+function parseFormEncoded(str) {
+  if (!str || typeof str !== "string") return null;
+  const trimmed = str.trim();
+  if (!trimmed.includes("=") && !trimmed.includes("&")) return null;
+
+  try {
+    const params = new URLSearchParams(trimmed);
+    const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json", "body", "content"];
+    for (const k of containerKeys) {
+      if (params.has(k)) {
+        const val = params.get(k);
+        const parsed = parseJsonLenient(val);
+        if (parsed && typeof parsed === "object") {
+          if (params.has("action") && !parsed.action) {
+            parsed.action = params.get("action");
+          }
+          return parsed;
+        }
+      }
+    }
+
+    const flatObj = {};
+    for (const [k, v] of params.entries()) {
+      flatObj[k] = v;
+    }
+    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.cena || flatObj.action) {
+      return flatObj;
+    }
+  } catch (_e) {}
+
+  return null;
+}
+
+/**
+ * Parsovanie multipart/form-data
+ */
+async function parseMultipartFormData(req) {
+  try {
+    const formData = await req.clone().formData();
+    if (!formData) return null;
+
+    const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json"];
+    for (const k of containerKeys) {
+      const val = formData.get(k);
+      if (typeof val === "string") {
+        const parsed = parseJsonLenient(val);
+        if (parsed) {
+          if (formData.has("action") && !parsed.action) {
+            parsed.action = formData.get("action");
+          }
+          return parsed;
+        }
+      }
+    }
+
+    const flatObj = {};
+    for (const [k, v] of formData.entries()) {
+      if (typeof v === "string") {
+        flatObj[k] = v;
+      }
+    }
+    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.action) {
+      return flatObj;
+    }
+  } catch (_e) {}
+  return null;
+}
+
+/**
+ * Parsovanie URL query parametrov
+ */
+function parseUrlQuery(req) {
+  try {
+    const url = new URL(req.url);
+    if (!url.searchParams) return null;
+
+    const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json"];
+    for (const k of containerKeys) {
+      if (url.searchParams.has(k)) {
+        const val = url.searchParams.get(k);
+        const parsed = parseJsonLenient(val);
+        if (parsed) {
+          if (url.searchParams.has("action") && !parsed.action) {
+            parsed.action = url.searchParams.get("action");
+          }
+          return parsed;
+        }
+      }
+    }
+
+    const flatObj = {};
+    for (const [k, v] of url.searchParams.entries()) {
+      flatObj[k] = v;
+    }
+    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov) {
+      return flatObj;
+    }
+  } catch (_e) {}
+  return null;
+}
+
+/**
+ * Jednoduché parsovanie XML
+ */
+function parseXmlSimple(rawXml) {
+  if (!rawXml || typeof rawXml !== "string" || !rawXml.trim().startsWith("<")) return null;
+  const getTag = (xml, tag) => {
+    const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+    return m ? m[1].trim() : null;
+  };
+
+  const id = getTag(rawXml, "id") || getTag(rawXml, "external_id") || getTag(rawXml, "kod");
+  const title = getTag(rawXml, "nazov") || getTag(rawXml, "title") || getTag(rawXml, "nadpis");
+  if (id || title) {
+    return {
+      external_id: id,
+      title: title,
+      price: getTag(rawXml, "cena") || getTag(rawXml, "price"),
+      category: getTag(rawXml, "kategoria") || getTag(rawXml, "druh") || getTag(rawXml, "typ"),
+      deal: getTag(rawXml, "typ_obchodu") || getTag(rawXml, "obchod"),
+      rooms: getTag(rawXml, "pocet_izieb") || getTag(rawXml, "izby"),
+      area: getTag(rawXml, "uzitkova_plocha") || getTag(rawXml, "plocha") || getTag(rawXml, "vymera"),
+      floor: getTag(rawXml, "poschodie"),
+      city: getTag(rawXml, "mesto") || getTag(rawXml, "obec"),
+      street: getTag(rawXml, "ulica"),
+      description: getTag(rawXml, "popis") || getTag(rawXml, "text"),
+      action: getTag(rawXml, "akcia") || getTag(rawXml, "action") || "upsert"
+    };
+  }
+  return null;
+}
+
+/**
+ * Orchestrátor: deteguje a rozparsuje formát tela požiadavky
+ */
+async function parseAnyPayload(req, rawBody) {
+  if (rawBody && rawBody.trim().length > 0) {
+    const jsonParsed = parseJsonLenient(rawBody);
+    if (jsonParsed && typeof jsonParsed === "object") {
+      return { parsed: jsonParsed, format: "json-lenient" };
+    }
+
+    const formParsed = parseFormEncoded(rawBody);
+    if (formParsed && typeof formParsed === "object") {
+      return { parsed: formParsed, format: "form-urlencoded" };
+    }
+
+    const xmlParsed = parseXmlSimple(rawBody);
+    if (xmlParsed && typeof xmlParsed === "object") {
+      return { parsed: xmlParsed, format: "xml" };
+    }
+  }
+
+  const multipartParsed = await parseMultipartFormData(req);
+  if (multipartParsed && typeof multipartParsed === "object") {
+    return { parsed: multipartParsed, format: "multipart-form-data" };
+  }
+
+  const queryParsed = parseUrlQuery(req);
+  if (queryParsed && typeof queryParsed === "object") {
+    return { parsed: queryParsed, format: "url-query" };
+  }
+
+  return { parsed: null, format: "unrecognized" };
+}
+
+/**
  * Uloženie alebo vymazanie inzerátu v Netlify Blobs
  */
 async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
   const raw = rawItem || {};
+  if (!hasRealPropertyData(raw)) {
+    console.log("[REALSOFT SKIP] Dáta neobsahujú žiadne atribúty inzerátu (napr. testovací ping). Preskakujem.");
+    return { success: true, externalId: null, action: "skipped", reason: "no property data" };
+  }
+
   const rawId = raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id;
   const externalId = rawId ? String(rawId).trim() : `RS-${Date.now()}`;
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
@@ -359,27 +653,33 @@ export default async (req, context) => {
     return new Response("", { status: 200, headers: corsHeaders });
   }
 
-  let rawBody = "";
-  try {
-    rawBody = await req.text();
-  } catch (_e) {
-    rawBody = "";
-  }
-
+  const rawBody = await readRawBody(req);
   const headers = Object.fromEntries(req.headers.entries());
 
-  // --- 1. CONSOLE.LOG NA ÚPLNOM ZAČIATKU FUNKCIE ---
   console.log("==================================================================");
   console.log(`[REALSOFT WEBHOOK START] Čas: ${new Date().toISOString()}`);
   console.log(`[REALSOFT WEBHOOK] HTTP Metóda: ${method}`);
-  console.log(`[REALSOFT WEBHOOK] Hlavičky požiadavky:`, JSON.stringify(headers));
+  console.log(`[REALSOFT WEBHOOK] Content-Type: ${headers["content-type"] || "(chýba)"}`);
+  console.log(`[REALSOFT WEBHOOK] Dĺžka tela (bytes): ${rawBody.length}`);
   console.log(`[REALSOFT WEBHOOK] Prijatý surový payload (body):`);
   console.log(rawBody ? (rawBody.length > 5000 ? rawBody.slice(0, 5000) + "... [skrátené]" : rawBody) : "(prázdne telo)");
   console.log("==================================================================");
 
-  // GET diagnostika
+  const storeInfo = getPropertiesStore(context);
+
+  // Vždy preventívne vyčistiť staré testovacie inzeráty začínajúce na RS-1789*
+  await cleanupTestListings(storeInfo);
+
+  // GET diagnostika alebo manuálny cleanup
   if (method === "GET") {
-    const storeInfo = getPropertiesStore(context);
+    let url = null;
+    try { url = new URL(req.url); } catch (_e) {}
+    
+    if (url && (url.searchParams.get("cleanup") === "1" || url.searchParams.get("clean") === "1")) {
+      const cleaned = await cleanupTestListings(storeInfo);
+      return new Response(JSON.stringify({ status: "ok", action: "cleanup", cleaned }), { status: 200, headers: corsHeaders });
+    }
+
     const getRes = {
       status: "online",
       service: "KEYS & PARTNERS a.s. - Realsoft Webhook (Netlify Blobs Functions v2)",
@@ -398,46 +698,56 @@ export default async (req, context) => {
     return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: corsHeaders });
   }
 
-  // Spracovanie POST payloadu z Realsoftu
-  let storeInfo = null;
+  // Rozparsovanie ľubovoľného formátu (JSON, unquoted JSON, urlencoded, multipart, XML, URL query)
   let writeResults = [];
+  let detectedFormat = "none";
+
   try {
-    let parsed = {};
-    try {
-      parsed = rawBody ? JSON.parse(rawBody) : {};
-    } catch (parseErr) {
-      console.warn("[REALSOFT WARN] Payload nie je platný JSON:", parseErr.message);
-    }
+    const parseResult = await parseAnyPayload(req, rawBody);
+    const parsed = parseResult.parsed;
+    detectedFormat = parseResult.format;
 
-    storeInfo = getPropertiesStore(context);
+    console.log(`[REALSOFT PARSER] Detegovaný a rozparsovaný formát: ${detectedFormat}`);
 
-    const rawList = parsed.properties || parsed.listings || parsed.items || parsed.data;
-    if (Array.isArray(rawList) && rawList.length > 0) {
-      console.log(`[REALSOFT BATCH] Spracovávam balík ${rawList.length} inzerátov...`);
-      for (const item of rawList) {
-        const res = await saveOrDeleteListing(storeInfo, item, parsed.action);
-        writeResults.push(res);
+    if (parsed && typeof parsed === "object") {
+      const rawList = parsed.properties || parsed.listings || parsed.items || (Array.isArray(parsed.data) ? parsed.data : null);
+
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        console.log(`[REALSOFT BATCH] Spracovávam balík ${rawList.length} inzerátov...`);
+        for (const item of rawList) {
+          if (hasRealPropertyData(item)) {
+            const res = await saveOrDeleteListing(storeInfo, item, parsed.action);
+            writeResults.push(res);
+          }
+        }
+      } else {
+        const rawItem = parsed.property || (parsed.data && typeof parsed.data === "object" && !Array.isArray(parsed.data) ? parsed.data : null) || parsed.listing || parsed;
+        if (hasRealPropertyData(rawItem)) {
+          const res = await saveOrDeleteListing(storeInfo, rawItem, parsed.action);
+          writeResults.push(res);
+        } else {
+          console.log("[REALSOFT INFO] Požiadavka neobsahovala platné dáta inzerátu (napr. testovací overovací ping Realsoftu).");
+        }
       }
     } else {
-      const rawItem = parsed.property || parsed.data || parsed.listing || parsed;
-      const res = await saveOrDeleteListing(storeInfo, rawItem, parsed.action);
-      writeResults.push(res);
+      console.log("[REALSOFT INFO] Prázdne telo alebo žiadny objekt (overovací ping Realsoftu). Vraciam štandardnú odpoveď 200 OK.");
     }
   } catch (err) {
-    console.error("[REALSOFT CRITICAL ERROR] Neočakávaná chyba pri spracovaní payloadu:", err);
+    console.error("[REALSOFT CRITICAL ERROR] Neočakávaná chyba pri spracovaní:", err);
   }
 
+  // Realsoft očakáva presne túto odpoveď so statusom 200
   const responseBody = {
     code: 1,
     message: "Object added",
     url: "https://keyspartner.netlify.app",
     processed: writeResults.length,
+    parserFormat: detectedFormat,
     storeMode: storeInfo ? storeInfo.mode : "none",
     storeError: storeInfo ? storeInfo.error : null,
     results: writeResults
   };
 
-  // --- 2. CONSOLE.LOG NA ÚPLNOM KONCI FUNKCIE ---
   console.log("==================================================================");
   console.log(`[REALSOFT WEBHOOK END] Čas: ${new Date().toISOString()}`);
   console.log(`[REALSOFT WEBHOOK END] Návratový HTTP Kód: 200`);

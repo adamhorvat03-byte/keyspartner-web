@@ -164,9 +164,23 @@ async function fetchBlobsProperties(storeInfo) {
       return { properties: [], keys: [], error: null };
     }
 
-    const keys = blobs.map(b => b.key);
+    // Vyčistiť staré testovacie záznamy RS-1789* a RS-TEST*
+    const validBlobs = [];
+    for (const b of blobs) {
+      const key = String(b.key || "");
+      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST")) {
+        try {
+          await storeInfo.store.delete(key);
+          console.log(`[Blobs Cleanup] Odstránený starý testovací záznam: ${key}`);
+        } catch (_e) {}
+      } else {
+        validBlobs.push(b);
+      }
+    }
+
+    const keys = validBlobs.map(b => b.key);
     const items = await Promise.all(
-      blobs.map(async (b) => {
+      validBlobs.map(async (b) => {
         try {
           if (typeof storeInfo.store.getJSON === "function") {
             const val = await storeInfo.store.getJSON(b.key);
@@ -181,7 +195,16 @@ async function fetchBlobsProperties(storeInfo) {
       })
     );
 
-    return { properties: items.filter(Boolean), keys, error: null };
+    // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt
+    const cleanProperties = items.filter(Boolean).filter(p => {
+      const idStr = String(p.id || p.externalId || "");
+      if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST")) return false;
+      if (!p.title || String(p.title).trim() === "") return false;
+      if (p.price === 0 && (!p.area || p.area === 0) && (!p.images || p.images.length === 0)) return false;
+      return true;
+    });
+
+    return { properties: cleanProperties, keys, error: null };
   } catch (listErr) {
     console.error("[Blobs Read Error]:", listErr.message);
     return { properties: [], keys: [], error: listErr.message };
