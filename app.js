@@ -341,27 +341,56 @@ function renderListings() {
         });
         
         // Formátovanie ceny
-        const priceFormatted = prop.deal === "prenajom" 
-            ? `${prop.price.toLocaleString("sk-SK")} € / mesiac`
-            : `${prop.price.toLocaleString("sk-SK")} €`;
+        let priceFormatted = "";
+        if (prop.priceCustom && typeof prop.priceCustom === "string") {
+            priceFormatted = prop.priceCustom;
+        } else if (prop.price && Number(prop.price) > 0) {
+            priceFormatted = prop.deal === "prenajom" 
+                ? `${Number(prop.price).toLocaleString("sk-SK")} € / mesiac`
+                : `${Number(prop.price).toLocaleString("sk-SK")} €`;
+        } else {
+            priceFormatted = "Cena na vyžiadanie";
+        }
             
         // Formátovanie detailov na spodku
         let specsHtml = "";
-        if (prop.type === "byt") {
+        const areaStr = (prop.area && Number(prop.area) > 0) ? `${prop.area} m²` : null;
+        const validRooms = prop.rooms !== null && prop.rooms !== undefined && String(prop.rooms).trim() !== "" && String(prop.rooms).toLowerCase() !== "null" && String(prop.rooms).trim() !== "-";
+        const validFloor = prop.floor !== null && prop.floor !== undefined && String(prop.floor).trim() !== "" && String(prop.floor).toLowerCase() !== "null" && String(prop.floor).trim() !== "-";
+
+        if (prop.type === "byt" || prop.type === "dom") {
+            let roomsStr = "";
+            if (validRooms) {
+                const rNum = Number(prop.rooms);
+                if (!isNaN(rNum)) {
+                    roomsStr = rNum === 1 ? "1 izba" : (rNum >= 2 && rNum <= 4 ? `${rNum} izby` : `${rNum} izieb`);
+                } else {
+                    roomsStr = String(prop.rooms);
+                }
+            }
+
+            let floorStr = "";
+            if (validFloor) {
+                floorStr = String(prop.floor).includes("p.") ? String(prop.floor) : `${prop.floor} p.`;
+            }
+
             specsHtml = `
-                <div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${prop.area} m²</span></div>
-                <div class="spec-item"><i class="fa-solid fa-bed"></i> <span>${prop.rooms} izby</span></div>
-                <div class="spec-item"><i class="fa-solid fa-building"></i> <span>${prop.floor} p.</span></div>
+                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
+                ${roomsStr ? `<div class="spec-item"><i class="fa-solid fa-bed"></i> <span>${roomsStr}</span></div>` : ''}
+                ${floorStr ? `<div class="spec-item"><i class="fa-solid fa-building"></i> <span>${floorStr}</span></div>` : ''}
             `;
+            if (!specsHtml.trim()) {
+                specsHtml = `<div class="spec-item"><i class="fa-solid fa-home"></i> <span>${prop.type === 'dom' ? 'Rodinný dom' : 'Rezidenčné'}</span></div>`;
+            }
         } else if (prop.type === "pozemi") {
             specsHtml = `
-                <div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${prop.area} m²</span></div>
+                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
                 <div class="spec-item"><i class="fa-solid fa-seedling"></i> <span>Pozemok</span></div>
                 <div class="spec-item"><i class="fa-solid fa-map"></i> <span>Stavebný</span></div>
             `;
         } else {
             specsHtml = `
-                <div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${prop.area} m²</span></div>
+                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
                 <div class="spec-item"><i class="fa-solid fa-briefcase"></i> <span>Komerčné</span></div>
                 <div class="spec-item"><i class="fa-solid fa-key"></i> <span>Voľné</span></div>
             `;
@@ -375,7 +404,7 @@ function renderListings() {
             </div>
             <div class="card-body">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span class="card-type">${prop.type === "byt" ? "Rezidenčné" : prop.type === "pozemi" ? "Stavebný pozemok" : "Komerčné / Investícia"}</span>
+                    <span class="card-type">${prop.type === "byt" ? "Rezidenčné" : prop.type === "dom" ? "Rodinný dom" : prop.type === "pozemi" ? "Stavebný pozemok" : "Komerčné / Investícia"}</span>
                     <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">ID: ${prop.externalId || prop.id}</span>
                 </div>
                 <h3 class="card-title">${prop.title}</h3>
@@ -466,36 +495,49 @@ function openPropertyModal(id) {
         role: "Vzťahový manažér / Maklér"
     } : (AGENTS.find(a => a.id === prop.agentId) || AGENTS[0]);
     
-    const priceFormatted = prop.deal === "prenajom" 
-        ? `${prop.price.toLocaleString("sk-SK")} € / mesiac`
-        : `${prop.price.toLocaleString("sk-SK")} €`;
+    let priceFormatted = "";
+    if (prop.priceCustom && typeof prop.priceCustom === "string") {
+        priceFormatted = prop.priceCustom;
+    } else if (prop.price && Number(prop.price) > 0) {
+        priceFormatted = prop.deal === "prenajom" 
+            ? `${Number(prop.price).toLocaleString("sk-SK")} € / mesiac`
+            : `${Number(prop.price).toLocaleString("sk-SK")} €`;
+    } else {
+        priceFormatted = "Cena na vyžiadanie";
+    }
         
     // Špeciálne boxy podľa typu nehnuteľnosti
+    const areaVal = (prop.area && Number(prop.area) > 0) ? `${prop.area} m²` : "-";
+    const validRooms = prop.rooms !== null && prop.rooms !== undefined && String(prop.rooms).trim() !== "" && String(prop.rooms).toLowerCase() !== "null" && String(prop.rooms).trim() !== "-";
+    const validFloor = prop.floor !== null && prop.floor !== undefined && String(prop.floor).trim() !== "" && String(prop.floor).toLowerCase() !== "null" && String(prop.floor).trim() !== "-";
+    const roomsVal = validRooms ? String(prop.rooms) : "-";
+    const floorVal = validFloor ? (String(prop.floor).includes("p.") ? String(prop.floor) : `${prop.floor} p.`) : "-";
+
     let specsBoxHtml = "";
-    if (prop.type === "byt") {
+    if (prop.type === "byt" || prop.type === "dom") {
         specsBoxHtml = `
             <div class="modal-spec-box">
-                <div class="modal-spec-val">${prop.area} m²</div>
+                <div class="modal-spec-val">${areaVal}</div>
                 <div class="modal-spec-lbl">Rozloha</div>
             </div>
             <div class="modal-spec-box">
-                <div class="modal-spec-val">${prop.rooms}</div>
+                <div class="modal-spec-val">${roomsVal}</div>
                 <div class="modal-spec-lbl">Izby</div>
             </div>
             <div class="modal-spec-box">
-                <div class="modal-spec-val">${prop.floor}</div>
+                <div class="modal-spec-val">${floorVal}</div>
                 <div class="modal-spec-lbl">Poschodie</div>
             </div>
         `;
     } else {
         specsBoxHtml = `
             <div class="modal-spec-box">
-                <div class="modal-spec-val">${prop.area} m²</div>
+                <div class="modal-spec-val">${areaVal}</div>
                 <div class="modal-spec-lbl">Rozloha</div>
             </div>
             <div class="modal-spec-box">
-                <div class="modal-spec-val">-</div>
-                <div class="modal-spec-lbl">Izby</div>
+                <div class="modal-spec-val">${roomsVal}</div>
+                <div class="modal-spec-lbl">Izby / Priestory</div>
             </div>
             <div class="modal-spec-box">
                 <div class="modal-spec-val">-</div>

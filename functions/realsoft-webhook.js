@@ -53,6 +53,181 @@ function normalizeDeal(deal) {
   return "predaj";
 }
 
+function extractPrice(raw) {
+  const candidates = [
+    raw.price,
+    raw.price_value,
+    raw.cena,
+    raw.suma,
+    raw.cost,
+    raw.pricing && (raw.pricing.price || raw.pricing.value || raw.pricing.amount),
+    raw.price_total,
+    raw.total_price
+  ];
+
+  for (const c of candidates) {
+    if (typeof c === "number" && !isNaN(c) && c > 0) {
+      return { price: c, priceCustom: null };
+    }
+    if (typeof c === "string" && c.trim().length > 0) {
+      const lower = c.toLowerCase();
+      if (lower.includes("dohod") || lower.includes("dohoda")) {
+        return { price: 0, priceCustom: "Cena dohodou" };
+      }
+      if (lower.includes("vyžiad") || lower.includes("vyziad") || lower.includes("info")) {
+        return { price: 0, priceCustom: "Cena na vyžiadanie" };
+      }
+      const cleaned = c.replace(/\s/g, "").replace(",", ".");
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num > 0) {
+        return { price: num, priceCustom: null };
+      }
+    }
+  }
+
+  return { price: 0, priceCustom: "Cena na vyžiadanie" };
+}
+
+function extractRooms(raw, titleText) {
+  const candidates = [
+    raw.rooms,
+    raw.room_count,
+    raw.disposition,
+    raw.pocet_izieb,
+    raw.izby,
+    raw.layout,
+    raw.rooms_count,
+    raw.dispozicia
+  ];
+
+  for (const c of candidates) {
+    if (c === null || c === undefined || c === "" || String(c).toLowerCase() === "null") continue;
+    if (typeof c === "number" && !isNaN(c) && c > 0) {
+      return c;
+    }
+    if (typeof c === "string") {
+      const trimmed = c.trim();
+      if (trimmed === "-" || trimmed.toLowerCase() === "null" || trimmed === "0") continue;
+      const match = trimmed.match(/^(\d+)/);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+      return trimmed;
+    }
+  }
+
+  // Fallback z názvu inzerátu (napr. "3-izbový byt")
+  if (titleText && typeof titleText === "string") {
+    const titleMatch = titleText.match(/(\d+)[ -]?izb/i);
+    if (titleMatch) {
+      return parseInt(titleMatch[1], 10);
+    }
+  }
+
+  return null;
+}
+
+function extractArea(raw) {
+  const candidates = [
+    raw.usable_area,
+    raw.floor_area,
+    raw.surface,
+    raw.area_total,
+    raw.vymera,
+    raw.area,
+    raw.living_area,
+    raw.land_area,
+    raw.plocha,
+    raw.uzitkova_plocha,
+    raw.celkova_plocha,
+    raw.rozloha
+  ];
+
+  for (const c of candidates) {
+    if (c === null || c === undefined || c === "") continue;
+    if (typeof c === "number" && !isNaN(c) && c > 0) {
+      return Math.round(c * 100) / 100;
+    }
+    if (typeof c === "string") {
+      const cleaned = c.replace(/\s/g, "").replace(",", ".");
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num > 0) {
+        return Math.round(num * 100) / 100;
+      }
+    }
+  }
+
+  return 0;
+}
+
+function extractFloor(raw) {
+  const candidates = [
+    raw.floor,
+    raw.poschodie,
+    raw.floor_number,
+    raw.podlazie
+  ];
+
+  let floorVal = null;
+  for (const c of candidates) {
+    if (c === null || c === undefined || c === "" || String(c).toLowerCase() === "null") continue;
+    const str = String(c).trim();
+    if (str === "-" || str.toLowerCase() === "null") continue;
+    floorVal = str;
+    break;
+  }
+
+  if (!floorVal) return null;
+
+  const total = raw.floors_total || raw.total_floors || raw.pocet_poschodi;
+  if (total && !floorVal.includes("/")) {
+    return `${floorVal}/${total}`;
+  }
+
+  return floorVal;
+}
+
+function extractLocation(raw) {
+  if (typeof raw.location === "string" && raw.location.trim().length > 0 && raw.location.trim().toLowerCase() !== "null") {
+    return raw.location.trim();
+  }
+
+  const city = raw.city || raw.mesto || (raw.location && raw.location.city) || (raw.address && raw.address.city) || "Prešov";
+  const street = raw.street || raw.ulica || (raw.location && raw.location.street) || (raw.address && raw.address.street);
+  const district = raw.district || raw.okres || raw.cast || raw.mestskacast;
+
+  const parts = [];
+  if (city) parts.push(city);
+  if (district && district !== city) parts.push(district);
+  if (street) parts.push(street);
+
+  return parts.length > 0 ? parts.join(", ") : "Prešov a okolie";
+}
+
+function extractTitle(raw, propType, dealType, rooms, location) {
+  const explicitTitle = raw.title || raw.name || raw.nazov || raw.headline || raw.subject;
+  if (explicitTitle && typeof explicitTitle === "string" && explicitTitle.trim().length > 0) {
+    const trimmed = explicitTitle.trim();
+    if (!trimmed.startsWith("Nehnuteľnosť RS-") && !trimmed.startsWith("Property ")) {
+      return trimmed;
+    }
+  }
+
+  const dealStr = dealType === "prenajom" ? "Prenájom" : "Predaj";
+  let typeLabel = "Nehnuteľnosť";
+  if (propType === "byt") {
+    typeLabel = rooms ? `${rooms}-izbový byt` : "Byt";
+  } else if (propType === "dom") {
+    typeLabel = "Rodinný dom";
+  } else if (propType === "pozemi") {
+    typeLabel = "Stavebný pozemok";
+  } else if (propType === "komercne") {
+    typeLabel = "Komerčný priestor";
+  }
+
+  return `${typeLabel} na ${dealStr.toLowerCase()} (${location})`;
+}
+
 function extractAllImages(raw) {
   const images = [];
   const list = raw.images || raw.photos || raw.fotografie || raw.galeria || [];
@@ -109,28 +284,34 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
       }
     } else {
       const allImages = extractAllImages(raw);
-      const dealType = normalizeDeal(raw.transaction_type || raw.deal_type || raw.deal);
-      const propType = normalizePropertyType(raw.property_type || raw.category || raw.type);
+      const dealType = normalizeDeal(raw.transaction_type || raw.deal_type || raw.deal || raw.typ_obchodu);
+      const propType = normalizePropertyType(raw.property_type || raw.category || raw.type || raw.kategoria || raw.druh);
+      const priceData = extractPrice(raw);
+      const locationVal = extractLocation(raw);
+      const rawTitle = raw.title || raw.name || raw.nazov || raw.headline;
+      const roomsVal = extractRooms(raw, rawTitle);
+      const areaVal = extractArea(raw);
+      const floorVal = extractFloor(raw);
+      const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
 
       const propertyItem = {
         id: externalId,
         externalId: externalId,
-        title: raw.title || raw.name || raw.nazov || `Nehnuteľnosť ${externalId}`,
-        shortTitle: raw.shortTitle || raw.title || `Nehnuteľnosť ${externalId}`,
+        title: titleVal,
+        shortTitle: raw.shortTitle || raw.kratky_nazov || titleVal,
         type: propType,
         deal: dealType,
-        price: typeof raw.price === "number" ? raw.price : parseFloat(String(raw.price || "0").replace(/\s/g, "").replace(",", ".")) || 0,
-        currency: raw.currency || "EUR",
-        area: Number(raw.area || raw.usable_area || raw.living_area || raw.land_area || raw.plocha || raw.vymera) || 0,
-        rooms: raw.rooms ? Number(raw.rooms) : null,
-        floor: raw.floor ? String(raw.floor) : null,
-        location: typeof raw.location === "string"
-          ? raw.location
-          : (raw.city || raw.mesto || (raw.location && raw.location.city) || "Prešov a okolie") + (raw.street ? `, ${raw.street}` : ""),
+        price: priceData.price,
+        priceCustom: priceData.priceCustom,
+        currency: raw.currency || raw.mena || "EUR",
+        area: areaVal,
+        rooms: roomsVal,
+        floor: floorVal,
+        location: locationVal,
         image: allImages[0],
         images: allImages,
         tags: raw.tags || [dealType === "predaj" ? "PREDAJ" : "PRENÁJOM", "REALSOFT"],
-        isReserved: raw.status === "reserved" || raw.is_reserved === true,
+        isReserved: raw.status === "reserved" || raw.is_reserved === true || raw.rezervovane === true,
         agentId: raw.agentId || 1,
         agent: raw.agent || raw.broker || raw.makler || {
           name: "Peter DUDA",
@@ -138,11 +319,11 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
           email: "peter_duda@keyspartners.sk"
         },
         desc: raw.description || raw.desc || raw.popis || raw.text || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
-        technicalSpecs: raw.technicalSpecs || raw.parameters || {
+        technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || {
           "Inžinierske siete": raw.utilities || "Voda, elektrina, plyn, kanalizácia",
-          "Stav objektu": raw.condition || "Pripravené na prevod",
-          "Vykurovanie": raw.heating || "Ústredné diaľkové / vlastné",
-          "Konštrukcia": raw.construction || "Tehla / zateplený dom",
+          "Stav objektu": raw.condition || raw.stav || "Pripravené na prevod",
+          "Vykurovanie": raw.heating || raw.kurenie || "Ústredné diaľkové / vlastné",
+          "Konštrukcia": raw.construction || raw.konstrukcia || "Tehla / zateplený dom",
           "Energetický certifikát": raw.energyCertificate || "Trieda B"
         },
         updatedAt: new Date().toISOString()
