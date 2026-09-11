@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // --- Asynchrónne načítanie nehnuteľností z Netlify Blobs cez /api/properties ---
 async function loadPropertiesFromApi() {
     try {
-        const res = await fetch("/api/properties");
+        const res = await fetch(`/api/properties?_=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) return;
         const result = await res.json();
         if (result && Array.isArray(result.data) && result.data.length > 0) {

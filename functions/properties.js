@@ -190,7 +190,8 @@ export default async (req, context) => {
   const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
   };
 
   if (req.method === "OPTIONS") {
