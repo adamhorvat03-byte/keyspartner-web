@@ -249,7 +249,10 @@ export default async (req, context) => {
     code: 1,
     message: "Object added",
     url: "https://keyspartner.netlify.app",
-    processed: writeResults.length
+    processed: writeResults.length,
+    storeMode: storeInfo.mode,
+    storeError: storeInfo.error,
+    results: writeResults
   };
 
   // --- 2. CONSOLE.LOG NA ÚPLNOM KONCI FUNKCIE ---
