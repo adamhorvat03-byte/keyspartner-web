@@ -3,12 +3,16 @@
  * Netlify Serverless Function: Verejné API pre nehnuteľnosti z Netlify Blobs
  * Umiestnenie: netlify/functions/properties.js
  * Dostupné na: /api/properties a /.netlify/functions/properties
- * Netlify Functions v2 (ESM) s automatickou injekciou Netlify Blobs
+ * Netlify Functions v2 (ESM) s natívnym Netlify Blobs úložiskom
  * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
  * ==============================================================================
  */
 
 import { getStore } from "@netlify/blobs";
+
+export const config = {
+  path: ["/api/properties", "/.netlify/functions/properties"]
+};
 
 const DEFAULT_PROPERTIES = [
   {
@@ -126,11 +130,7 @@ const DEFAULT_PROPERTIES = [
   }
 ];
 
-/**
- * Bezpečná inicializácia Netlify Blobs úložiska pre v2 aj v1
- */
 function getPropertiesStore(context) {
-  // 1. Kontext z Netlify Functions v2
   if (context && context.blobs && typeof context.blobs.getStore === "function") {
     try {
       return { store: context.blobs.getStore("properties"), mode: "context.blobs", error: null };
@@ -139,7 +139,6 @@ function getPropertiesStore(context) {
     }
   }
 
-  // 2. Štandardná zero-config inicializácia (v Functions v2 je automatická)
   try {
     const store = getStore("properties", { consistency: "strong" });
     return { store, mode: "zero-config-strong", error: null };
@@ -148,25 +147,11 @@ function getPropertiesStore(context) {
       const store = getStore("properties");
       return { store, mode: "zero-config", error: null };
     } catch (err2) {
-      // 3. Explicitné parametre ak sú k dispozícii
-      const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-      const userToken = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_API_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN;
-      if (siteID && userToken) {
-        try {
-          const store = getStore({ name: "properties", siteID, token: userToken, consistency: "strong" });
-          return { store, mode: "explicit-token", error: null };
-        } catch (eToken) {
-          return { store: null, mode: "failed", error: eToken.message };
-        }
-      }
       return { store: null, mode: "failed", error: err2.message };
     }
   }
 }
 
-/**
- * Načítanie inzerátov z Netlify Blobs
- */
 async function fetchBlobsProperties(storeInfo) {
   if (!storeInfo || !storeInfo.store) {
     return { properties: [], error: storeInfo ? storeInfo.error : "No store" };
@@ -201,53 +186,23 @@ async function fetchBlobsProperties(storeInfo) {
   }
 }
 
-/**
- * Univerzálny handler podporujúci Web API (Functions v2) aj Lambda (Functions v1)
- */
-async function universalHandler(arg1, arg2) {
-  const isV2 = Boolean(arg1 && typeof arg1.text === "function" && typeof arg1.json === "function");
-
-  let query = {};
-  let context = arg2 || {};
-
-  if (isV2) {
-    try {
-      const url = new URL(arg1.url);
-      query = Object.fromEntries(url.searchParams.entries());
-    } catch (_e) {
-      query = {};
-    }
-    context = arg2 || {};
-  } else {
-    const event = arg1 || {};
-    query = event.queryStringParameters || {};
-    context = arg2 || {};
-  }
-
+export default async (req, context) => {
   const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS"
   };
 
-  const createResponse = (statusCode, payload) => {
-    const bodyStr = typeof payload === "string" ? payload : JSON.stringify(payload);
-    if (isV2) {
-      return new Response(bodyStr, {
-        status: statusCode,
-        headers: corsHeaders
-      });
-    }
-    return {
-      statusCode,
-      headers: corsHeaders,
-      body: bodyStr
-    };
-  };
+  if (req.method === "OPTIONS") {
+    return new Response("", { status: 200, headers: corsHeaders });
+  }
 
-  const method = isV2 ? (arg1.method || "GET").toUpperCase() : ((arg1 && arg1.httpMethod) || "GET").toUpperCase();
-  if (method === "OPTIONS") {
-    return createResponse(200, "");
+  let query = {};
+  try {
+    const url = new URL(req.url);
+    query = Object.fromEntries(url.searchParams.entries());
+  } catch (_e) {
+    query = {};
   }
 
   const storeInfo = getPropertiesStore(context);
@@ -284,27 +239,22 @@ async function universalHandler(arg1, arg2) {
     );
   }
 
-  return createResponse(200, {
+  const responseBody = {
     status: "success",
     count: filtered.length,
     source: source,
     diagnostics: {
-      runtime: isV2 ? "Functions v2 (Web API)" : "Functions v1 (Lambda)",
+      runtime: "Functions v2 (Native)",
       blobsInitMode: storeInfo.mode,
       blobsError: blobResult.error,
-      blobsCount: (blobResult.properties || []).length,
-      env: {
-        hasSiteId: Boolean(process.env.SITE_ID || process.env.NETLIFY_SITE_ID),
-        hasFunctionsToken: Boolean(process.env.NETLIFY_FUNCTIONS_TOKEN),
-        hasPurgeToken: Boolean(process.env.NETLIFY_PURGE_API_TOKEN),
-        hasAuthToken: Boolean(process.env.NETLIFY_AUTH_TOKEN),
-        hasBlobsContext: Boolean(process.env.NETLIFY_BLOBS_CONTEXT)
-      }
+      blobsCount: (blobResult.properties || []).length
     },
     data: filtered,
     timestamp: new Date().toISOString()
-  });
-}
+  };
 
-export const handler = universalHandler;
-export default universalHandler;
+  return new Response(JSON.stringify(responseBody), {
+    status: 200,
+    headers: corsHeaders
+  });
+};

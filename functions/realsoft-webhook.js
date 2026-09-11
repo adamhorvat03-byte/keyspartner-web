@@ -3,18 +3,18 @@
  * Netlify Serverless Function: Realsoft Webhook s ukladaním do Netlify Blobs
  * Umiestnenie: netlify/functions/realsoft-webhook.js
  * Dostupné na: /.netlify/functions/realsoft-webhook a /api/realsoft-webhook
- * Netlify Functions v2 (ESM) s automatickou injekciou Netlify Blobs
+ * Netlify Functions v2 (ESM) s natívnym Netlify Blobs úložiskom
  * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
  * ==============================================================================
  */
 
 import { getStore } from "@netlify/blobs";
 
-/**
- * Bezpečná inicializácia Netlify Blobs úložiska pre v2 aj v1
- */
+export const config = {
+  path: ["/api/realsoft-webhook", "/.netlify/functions/realsoft-webhook"]
+};
+
 function getPropertiesStore(context) {
-  // 1. Kontext z Netlify Functions v2
   if (context && context.blobs && typeof context.blobs.getStore === "function") {
     try {
       return { store: context.blobs.getStore("properties"), mode: "context.blobs", error: null };
@@ -23,7 +23,6 @@ function getPropertiesStore(context) {
     }
   }
 
-  // 2. Štandardná zero-config inicializácia (v Functions v2 je plne automatická)
   try {
     const store = getStore("properties", { consistency: "strong" });
     return { store, mode: "zero-config-strong", error: null };
@@ -32,17 +31,6 @@ function getPropertiesStore(context) {
       const store = getStore("properties");
       return { store, mode: "zero-config", error: null };
     } catch (err2) {
-      // 3. Explicitné parametre ak sú k dispozícii
-      const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-      const userToken = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_API_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN;
-      if (siteID && userToken) {
-        try {
-          const store = getStore({ name: "properties", siteID, token: userToken, consistency: "strong" });
-          return { store, mode: "explicit-token", error: null };
-        } catch (eToken) {
-          return { store: null, mode: "failed", error: eToken.message };
-        }
-      }
       return { store: null, mode: "failed", error: err2.message };
     }
   }
@@ -177,44 +165,8 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
   }
 }
 
-/**
- * Univerzálny handler podporujúci Web API (Functions v2) aj Lambda (Functions v1)
- */
-async function universalHandler(arg1, arg2) {
-  const isV2 = Boolean(arg1 && typeof arg1.text === "function" && typeof arg1.json === "function");
-
-  let method = "GET";
-  let rawBody = "";
-  let headers = {};
-  let context = arg2 || {};
-
-  if (isV2) {
-    method = (arg1.method || "GET").toUpperCase();
-    try {
-      rawBody = await arg1.text();
-    } catch (_e) {
-      rawBody = "";
-    }
-    headers = Object.fromEntries(arg1.headers.entries());
-    context = arg2 || {};
-  } else {
-    const event = arg1 || {};
-    method = (event.httpMethod || "GET").toUpperCase();
-    rawBody = typeof event.body === "string" ? event.body : JSON.stringify(event.body || "");
-    headers = event.headers || {};
-    context = arg2 || {};
-  }
-
-  // --- 1. CONSOLE.LOG NA ÚPLNOM ZAČIATKU FUNKCIE ---
-  console.log("==================================================================");
-  console.log(`[REALSOFT WEBHOOK START] Čas: ${new Date().toISOString()}`);
-  console.log(`[REALSOFT WEBHOOK] Režim: ${isV2 ? "Functions v2 (Web API)" : "Functions v1 (AWS Lambda)"}`);
-  console.log(`[REALSOFT WEBHOOK] HTTP Metóda: ${method}`);
-  console.log(`[REALSOFT WEBHOOK] Hlavičky požiadavky:`, JSON.stringify(headers));
-  console.log(`[REALSOFT WEBHOOK] Prijatý surový payload (body):`);
-  console.log(rawBody ? (rawBody.length > 5000 ? rawBody.slice(0, 5000) + "... [skrátené]" : rawBody) : "(prázdne telo)");
-  console.log("==================================================================");
-
+export default async (req, context) => {
+  const method = (req.method || "GET").toUpperCase();
   const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -222,51 +174,47 @@ async function universalHandler(arg1, arg2) {
     "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
   };
 
-  const createResponse = (statusCode, payload) => {
-    const bodyStr = typeof payload === "string" ? payload : JSON.stringify(payload);
-
-    // --- 2. CONSOLE.LOG NA ÚPLNOM KONCI FUNKCIE ---
-    console.log("==================================================================");
-    console.log(`[REALSOFT WEBHOOK END] Čas: ${new Date().toISOString()}`);
-    console.log(`[REALSOFT WEBHOOK END] Návratový HTTP Kód: ${statusCode}`);
-    console.log(`[REALSOFT WEBHOOK END] Odosielaná odpoveď Realsoftu:`, bodyStr);
-    console.log("==================================================================");
-
-    if (isV2) {
-      return new Response(bodyStr, {
-        status: statusCode,
-        headers: corsHeaders
-      });
-    }
-    return {
-      statusCode,
-      headers: corsHeaders,
-      body: bodyStr
-    };
-  };
-
   if (method === "OPTIONS") {
-    return createResponse(200, "");
+    return new Response("", { status: 200, headers: corsHeaders });
   }
 
-  // GET diagnostika / healthcheck
+  let rawBody = "";
+  try {
+    rawBody = await req.text();
+  } catch (_e) {
+    rawBody = "";
+  }
+
+  const headers = Object.fromEntries(req.headers.entries());
+
+  // --- 1. CONSOLE.LOG NA ÚPLNOM ZAČIATKU FUNKCIE ---
+  console.log("==================================================================");
+  console.log(`[REALSOFT WEBHOOK START] Čas: ${new Date().toISOString()}`);
+  console.log(`[REALSOFT WEBHOOK] HTTP Metóda: ${method}`);
+  console.log(`[REALSOFT WEBHOOK] Hlavičky požiadavky:`, JSON.stringify(headers));
+  console.log(`[REALSOFT WEBHOOK] Prijatý surový payload (body):`);
+  console.log(rawBody ? (rawBody.length > 5000 ? rawBody.slice(0, 5000) + "... [skrátené]" : rawBody) : "(prázdne telo)");
+  console.log("==================================================================");
+
+  // GET diagnostika
   if (method === "GET") {
     const storeInfo = getPropertiesStore(context);
-    return createResponse(200, {
+    const getRes = {
       status: "online",
       service: "KEYS & PARTNERS a.s. - Realsoft Webhook (Netlify Blobs Functions v2)",
       storage: "Netlify Blobs (store: properties)",
       blobsInitMode: storeInfo.mode,
       blobsError: storeInfo.error,
-      runtime: isV2 ? "Functions v2 (Web API)" : "Functions v1 (Lambda)",
+      runtime: "Functions v2 (Native)",
       endpoint: "/api/realsoft-webhook",
       url: "https://keyspartner.netlify.app",
       timestamp: new Date().toISOString()
-    });
+    };
+    return new Response(JSON.stringify(getRes), { status: 200, headers: corsHeaders });
   }
 
   if (method !== "POST") {
-    return createResponse(405, { error: "Method Not Allowed" });
+    return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: corsHeaders });
   }
 
   // Spracovanie POST payloadu z Realsoftu
@@ -281,7 +229,6 @@ async function universalHandler(arg1, arg2) {
 
     const storeInfo = getPropertiesStore(context);
 
-    // Detekcia či ide o zoznam inzerátov alebo jeden inzerát
     const rawList = parsed.properties || parsed.listings || parsed.items || parsed.data;
     if (Array.isArray(rawList) && rawList.length > 0) {
       console.log(`[REALSOFT BATCH] Spracovávam balík ${rawList.length} inzerátov...`);
@@ -298,14 +245,22 @@ async function universalHandler(arg1, arg2) {
     console.error("[REALSOFT CRITICAL ERROR] Neočakávaná chyba pri spracovaní payloadu:", err);
   }
 
-  // Štandardná odpoveď potvrdenia pre Realsoft
-  return createResponse(200, {
+  const responseBody = {
     code: 1,
     message: "Object added",
     url: "https://keyspartner.netlify.app",
     processed: writeResults.length
-  });
-}
+  };
 
-export const handler = universalHandler;
-export default universalHandler;
+  // --- 2. CONSOLE.LOG NA ÚPLNOM KONCI FUNKCIE ---
+  console.log("==================================================================");
+  console.log(`[REALSOFT WEBHOOK END] Čas: ${new Date().toISOString()}`);
+  console.log(`[REALSOFT WEBHOOK END] Návratový HTTP Kód: 200`);
+  console.log(`[REALSOFT WEBHOOK END] Odosielaná odpoveď Realsoftu:`, JSON.stringify(responseBody));
+  console.log("==================================================================");
+
+  return new Response(JSON.stringify(responseBody), {
+    status: 200,
+    headers: corsHeaders
+  });
+};
