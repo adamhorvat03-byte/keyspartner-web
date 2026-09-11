@@ -1,0 +1,14 @@
+{
+  "name": "keyspartner-web",
+  "version": "1.0.0",
+  "description": "KEYS & PARTNERS a.s. webová stránka s automatickou integráciou Realsoft cez Netlify Blobs",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static build ready'"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "author": "KEYS & PARTNERS a.s.",
+  "license": "ISC"
+}

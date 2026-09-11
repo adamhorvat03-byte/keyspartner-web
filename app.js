@@ -3,7 +3,7 @@
 // ==========================================================================
 
 // --- Databáza nehnuteľností (Reálne ponuky realitnej divízie z Realsoftu) ---
-const PROPERTIES = [
+let PROPERTIES = [
     {
         id: 101,
         externalId: "RS-88421",
@@ -231,7 +231,24 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAgents();
     initScrollReveal(); // Spustenie animácií pri skrollovaní
     setupEventListeners();
+    loadPropertiesFromApi(); // Asynchrónne načítanie aktuálnych inzerátov z Netlify Blobs
 });
+
+// --- Asynchrónne načítanie nehnuteľností z Netlify Blobs cez /api/properties ---
+async function loadPropertiesFromApi() {
+    try {
+        const res = await fetch("/api/properties");
+        if (!res.ok) return;
+        const result = await res.json();
+        if (result && Array.isArray(result.data) && result.data.length > 0) {
+            PROPERTIES = result.data;
+            renderListings();
+            console.log(`[KEYS & PARTNERS] Načítané nehnuteľnosti z API (${result.data.length} položiek, zdroj: ${result.source || 'live'}).`);
+        }
+    } catch (err) {
+        console.warn("[KEYS & PARTNERS] API nedostupné, použijú sa východiskové ponuky:", err);
+    }
+}
 
 // --- Inicializácia témy ---
 function initTheme() {
@@ -372,7 +389,7 @@ function renderListings() {
         `;
         
         // Kliknutie otvorí modálne okno s detailom
-        card.addEventListener("click", () => openPropertyModal(prop.id));
+        card.addEventListener("click", () => openPropertyModal(prop.id || prop.externalId));
         
         grid.appendChild(card);
     });
@@ -438,10 +455,16 @@ function initScrollReveal() {
 function openPropertyModal(id) {
     const modal = document.getElementById("propertyModal");
     const modalBody = document.getElementById("modalBody");
-    const prop = PROPERTIES.find(p => p.id === id);
-    const agent = AGENTS.find(a => a.id === prop.agentId);
-    
-    if (!prop || !agent) return;
+    const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id));
+    if (!prop) return;
+
+    const agent = (prop.agent && prop.agent.name) ? {
+        name: prop.agent.name,
+        phone: prop.agent.phone || "+421 907 441 405",
+        email: prop.agent.email || "peter_duda@keyspartners.sk",
+        image: prop.agent.photo || (prop.agentId === 2 ? "brano.jpg" : "duda.jpg"),
+        role: "Vzťahový manažér / Maklér"
+    } : (AGENTS.find(a => a.id === prop.agentId) || AGENTS[0]);
     
     const priceFormatted = prop.deal === "prenajom" 
         ? `${prop.price.toLocaleString("sk-SK")} € / mesiac`
