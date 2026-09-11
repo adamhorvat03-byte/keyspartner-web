@@ -12,9 +12,9 @@
  * Bezpečná inicializácia Netlify Blobs úložiska.
  * Podporuje:
  * 1. Functions v2 context.blobs.getStore
- * 2. Explicitné SITE_ID a NETLIFY_PURGE_API_TOKEN / NETLIFY_AUTH_TOKEN
- * 3. Automatické zero-config getStore("properties")
- * 4. getStore len so SITE_ID
+ * 2. Explicitné SITE_ID a NETLIFY_FUNCTIONS_TOKEN / NETLIFY_PURGE_API_TOKEN
+ * 3. Syntetizovaný NETLIFY_BLOBS_CONTEXT pre zero-config kompatibilitu
+ * 4. Automatické getStore("properties") a getStore len so SITE_ID
  */
 async function getPropertiesStore(context) {
   let blobsModule = null;
@@ -46,7 +46,7 @@ async function getPropertiesStore(context) {
     }
   }
 
-  // 2. Extrakcia environment parametrov (SITE_ID, NETLIFY_PURGE_API_TOKEN, NETLIFY_AUTH_TOKEN)
+  // 2. Extrakcia environment parametrov (SITE_ID a NETLIFY_FUNCTIONS_TOKEN)
   const siteID = 
     process.env.SITE_ID || 
     process.env.NETLIFY_SITE_ID || 
@@ -54,6 +54,7 @@ async function getPropertiesStore(context) {
     (context && context.clientContext && context.clientContext.custom && context.clientContext.custom.siteID);
 
   const token = 
+    process.env.NETLIFY_FUNCTIONS_TOKEN || 
     process.env.NETLIFY_PURGE_API_TOKEN || 
     process.env.NETLIFY_AUTH_TOKEN || 
     process.env.NETLIFY_API_TOKEN ||
@@ -61,13 +62,29 @@ async function getPropertiesStore(context) {
 
   console.log(`[Blobs Init] Diagnostika prostredia: SITE_ID=${siteID ? "Áno (" + String(siteID).slice(0, 8) + "...)" : "Nie"}, TOKEN=${token ? "Áno" : "Nie"}, NETLIFY_BLOBS_CONTEXT=${Boolean(process.env.NETLIFY_BLOBS_CONTEXT)}`);
 
-  // 3. Pokus s explicitnou konfiguráciou (SITE_ID + TOKEN)
+  // 3. Syntetizovanie NETLIFY_BLOBS_CONTEXT ak chýba
+  if (!process.env.NETLIFY_BLOBS_CONTEXT && siteID && token) {
+    try {
+      const blobCtx = {
+        siteID: siteID,
+        token: token,
+        apiURL: "https://api.netlify.com"
+      };
+      process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(JSON.stringify(blobCtx)).toString("base64");
+      console.log("[Blobs Init] Syntetizovaný NETLIFY_BLOBS_CONTEXT pre plnú kompatibilitu.");
+    } catch (synthErr) {
+      console.warn("[Blobs Init] Syntéza NETLIFY_BLOBS_CONTEXT zlyhala:", synthErr.message);
+    }
+  }
+
+  // 4. Pokus s explicitnou konfiguráciou (SITE_ID + TOKEN)
   if (siteID && token) {
     try {
       const store = getStore({
         name: "properties",
         siteID: siteID,
         token: token,
+        apiURL: "https://api.netlify.com",
         consistency: "strong"
       });
       console.log("[Blobs Init] Úspešne vytvorený store cez explicitné SITE_ID a TOKEN.");
@@ -77,7 +94,7 @@ async function getPropertiesStore(context) {
     }
   }
 
-  // 4. Pokus so štandardným getStore("properties", { consistency: "strong" })
+  // 5. Pokus so štandardným getStore("properties", { consistency: "strong" })
   try {
     const store = getStore("properties", { consistency: "strong" });
     console.log("[Blobs Init] Úspešne vytvorený store cez getStore('properties', strong).");
@@ -86,7 +103,7 @@ async function getPropertiesStore(context) {
     console.warn("[Blobs Init] getStore('properties', strong) zlyhalo:", zcErr.message);
   }
 
-  // 5. Pokus so základným getStore("properties")
+  // 6. Pokus so základným getStore("properties")
   try {
     const store = getStore("properties");
     console.log("[Blobs Init] Úspešne vytvorený store cez getStore('properties').");
@@ -95,7 +112,7 @@ async function getPropertiesStore(context) {
     console.warn("[Blobs Init] getStore('properties') zlyhalo:", zcBasicErr.message);
   }
 
-  // 6. Pokus len so siteID
+  // 7. Pokus len so siteID
   if (siteID) {
     try {
       const store = getStore({
@@ -245,11 +262,11 @@ async function saveOrDeleteListing(storeInfo, context, rawItem, actionOverride) 
     
     // Fallback inicializácia pri chybe zápisu
     const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID || (context && context.site && context.site.id);
-    const token = process.env.NETLIFY_PURGE_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+    const token = process.env.NETLIFY_FUNCTIONS_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
     if (siteID && token) {
       try {
         const { getStore } = require("@netlify/blobs");
-        const fallbackStore = getStore({ name: "properties", siteID, token, consistency: "strong" });
+        const fallbackStore = getStore({ name: "properties", siteID, token, apiURL: "https://api.netlify.com", consistency: "strong" });
         const result = await performWrite(fallbackStore);
         console.log(`[REALSOFT SUCCESS] Inzerát ${externalId} úspešne spracovaný cez fallback store.`);
         return { success: true, externalId, action: result.action };
@@ -347,6 +364,7 @@ const mainHandler = async (arg1, arg2) => {
       blobsError: storeInfo.error,
       runtime: isV2 ? "Functions v2" : "Functions v1",
       hasSiteId: Boolean(process.env.SITE_ID || process.env.NETLIFY_SITE_ID),
+      hasFunctionsToken: Boolean(process.env.NETLIFY_FUNCTIONS_TOKEN),
       hasPurgeToken: Boolean(process.env.NETLIFY_PURGE_API_TOKEN),
       hasAuthToken: Boolean(process.env.NETLIFY_AUTH_TOKEN),
       hasBlobsContext: Boolean(process.env.NETLIFY_BLOBS_CONTEXT),

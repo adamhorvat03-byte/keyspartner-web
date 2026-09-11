@@ -155,7 +155,7 @@ async function getPropertiesStore(context) {
     }
   }
 
-  // 2. Extrakcia environment parametrov (SITE_ID, NETLIFY_PURGE_API_TOKEN, NETLIFY_AUTH_TOKEN)
+  // 2. Extrakcia environment parametrov (SITE_ID a NETLIFY_FUNCTIONS_TOKEN)
   const siteID = 
     process.env.SITE_ID || 
     process.env.NETLIFY_SITE_ID || 
@@ -163,18 +163,32 @@ async function getPropertiesStore(context) {
     (context && context.clientContext && context.clientContext.custom && context.clientContext.custom.siteID);
 
   const token = 
+    process.env.NETLIFY_FUNCTIONS_TOKEN || 
     process.env.NETLIFY_PURGE_API_TOKEN || 
     process.env.NETLIFY_AUTH_TOKEN || 
     process.env.NETLIFY_API_TOKEN ||
     (context && context.clientContext && context.clientContext.identity && context.clientContext.identity.token);
 
-  // 3. Pokus s explicitnou konfiguráciou (SITE_ID + TOKEN)
+  // 3. Syntéza NETLIFY_BLOBS_CONTEXT ak chýba
+  if (!process.env.NETLIFY_BLOBS_CONTEXT && siteID && token) {
+    try {
+      const blobCtx = {
+        siteID: siteID,
+        token: token,
+        apiURL: "https://api.netlify.com"
+      };
+      process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(JSON.stringify(blobCtx)).toString("base64");
+    } catch (_ctxErr) {}
+  }
+
+  // 4. Pokus s explicitnou konfiguráciou (SITE_ID + TOKEN)
   if (siteID && token) {
     try {
       const store = getStore({
         name: "properties",
         siteID: siteID,
         token: token,
+        apiURL: "https://api.netlify.com",
         consistency: "strong"
       });
       return { store, error: null, mode: "explicit-credentials" };
@@ -183,7 +197,7 @@ async function getPropertiesStore(context) {
     }
   }
 
-  // 4. Pokus so štandardným getStore("properties", strong)
+  // 5. Pokus so štandardným getStore("properties", strong)
   try {
     const store = getStore("properties", { consistency: "strong" });
     return { store, error: null, mode: "zero-config-strong" };
@@ -191,7 +205,7 @@ async function getPropertiesStore(context) {
     console.warn("[Blobs Init] getStore('properties', strong) zlyhalo:", zcErr.message);
   }
 
-  // 5. Pokus so základným getStore("properties")
+  // 6. Pokus so základným getStore("properties")
   try {
     const store = getStore("properties");
     return { store, error: null, mode: "zero-config" };
@@ -199,7 +213,7 @@ async function getPropertiesStore(context) {
     console.warn("[Blobs Init] getStore('properties') zlyhalo:", zcBasicErr.message);
   }
 
-  // 6. Pokus len so siteID
+  // 7. Pokus len so siteID
   if (siteID) {
     try {
       const store = getStore({
@@ -255,11 +269,11 @@ async function fetchBlobsProperties(storeInfo, context) {
     console.warn(`[Blobs Read] Prvé čítanie zlyhalo (${readErr.message}). Skúšam fallback so SITE_ID a TOKEN...`);
     
     const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID || (context && context.site && context.site.id);
-    const token = process.env.NETLIFY_PURGE_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+    const token = process.env.NETLIFY_FUNCTIONS_TOKEN || process.env.NETLIFY_PURGE_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
     if (siteID && token) {
       try {
         const { getStore } = require("@netlify/blobs");
-        const fallbackStore = getStore({ name: "properties", siteID, token, consistency: "strong" });
+        const fallbackStore = getStore({ name: "properties", siteID, token, apiURL: "https://api.netlify.com", consistency: "strong" });
         const properties = await loadFromStore(fallbackStore);
         return { properties, error: null, mode: "fallback-explicit" };
       } catch (fbErr) {
@@ -365,6 +379,7 @@ const mainHandler = async (arg1, arg2) => {
       blobsCount: (blobResult.properties || []).length,
       env: {
         hasSiteId: Boolean(process.env.SITE_ID || process.env.NETLIFY_SITE_ID),
+        hasFunctionsToken: Boolean(process.env.NETLIFY_FUNCTIONS_TOKEN),
         hasPurgeToken: Boolean(process.env.NETLIFY_PURGE_API_TOKEN),
         hasAuthToken: Boolean(process.env.NETLIFY_AUTH_TOKEN),
         hasBlobsContext: Boolean(process.env.NETLIFY_BLOBS_CONTEXT),
