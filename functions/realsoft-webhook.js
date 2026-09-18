@@ -5,6 +5,9 @@
  * Dostupné na: /.netlify/functions/realsoft-webhook a /api/realsoft-webhook
  * Netlify Functions v2 (ESM) s natívnym Netlify Blobs úložiskom
  * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
+ * 
+ * Špecifikácia: United Classifieds / Realsoft Export API v1 (Bod 2. Návratová hodnota)
+ * https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/export/intro
  * ==============================================================================
  */
 
@@ -64,6 +67,10 @@ async function cleanupTestListings(storeInfo) {
 
 function normalizePropertyType(type) {
   if (!type) return "byt";
+  if (type === 4 || type === "4") return "byt";
+  if (type === 6 || type === "6") return "dom";
+  if (type === 3 || type === "3") return "pozemi";
+  if (type === 2 || type === "2" || type === 9 || type === "9" || type === 7 || type === "7" || type === 11 || type === "11") return "komercne";
   const t = String(type).toLowerCase();
   if (t.includes("byt") || t.includes("flat") || t.includes("apartment")) return "byt";
   if (t.includes("dom") || t.includes("vila") || t.includes("house")) return "dom";
@@ -74,6 +81,8 @@ function normalizePropertyType(type) {
 
 function normalizeDeal(deal) {
   if (!deal) return "predaj";
+  if (deal === 1 || deal === "1" || deal === 2 || deal === "2") return "predaj";
+  if (deal === 3 || deal === "3" || deal === 4 || deal === "4") return "prenajom";
   const d = String(deal).toLowerCase();
   if (d.includes("prenaj") || d.includes("rent")) return "prenajom";
   return "predaj";
@@ -139,6 +148,14 @@ function extractRooms(raw, titleText) {
         return parseInt(match[1], 10);
       }
       return trimmed;
+    }
+  }
+
+  // Realsoft subcategory kľúče pre byty: 401=Garsónka, 402=1-izb, 403=2-izb, 404=3-izb, 405=4-izb, 406=5-izb
+  if (raw.subcategory) {
+    const sub = Number(raw.subcategory);
+    if (sub >= 401 && sub <= 406) {
+      return sub === 401 ? 1 : sub - 400;
     }
   }
 
@@ -219,7 +236,7 @@ function extractLocation(raw) {
 
   const city = raw.city || raw.mesto || (raw.location && raw.location.city) || (raw.address && raw.address.city) || "Prešov";
   const street = raw.street || raw.ulica || (raw.location && raw.location.street) || (raw.address && raw.address.street);
-  const district = raw.district || raw.okres || raw.cast || raw.mestskacast;
+  const district = raw.district || raw.okres || raw.cast || raw.mestskacast || raw.citypart_string;
 
   const parts = [];
   if (city) parts.push(city);
@@ -267,6 +284,8 @@ function extractAllImages(raw) {
   }
   if (raw.image && typeof raw.image === "string" && !images.includes(raw.image)) {
     images.unshift(raw.image);
+  } else if (raw.image && typeof raw.image === "object" && raw.image.url && !images.includes(raw.image.url)) {
+    images.unshift(raw.image.url);
   }
   if (raw.photo && typeof raw.photo === "string" && !images.includes(raw.photo)) {
     images.unshift(raw.photo);
@@ -278,12 +297,13 @@ function extractAllImages(raw) {
 }
 
 /**
- * Validácia: Obsahuje položka aspoň základné dáta skutočného inzerátu?
+ * Validácia: Obsahuje položka aspoň základné dáta skutočného inzerátu alebo makléra?
  * Zabraňuje vytváraniu prázdnych dummy inzerátov pri testovacích pingoch.
  */
 function hasRealPropertyData(raw) {
   if (!raw || typeof raw !== "object") return false;
-  if (raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
+  if (raw.object_id || raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
+  if (raw.user_id || raw.full_name) return true;
   if (raw.title || raw.name || raw.nazov || raw.headline) return true;
   if (raw.price !== undefined || raw.cena !== undefined) return true;
   if (raw.usable_area || raw.floor_area || raw.area || raw.vymera) return true;
@@ -382,14 +402,15 @@ function parseFormEncoded(str) {
 
   try {
     const params = new URLSearchParams(trimmed);
+    const postAction = params.get("action");
     const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json", "body", "content"];
     for (const k of containerKeys) {
       if (params.has(k)) {
         const val = params.get(k);
         const parsed = parseJsonLenient(val);
         if (parsed && typeof parsed === "object") {
-          if (params.has("action") && !parsed.action) {
-            parsed.action = params.get("action");
+          if (postAction && !parsed.postAction) {
+            parsed.postAction = postAction;
           }
           return parsed;
         }
@@ -400,7 +421,7 @@ function parseFormEncoded(str) {
     for (const [k, v] of params.entries()) {
       flatObj[k] = v;
     }
-    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.cena || flatObj.action) {
+    if (flatObj.object_id || flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.cena || flatObj.user_id) {
       return flatObj;
     }
   } catch (_e) {}
@@ -416,14 +437,15 @@ async function parseMultipartFormData(req) {
     const formData = await req.clone().formData();
     if (!formData) return null;
 
+    const postAction = formData.get("action");
     const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json"];
     for (const k of containerKeys) {
       const val = formData.get(k);
       if (typeof val === "string") {
         const parsed = parseJsonLenient(val);
         if (parsed) {
-          if (formData.has("action") && !parsed.action) {
-            parsed.action = formData.get("action");
+          if (postAction && !parsed.postAction) {
+            parsed.postAction = postAction;
           }
           return parsed;
         }
@@ -436,7 +458,7 @@ async function parseMultipartFormData(req) {
         flatObj[k] = v;
       }
     }
-    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.action) {
+    if (flatObj.object_id || flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.user_id) {
       return flatObj;
     }
   } catch (_e) {}
@@ -451,14 +473,15 @@ function parseUrlQuery(req) {
     const url = new URL(req.url);
     if (!url.searchParams) return null;
 
+    const postAction = url.searchParams.get("action");
     const containerKeys = ["data", "payload", "property", "inzerat", "listing", "item", "json"];
     for (const k of containerKeys) {
       if (url.searchParams.has(k)) {
         const val = url.searchParams.get(k);
         const parsed = parseJsonLenient(val);
         if (parsed) {
-          if (url.searchParams.has("action") && !parsed.action) {
-            parsed.action = url.searchParams.get("action");
+          if (postAction && !parsed.postAction) {
+            parsed.postAction = postAction;
           }
           return parsed;
         }
@@ -469,7 +492,7 @@ function parseUrlQuery(req) {
     for (const [k, v] of url.searchParams.entries()) {
       flatObj[k] = v;
     }
-    if (flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov) {
+    if (flatObj.object_id || flatObj.external_id || flatObj.id || flatObj.title || flatObj.nazov || flatObj.user_id) {
       return flatObj;
     }
   } catch (_e) {}
@@ -486,10 +509,11 @@ function parseXmlSimple(rawXml) {
     return m ? m[1].trim() : null;
   };
 
-  const id = getTag(rawXml, "id") || getTag(rawXml, "external_id") || getTag(rawXml, "kod");
+  const id = getTag(rawXml, "object_id") || getTag(rawXml, "id") || getTag(rawXml, "external_id") || getTag(rawXml, "kod");
   const title = getTag(rawXml, "nazov") || getTag(rawXml, "title") || getTag(rawXml, "nadpis");
   if (id || title) {
     return {
+      object_id: id,
       external_id: id,
       title: title,
       price: getTag(rawXml, "cena") || getTag(rawXml, "price"),
@@ -542,44 +566,94 @@ async function parseAnyPayload(req, rawBody) {
 }
 
 /**
- * Uloženie alebo vymazanie inzerátu v Netlify Blobs
+ * Uloženie alebo vymazanie inzerátu v Netlify Blobs podľa Realsoft špecifikácie
+ * Návratové hodnoty:
+ * code: 1 = Object added (pridaná zákazka)
+ * code: 2 = Object edited (upravená zákazka)
+ * code: 3 = Object deleted (vymazaná zákazka)
  */
-async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
+async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postAction) {
   const raw = rawItem || {};
   if (!hasRealPropertyData(raw)) {
     console.log("[REALSOFT SKIP] Dáta neobsahujú žiadne atribúty inzerátu (napr. testovací ping). Preskakujem.");
-    return { success: true, externalId: null, action: "skipped", reason: "no property data" };
+    return {
+      success: true,
+      externalId: "0",
+      importId: "0",
+      code: 1,
+      message: "Object added",
+      action: "skipped",
+      reason: "no property data"
+    };
   }
 
-  const rawId = raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id;
-  const externalId = rawId ? String(rawId).trim() : `RS-${Date.now()}`;
+  const isAgent = postAction === 2 || postAction === "2" || Boolean(raw.user_id && raw.full_name);
+
+  // ID nehnuteľnosti / makléra
+  const rawId = raw.object_id || raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id || raw.user_id;
+  let externalId = rawId ? String(rawId).trim() : (isAgent ? `AGENT-${Date.now()}` : `RS-${Date.now()}`);
+  if (!isAgent && raw.object_id && !externalId.startsWith("RS-")) {
+    externalId = `RS-${raw.object_id}`;
+  }
+
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
 
+  // Status 5 v číselníku Realsoftu = Zrušené (DELETE)
   const isDelete =
+    Number(raw.status) === 5 ||
+    raw.status === "5" ||
+    raw.deleted === 1 ||
+    raw.deleted === true ||
+    raw.deleted === "1" ||
+    raw.deleted === "true" ||
     action === "delete" ||
     action === "deactivate" ||
     raw.status === "deleted" ||
     raw.status === "inactive" ||
     raw.is_active === false;
 
-  console.log(`[REALSOFT ACTION] Inzerát ID: ${externalId}, Požadovaná akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
+  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, ID: ${externalId}, Požadovaná akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
 
   if (!storeInfo || !storeInfo.store) {
     console.warn(`[REALSOFT WARNING] Netlify Blobs store nie je dostupný pre ${externalId}:`, storeInfo ? storeInfo.error : "Unknown");
-    return { success: false, externalId, error: "Store not available" };
+    return {
+      success: false,
+      externalId,
+      importId: externalId,
+      code: 13,
+      message: "Storage unavailable",
+      error: "Store not available"
+    };
   }
 
   try {
     if (isDelete) {
       if (typeof storeInfo.store.delete === "function") {
         await storeInfo.store.delete(externalId);
-        console.log(`[REALSOFT SUCCESS] Inzerát ${externalId} úspešne vymazaný z Netlify Blobs.`);
-        return { success: true, externalId, action: "deleted" };
+        console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} úspešne vymazaná z Netlify Blobs.`);
+        return {
+          success: true,
+          externalId,
+          importId: externalId,
+          code: 3,
+          message: isAgent ? "Agent deleted" : "Object deleted",
+          action: "deleted"
+        };
       }
     } else {
+      // Overenie, či inzerát už v Netlify Blobs existoval (kvôli rozlíšeniu Object added vs Object edited)
+      let alreadyExists = false;
+      try {
+        if (typeof storeInfo.store.get === "function") {
+          const existingItem = await storeInfo.store.get(externalId);
+          if (existingItem) alreadyExists = true;
+        }
+      } catch (_e) {}
+      if (raw.extern_id) alreadyExists = true;
+
       const allImages = extractAllImages(raw);
-      const dealType = normalizeDeal(raw.transaction_type || raw.deal_type || raw.deal || raw.typ_obchodu);
-      const propType = normalizePropertyType(raw.property_type || raw.category || raw.type || raw.kategoria || raw.druh);
+      const dealType = normalizeDeal(raw.action || raw.transaction_type || raw.deal_type || raw.deal || raw.typ_obchodu);
+      const propType = normalizePropertyType(raw.category || raw.property_type || raw.type || raw.kategoria || raw.druh);
       const priceData = extractPrice(raw);
       const locationVal = extractLocation(raw);
       const rawTitle = raw.title || raw.name || raw.nazov || raw.headline;
@@ -588,9 +662,12 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
       const floorVal = extractFloor(raw);
       const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
 
+      const isReserved = Number(raw.status) === 3 || raw.status === "3" || raw.status === "reserved" || raw.is_reserved === true || raw.rezervovane === true;
+
       const propertyItem = {
         id: externalId,
         externalId: externalId,
+        objectId: raw.object_id || null,
         title: titleVal,
         shortTitle: raw.shortTitle || raw.kratky_nazov || titleVal,
         type: propType,
@@ -605,8 +682,8 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
         image: allImages[0],
         images: allImages,
         tags: raw.tags || [dealType === "predaj" ? "PREDAJ" : "PRENÁJOM", "REALSOFT"],
-        isReserved: raw.status === "reserved" || raw.is_reserved === true || raw.rezervovane === true,
-        agentId: raw.agentId || 1,
+        isReserved: isReserved,
+        agentId: raw.agentId || raw.agent_id || 1,
         agent: raw.agent || raw.broker || raw.makler || {
           name: "Peter DUDA",
           phone: "+421 907 441 405",
@@ -631,12 +708,31 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride) {
         throw new Error("Store object does not have setJSON or set method");
       }
 
-      console.log(`[REALSOFT SUCCESS] Inzerát ${externalId} (${propertyItem.title}) úspešne zapísaný do Netlify Blobs.`);
-      return { success: true, externalId, action: "upserted" };
+      const returnCode = alreadyExists ? 2 : 1;
+      const returnMessage = alreadyExists
+        ? (isAgent ? "Agent edited" : "Object edited")
+        : (isAgent ? "Agent added" : "Object added");
+
+      console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (${propertyItem.title}) úspešne uložená v Netlify Blobs [${returnMessage}].`);
+      return {
+        success: true,
+        externalId,
+        importId: externalId,
+        code: returnCode,
+        message: returnMessage,
+        action: alreadyExists ? "edited" : "added"
+      };
     }
   } catch (writeErr) {
     console.error(`[REALSOFT ERROR] Zápis inzerátu ${externalId} do Netlify Blobs zlyhal:`, writeErr);
-    return { success: false, externalId, error: writeErr.message };
+    return {
+      success: false,
+      externalId,
+      importId: externalId,
+      code: 13,
+      message: writeErr.message,
+      error: writeErr.message
+    };
   }
 }
 
@@ -683,6 +779,7 @@ export default async (req, context) => {
     const getRes = {
       status: "online",
       service: "KEYS & PARTNERS a.s. - Realsoft Webhook (Netlify Blobs Functions v2)",
+      spec: "United Classifieds / Realsoft Export API v1 (Bod 2)",
       storage: "Netlify Blobs (store: properties)",
       blobsInitMode: storeInfo.mode,
       blobsError: storeInfo.error,
@@ -695,12 +792,13 @@ export default async (req, context) => {
   }
 
   if (method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: corsHeaders });
+    return new Response(JSON.stringify({ code: 13, message: "Method Not Allowed" }), { status: 405, headers: corsHeaders });
   }
 
   // Rozparsovanie ľubovoľného formátu (JSON, unquoted JSON, urlencoded, multipart, XML, URL query)
   let writeResults = [];
   let detectedFormat = "none";
+  let isAgent = false;
 
   try {
     const parseResult = await parseAnyPayload(req, rawBody);
@@ -710,52 +808,80 @@ export default async (req, context) => {
     console.log(`[REALSOFT PARSER] Detegovaný a rozparsovaný formát: ${detectedFormat}`);
 
     if (parsed && typeof parsed === "object") {
-      const rawList = parsed.properties || parsed.listings || parsed.items || (Array.isArray(parsed.data) ? parsed.data : null);
+      const postAction = parsed.action || parsed.postAction;
+      isAgent = postAction === 2 || postAction === "2";
+
+      // V Realsofte môžu prísť dáta priamo v parametri 'data' (JSON objekt alebo pole)
+      const targetPayload = (parsed.data && typeof parsed.data === "object") ? parsed.data : parsed;
+      const rawList = targetPayload.properties || targetPayload.listings || targetPayload.items || (Array.isArray(targetPayload) ? targetPayload : null);
 
       if (Array.isArray(rawList) && rawList.length > 0) {
         console.log(`[REALSOFT BATCH] Spracovávam balík ${rawList.length} inzerátov...`);
         for (const item of rawList) {
           if (hasRealPropertyData(item)) {
-            const res = await saveOrDeleteListing(storeInfo, item, parsed.action);
+            const res = await saveOrDeleteListing(storeInfo, item, parsed.action, postAction);
             writeResults.push(res);
           }
         }
       } else {
-        const rawItem = parsed.property || (parsed.data && typeof parsed.data === "object" && !Array.isArray(parsed.data) ? parsed.data : null) || parsed.listing || parsed;
+        const rawItem = targetPayload.property || targetPayload.listing || targetPayload;
         if (hasRealPropertyData(rawItem)) {
-          const res = await saveOrDeleteListing(storeInfo, rawItem, parsed.action);
+          const res = await saveOrDeleteListing(storeInfo, rawItem, parsed.action, postAction);
           writeResults.push(res);
         } else {
           console.log("[REALSOFT INFO] Požiadavka neobsahovala platné dáta inzerátu (napr. testovací overovací ping Realsoftu).");
         }
       }
     } else {
-      console.log("[REALSOFT INFO] Prázdne telo alebo žiadny objekt (overovací ping Realsoftu). Vraciam štandardnú odpoveď 200 OK.");
+      console.log("[REALSOFT INFO] Prázdne telo alebo žiadny objekt (overovací ping Realsoftu).");
     }
   } catch (err) {
     console.error("[REALSOFT CRITICAL ERROR] Neočakávaná chyba pri spracovaní:", err);
   }
 
-  // Realsoft očakáva presne túto odpoveď so statusom 200
-  const responseBody = {
-    code: 1,
-    message: "Object added",
-    url: "https://keyspartner.netlify.app",
-    processed: writeResults.length,
-    parserFormat: detectedFormat,
-    storeMode: storeInfo ? storeInfo.mode : "none",
-    storeError: storeInfo ? storeInfo.error : null,
-    results: writeResults
-  };
+  // ==============================================================================
+  // OFICIÁLNA NÁVRATOVÁ HODNOTA REALSOFTU (BOD 2)
+  //
+  // Vyžadované položky:
+  // - code: 1 (Object/Agent added), 2 (Object/Agent edited), 3 (Object/Agent deleted)
+  // - importId: ID na portále po pridaní/editovaní/zmazaní inzerátu/makléra
+  // - message: Textová správa ("Object added", "Object edited", "Object deleted")
+  // - url: URL na portále pridaného/editovaného inzerátu
+  // ==============================================================================
+  let responseBody;
+  if (writeResults.length > 0) {
+    const mainResult = writeResults[0];
+    responseBody = {
+      code: mainResult.code || (isAgent ? 1 : 1),
+      importId: String(mainResult.importId || mainResult.externalId || "0"),
+      message: mainResult.message || (isAgent ? "Agent added" : "Object added"),
+      url: "https://keyspartner.netlify.app"
+    };
+  } else {
+    // Predvolená úspešná odpoveď pre overovací ping Realsoftu bez položky
+    responseBody = {
+      code: 1,
+      importId: "0",
+      message: isAgent ? "Agent added" : "Object added",
+      url: "https://keyspartner.netlify.app"
+    };
+  }
 
   console.log("==================================================================");
   console.log(`[REALSOFT WEBHOOK END] Čas: ${new Date().toISOString()}`);
   console.log(`[REALSOFT WEBHOOK END] Návratový HTTP Kód: 200`);
-  console.log(`[REALSOFT WEBHOOK END] Odosielaná odpoveď Realsoftu:`, JSON.stringify(responseBody));
+  console.log(`[REALSOFT WEBHOOK END] Odosielaná odpoveď Realsoftu (Bod 2):`, JSON.stringify(responseBody));
   console.log("==================================================================");
+
+  // Dodatočné diagnostické hlavičky (neovplyvňujú JSON body validovaný Realsoftom)
+  const customHeaders = {
+    ...corsHeaders,
+    "X-Realsoft-Processed": String(writeResults.length),
+    "X-Realsoft-Format": detectedFormat
+  };
 
   return new Response(JSON.stringify(responseBody), {
     status: 200,
-    headers: corsHeaders
+    headers: customHeaders
   });
 };
