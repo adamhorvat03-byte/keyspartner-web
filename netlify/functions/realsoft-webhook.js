@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==============================================================================
  * Netlify Serverless Function: Realsoft Webhook s ukladaním do Netlify Blobs
  * Umiestnenie: netlify/functions/realsoft-webhook.js
@@ -300,9 +300,23 @@ function extractAllImages(raw) {
  * Validácia: Obsahuje položka aspoň základné dáta skutočného inzerátu alebo makléra?
  * Zabraňuje vytváraniu prázdnych dummy inzerátov pri testovacích pingoch.
  */
-function hasRealPropertyData(raw) {
-  if (!raw || typeof raw !== "object") return false;
-  if (raw.object_id || raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
+function hasRealPropertyData(rawItem) {
+  if (!rawItem || typeof rawItem !== "object") return false;
+  let nestedData = {};
+  if (rawItem.data) {
+    if (typeof rawItem.data === "object" && !Array.isArray(rawItem.data)) {
+      nestedData = rawItem.data;
+    } else if (typeof rawItem.data === "string") {
+      const inner = parseJsonLenient(rawItem.data);
+      if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+        nestedData = inner;
+      }
+    }
+  }
+  const raw = { ...rawItem, ...nestedData };
+
+  if (raw.object_id !== undefined && raw.object_id !== null) return true;
+  if (raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
   if (raw.user_id || raw.full_name) return true;
   if (raw.title || raw.name || raw.nazov || raw.headline) return true;
   if (raw.price !== undefined || raw.cena !== undefined) return true;
@@ -573,13 +587,28 @@ async function parseAnyPayload(req, rawBody) {
  * code: 3 = Object deleted (vymazaná zákazka)
  */
 async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postAction) {
-  const raw = rawItem || {};
+  // Podpora pre vnorený objekt payload.data (Realsoft v1 export formát)
+  let nestedData = {};
+  if (rawItem && rawItem.data) {
+    if (typeof rawItem.data === "object" && !Array.isArray(rawItem.data)) {
+      nestedData = rawItem.data;
+    } else if (typeof rawItem.data === "string") {
+      const inner = parseJsonLenient(rawItem.data);
+      if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+        nestedData = inner;
+      }
+    }
+  }
+
+  // Zlúčime rawItem a nestedData tak, aby atribúty z 'data' mali prednosť
+  const raw = { ...(rawItem || {}), ...nestedData };
+
   if (!hasRealPropertyData(raw)) {
     console.log("[REALSOFT SKIP] Dáta neobsahujú žiadne atribúty inzerátu (napr. testovací ping). Preskakujem.");
     return {
       success: true,
       externalId: "0",
-      importId: "0",
+      importId: 0,
       code: 1,
       message: "Object added",
       action: "skipped",
@@ -589,11 +618,42 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
 
   const isAgent = postAction === 2 || postAction === "2" || Boolean(raw.user_id && raw.full_name);
 
-  // ID nehnuteľnosti / makléra
-  const rawId = raw.object_id || raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id || raw.user_id;
-  let externalId = rawId ? String(rawId).trim() : (isAgent ? `AGENT-${Date.now()}` : `RS-${Date.now()}`);
-  if (!isAgent && raw.object_id && !externalId.startsWith("RS-")) {
-    externalId = `RS-${raw.object_id}`;
+  // 1. Primárny identifikátor: object_id z payload.data (alebo koreňa)
+  const primaryObjectId = (rawItem && rawItem.data && rawItem.data.object_id !== undefined && rawItem.data.object_id !== null)
+    ? rawItem.data.object_id
+    : (raw.object_id !== undefined && raw.object_id !== null ? raw.object_id : null);
+
+  // 2. Fallback na alternatívne identifikátory
+  const rawId = primaryObjectId !== null
+    ? primaryObjectId
+    : (raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id || raw.user_id);
+
+  // 3. Formátovanie importId pre oficiálnu odpoveď Realsoftu (Bod 2)
+  // Vracia presne extrahovanú hodnotu object_id (číslo / string bez prefixu RS-)
+  let returnImportId = 0;
+  if (primaryObjectId !== null && primaryObjectId !== undefined) {
+    if (typeof primaryObjectId === "number") {
+      returnImportId = primaryObjectId;
+    } else if (typeof primaryObjectId === "string" && /^\d+$/.test(primaryObjectId.trim())) {
+      returnImportId = parseInt(primaryObjectId.trim(), 10);
+    } else {
+      returnImportId = primaryObjectId;
+    }
+  } else if (rawId !== null && rawId !== undefined) {
+    if (typeof rawId === "number") {
+      returnImportId = rawId;
+    } else if (typeof rawId === "string" && /^\d+$/.test(rawId.trim())) {
+      returnImportId = parseInt(rawId.trim(), 10);
+    } else {
+      returnImportId = rawId;
+    }
+  }
+
+  // 4. Kľúč pre Netlify Blobs úložisko
+  const idString = rawId !== null && rawId !== undefined ? String(rawId).trim() : "";
+  let externalId = idString ? idString : (isAgent ? `AGENT-${Date.now()}` : `RS-${Date.now()}`);
+  if (!isAgent && primaryObjectId !== null && !externalId.startsWith("RS-")) {
+    externalId = `RS-${primaryObjectId}`;
   }
 
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
@@ -612,14 +672,14 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     raw.status === "inactive" ||
     raw.is_active === false;
 
-  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, ID: ${externalId}, Požadovaná akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
+  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Požadovaná akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
 
   if (!storeInfo || !storeInfo.store) {
     console.warn(`[REALSOFT WARNING] Netlify Blobs store nie je dostupný pre ${externalId}:`, storeInfo ? storeInfo.error : "Unknown");
     return {
       success: false,
       externalId,
-      importId: externalId,
+      importId: returnImportId,
       code: 13,
       message: "Storage unavailable",
       error: "Store not available"
@@ -630,11 +690,14 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     if (isDelete) {
       if (typeof storeInfo.store.delete === "function") {
         await storeInfo.store.delete(externalId);
-        console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} úspešne vymazaná z Netlify Blobs.`);
+        if (primaryObjectId !== null && String(primaryObjectId) !== externalId) {
+          try { await storeInfo.store.delete(String(primaryObjectId)); } catch (_e) {}
+        }
+        console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (object_id: ${primaryObjectId}) úspešne vymazaná z Netlify Blobs.`);
         return {
           success: true,
           externalId,
-          importId: externalId,
+          importId: returnImportId,
           code: 3,
           message: isAgent ? "Agent deleted" : "Object deleted",
           action: "deleted"
@@ -646,7 +709,12 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       try {
         if (typeof storeInfo.store.get === "function") {
           const existingItem = await storeInfo.store.get(externalId);
-          if (existingItem) alreadyExists = true;
+          if (existingItem) {
+            alreadyExists = true;
+          } else if (primaryObjectId !== null) {
+            const existingNum = await storeInfo.store.get(String(primaryObjectId));
+            if (existingNum) alreadyExists = true;
+          }
         }
       } catch (_e) {}
       if (raw.extern_id) alreadyExists = true;
@@ -667,7 +735,7 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       const propertyItem = {
         id: externalId,
         externalId: externalId,
-        objectId: raw.object_id || null,
+        objectId: primaryObjectId !== null ? primaryObjectId : (raw.object_id || null),
         title: titleVal,
         shortTitle: raw.shortTitle || raw.kratky_nazov || titleVal,
         type: propType,
@@ -713,11 +781,11 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         ? (isAgent ? "Agent edited" : "Object edited")
         : (isAgent ? "Agent added" : "Object added");
 
-      console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (${propertyItem.title}) úspešne uložená v Netlify Blobs [${returnMessage}].`);
+      console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (${propertyItem.title}) úspešne uložená v Netlify Blobs [${returnMessage}]. importId=${returnImportId}`);
       return {
         success: true,
         externalId,
-        importId: externalId,
+        importId: returnImportId,
         code: returnCode,
         message: returnMessage,
         action: alreadyExists ? "edited" : "added"
@@ -728,7 +796,7 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     return {
       success: false,
       externalId,
-      importId: externalId,
+      importId: returnImportId,
       code: 13,
       message: writeErr.message,
       error: writeErr.message
@@ -808,12 +876,27 @@ export default async (req, context) => {
     console.log(`[REALSOFT PARSER] Detegovaný a rozparsovaný formát: ${detectedFormat}`);
 
     if (parsed && typeof parsed === "object") {
-      const postAction = parsed.action || parsed.postAction;
+      let dataObj = null;
+      if (parsed.data) {
+        if (typeof parsed.data === "object" && !Array.isArray(parsed.data)) {
+          dataObj = parsed.data;
+        } else if (typeof parsed.data === "string") {
+          const innerParsed = parseJsonLenient(parsed.data);
+          if (innerParsed && typeof innerParsed === "object" && !Array.isArray(innerParsed)) {
+            dataObj = innerParsed;
+          }
+        }
+      }
+
+      let postAction = parsed.action || parsed.postAction;
+      if (dataObj && dataObj.action !== undefined && postAction === undefined) {
+        postAction = dataObj.action;
+      }
       isAgent = postAction === 2 || postAction === "2";
 
       // V Realsofte môžu prísť dáta priamo v parametri 'data' (JSON objekt alebo pole)
-      const targetPayload = (parsed.data && typeof parsed.data === "object") ? parsed.data : parsed;
-      const rawList = targetPayload.properties || targetPayload.listings || targetPayload.items || (Array.isArray(targetPayload) ? targetPayload : null);
+      const rawList = (dataObj && (dataObj.properties || dataObj.listings || dataObj.items || (Array.isArray(dataObj) ? dataObj : null)))
+        || parsed.properties || parsed.listings || parsed.items || (Array.isArray(parsed) ? parsed : null);
 
       if (Array.isArray(rawList) && rawList.length > 0) {
         console.log(`[REALSOFT BATCH] Spracovávam balík ${rawList.length} inzerátov...`);
@@ -824,7 +907,8 @@ export default async (req, context) => {
           }
         }
       } else {
-        const rawItem = targetPayload.property || targetPayload.listing || targetPayload;
+        // Jednotlivá položka: zlúčime koreňový parsed s parsed.data (data má prednosť)
+        const rawItem = dataObj ? { ...parsed, ...dataObj } : parsed;
         if (hasRealPropertyData(rawItem)) {
           const res = await saveOrDeleteListing(storeInfo, rawItem, parsed.action, postAction);
           writeResults.push(res);
@@ -844,7 +928,7 @@ export default async (req, context) => {
   //
   // Vyžadované položky:
   // - code: 1 (Object/Agent added), 2 (Object/Agent edited), 3 (Object/Agent deleted)
-  // - importId: ID na portále po pridaní/editovaní/zmazaní inzerátu/makléra
+  // - importId: ID na portále po pridaní/editovaní/zmazaní inzerátu/makléra (extrahované object_id)
   // - message: Textová správa ("Object added", "Object edited", "Object deleted")
   // - url: URL na portále pridaného/editovaného inzerátu
   // ==============================================================================
@@ -853,7 +937,7 @@ export default async (req, context) => {
     const mainResult = writeResults[0];
     responseBody = {
       code: mainResult.code || (isAgent ? 1 : 1),
-      importId: String(mainResult.importId || mainResult.externalId || "0"),
+      importId: mainResult.importId !== undefined && mainResult.importId !== null ? mainResult.importId : 0,
       message: mainResult.message || (isAgent ? "Agent added" : "Object added"),
       url: "https://keyspartner.netlify.app"
     };
@@ -861,7 +945,7 @@ export default async (req, context) => {
     // Predvolená úspešná odpoveď pre overovací ping Realsoftu bez položky
     responseBody = {
       code: 1,
-      importId: "0",
+      importId: 0,
       message: isAgent ? "Agent added" : "Object added",
       url: "https://keyspartner.netlify.app"
     };
