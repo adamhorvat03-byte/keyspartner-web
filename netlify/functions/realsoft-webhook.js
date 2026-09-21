@@ -270,29 +270,148 @@ function extractTitle(raw, propType, dealType, rooms, location) {
   return `${typeLabel} na ${dealStr.toLowerCase()} (${location})`;
 }
 
+function extractImageUrl(item) {
+  if (!item) return null;
+  if (typeof item === "string") {
+    const trimmed = item.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("//")) {
+      return trimmed.startsWith("//") ? "https:" + trimmed : trimmed;
+    }
+    if (trimmed.startsWith("/")) {
+      return "https://realsoft.sk" + trimmed;
+    }
+    return null;
+  }
+  if (typeof item === "object") {
+    const candidates = [
+      item.url,
+      item.src,
+      item.path,
+      item.href,
+      item.link,
+      item.file,
+      item.full,
+      item.original,
+      item.large,
+      item.big,
+      item.uri,
+      item.photo && (typeof item.photo === "string" ? item.photo : item.photo.url || item.photo.src),
+      item.image && (typeof item.image === "string" ? item.image : item.image.url || item.image.src)
+    ];
+    for (const c of candidates) {
+      const res = extractImageUrl(c);
+      if (res) return res;
+    }
+  }
+  return null;
+}
+
 function extractAllImages(raw) {
   const images = [];
-  const list = raw.images || raw.photos || raw.fotografie || raw.galeria || [];
-  if (Array.isArray(list)) {
-    for (const item of list) {
-      if (typeof item === "string" && item.startsWith("http")) {
-        images.push(item);
-      } else if (item && typeof item === "object" && item.url) {
-        images.push(item.url);
+  const addImage = (url) => {
+    if (url && typeof url === "string" && !images.includes(url)) {
+      images.push(url);
+    }
+  };
+
+  const rawData = (raw && raw.data && typeof raw.data === "object") ? raw.data : {};
+
+  // Kontrola kľúčov vo vnútri raw aj vo vnútri raw.data (payload.data):
+  // photos, fotografie, pictures, prilohy, images, galeria, gallery, obrazky, foto
+  const listCandidates = [
+    raw.photos,
+    rawData.photos,
+    raw.fotografie,
+    rawData.fotografie,
+    raw.pictures,
+    rawData.pictures,
+    raw.prilohy,
+    rawData.prilohy,
+    raw.images,
+    rawData.images,
+    raw.galeria,
+    rawData.galeria,
+    raw.gallery,
+    rawData.gallery,
+    raw.obrazky,
+    rawData.obrazky,
+    raw.attachments,
+    rawData.attachments,
+    raw.foto,
+    rawData.foto
+  ];
+
+  for (const candidate of listCandidates) {
+    if (!candidate) continue;
+    if (Array.isArray(candidate)) {
+      for (const item of candidate) {
+        const u = extractImageUrl(item);
+        if (u) addImage(u);
+      }
+    } else if (typeof candidate === "object") {
+      for (const val of Object.values(candidate)) {
+        const u = extractImageUrl(val);
+        if (u) addImage(u);
+      }
+    } else if (typeof candidate === "string") {
+      if (candidate.trim().startsWith("[") || candidate.trim().startsWith("{")) {
+        const parsed = parseJsonLenient(candidate);
+        if (parsed) {
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              const u = extractImageUrl(item);
+              if (u) addImage(u);
+            }
+          } else if (typeof parsed === "object") {
+            for (const val of Object.values(parsed)) {
+              const u = extractImageUrl(val);
+              if (u) addImage(u);
+            }
+          }
+        }
+      } else {
+        const parts = candidate.split(/[,;\s]+/);
+        for (const part of parts) {
+          const u = extractImageUrl(part);
+          if (u) addImage(u);
+        }
       }
     }
   }
-  if (raw.image && typeof raw.image === "string" && !images.includes(raw.image)) {
-    images.unshift(raw.image);
-  } else if (raw.image && typeof raw.image === "object" && raw.image.url && !images.includes(raw.image.url)) {
-    images.unshift(raw.image.url);
+
+  // Jednotlivé fotografie (photo, image, picture, main_photo, cover, titulka)
+  const singleCandidates = [
+    raw.photo,
+    rawData.photo,
+    raw.image,
+    rawData.image,
+    raw.picture,
+    rawData.picture,
+    raw.main_photo,
+    rawData.main_photo,
+    raw.cover,
+    rawData.cover,
+    raw.titulka,
+    rawData.titulka
+  ];
+
+  for (const single of singleCandidates) {
+    const u = extractImageUrl(single);
+    if (u && !images.includes(u)) {
+      images.unshift(u);
+    }
   }
-  if (raw.photo && typeof raw.photo === "string" && !images.includes(raw.photo)) {
-    images.unshift(raw.photo);
+
+  if (images.length > 0) {
+    console.log(`[REALSOFT IMAGES] Nájdených ${images.length} fotografií pre inzerát:`, images);
+  } else {
+    console.log("[REALSOFT IMAGES] Nenašli sa žiadne fotografie v payloade (použije sa fallback).");
   }
+
   if (images.length === 0) {
     images.push("https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80");
   }
+
   return images;
 }
 
@@ -325,38 +444,71 @@ function hasRealPropertyData(rawItem) {
 }
 
 /**
- * Bezpečné čítanie surového textu z Requestu (podpora UTF-8 aj Windows-1250)
+ * Bezpečné čítanie surového textu z Requestu s dekódovaním Windows-1250 / UTF-8
+ * Realsoft odosiela payloady v kódovaní Windows-1250 (Central European).
  */
 async function readRawBody(req) {
+  let buffer = null;
+
   try {
-    const text = await req.text();
-    if (text !== null && text !== undefined && text.length > 0) {
-      return text;
+    buffer = await req.clone().arrayBuffer();
+  } catch (_e1) {
+    try {
+      buffer = await req.arrayBuffer();
+    } catch (_e2) {
+      console.warn("[READ BODY] req.arrayBuffer() zlyhalo:", _e2.message);
     }
-  } catch (e1) {
-    console.warn("[READ BODY] req.text() zlyhalo:", e1.message);
   }
 
-  try {
-    const text = await req.clone().text();
-    if (text !== null && text !== undefined && text.length > 0) {
-      return text;
-    }
-  } catch (_e2) {}
+  if (buffer && buffer.byteLength > 0) {
+    const contentType = (req.headers && typeof req.headers.get === "function" ? req.headers.get("content-type") : "") || "";
 
-  try {
-    const buffer = await req.clone().arrayBuffer();
-    if (buffer && buffer.byteLength > 0) {
+    // 1. Ak je explicitne v hlavičke zadané windows-1250 / cp1250 / iso-8859-2
+    if (/windows-1250|cp1250|iso-8859-2/i.test(contentType)) {
       try {
-        const utf8 = new TextDecoder("utf-8").decode(buffer);
-        if (utf8 && utf8.trim().length > 0) return utf8;
-      } catch (_e3) {}
-      try {
-        const win = new TextDecoder("windows-1250").decode(buffer);
-        if (win && win.trim().length > 0) return win;
-      } catch (_e4) {}
+        const decoded = new TextDecoder("windows-1250").decode(buffer);
+        console.log("[READ BODY] Dekódované cez Windows-1250 (podľa hlavičky Content-Type).");
+        return decoded;
+      } catch (_e) {}
     }
-  } catch (_e5) {}
+
+    // 2. Primárne dekódovanie cez Windows-1250 (štandard Realsoft webhooku)
+    let textWin1250 = "";
+    try {
+      textWin1250 = new TextDecoder("windows-1250").decode(buffer);
+    } catch (errWin) {
+      console.warn("[READ BODY] new TextDecoder('windows-1250') zlyhalo:", errWin.message);
+    }
+
+    // 3. Detekcia, či buffer nebol v skutočnosti UTF-8 (napr. testovací cURL s UTF-8)
+    // Ak sa UTF-8 reťazec dekóduje cez Windows-1250, dvojbajtové znaky (napr. á, é, š, č) vytvoria
+    // charakteristické mojibake sekvencie začínajúce na znaky z rozsahu C2-DF nasledované 80-BF
+    const isMojibakeFromUtf8 = textWin1250 && /[\u00C0-\u00DF][\u0080-\u00BF]/.test(textWin1250);
+
+    if (isMojibakeFromUtf8 || /charset=utf-8/i.test(contentType)) {
+      try {
+        const textUtf8 = new TextDecoder("utf-8").decode(buffer);
+        if (textUtf8 && !textUtf8.includes("\uFFFD")) {
+          console.log("[READ BODY] Detegované a dekódované cez UTF-8.");
+          return textUtf8;
+        }
+      } catch (_e) {}
+    }
+
+    if (textWin1250 && textWin1250.length > 0) {
+      console.log("[READ BODY] Dekódované cez Windows-1250.");
+      return textWin1250;
+    }
+
+    try {
+      return new TextDecoder("utf-8").decode(buffer);
+    } catch (_e) {}
+  }
+
+  // 4. Núdzový fallback
+  try {
+    return await req.text();
+  } catch (_e) {}
 
   return "";
 }
@@ -887,6 +1039,13 @@ export default async (req, context) => {
           }
         }
       }
+
+      // Prechodný detailný log pre Realsoft fotografie (požiadavka: vidieť v Netlify logoch presnú štruktúru payload.data)
+      const dataToLog = dataObj || (parsed && parsed.data) || parsed;
+      console.log("------------------------------------------------------------------");
+      console.log("[REALSOFT DEBUG PAYLOAD.DATA]:");
+      console.log(JSON.stringify(dataToLog));
+      console.log("------------------------------------------------------------------");
 
       let postAction = parsed.action || parsed.postAction;
       if (dataObj && dataObj.action !== undefined && postAction === undefined) {
