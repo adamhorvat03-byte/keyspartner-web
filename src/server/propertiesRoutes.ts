@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * Express.js Router: Verejné endpointy pre nehnuteľnosti
- * KEYS & PARTNERS a.s.
+ * KEYS PARTNERS a.s.
  * ==============================================================================
  * Použitie v Express aplikácii:
  *   import { propertiesRouter } from './server/propertiesRoutes';

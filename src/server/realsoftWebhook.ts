@@ -2,7 +2,7 @@
  * ==============================================================================
  * Express.js / Node.js Router: POST /api/realsoft-webhook
  * Oficiálna integrácia pre Admin Nehnuteľnosti / Realsoft (United Classifieds)
- * KEYS & PARTNERS a.s.
+ * KEYS PARTNERS a.s.
  * ==============================================================================
  */
 
@@ -113,7 +113,7 @@ realsoftWebhookRouter.get('/realsoft-webhook', (_req: Request, res: Response) =>
   res.status(200).json({
     status: 'online',
     site: 'https://keyspartner.netlify.app',
-    service: 'KEYS & PARTNERS a.s. - Admin Nehnuteľnosti / Realsoft Webhook API (Express)',
+    service: 'KEYS PARTNERS a.s. - Admin Nehnuteľnosti / Realsoft Webhook API (Express)',
     endpoint: '/api/realsoft-webhook',
     webhookUrl: 'https://keyspartner.netlify.app/api/realsoft-webhook',
     acceptedMethod: 'POST',

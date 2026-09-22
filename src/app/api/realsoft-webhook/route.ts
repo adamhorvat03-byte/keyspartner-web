@@ -2,7 +2,7 @@
  * ==============================================================================
  * Next.js App Router API Route Handler: POST /api/realsoft-webhook
  * Oficiálna integrácia pre Admin Nehnuteľnosti / Realsoft (United Classifieds)
- * KEYS & PARTNERS a.s.
+ * KEYS PARTNERS a.s.
  * ==============================================================================
  */
 
@@ -190,7 +190,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'online',
     site: 'https://keyspartner.netlify.app',
-    service: 'KEYS & PARTNERS a.s. - Admin Nehnuteľnosti / Realsoft Webhook API',
+    service: 'KEYS PARTNERS a.s. - Admin Nehnuteľnosti / Realsoft Webhook API',
     endpoint: '/api/realsoft-webhook',
     webhookUrl: 'https://keyspartner.netlify.app/api/realsoft-webhook',
     acceptedMethod: 'POST',

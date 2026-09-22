@@ -1,5 +1,6 @@
 /* ==========================================================================
-   DIZAJNOVÝ SYSTÉM & PREMENNÉ (KEYS & PARTNERS GOLD & NAVY THEME)
+   DIZAJNOVÝ SYSTÉM & PREMENNÉ (KEYS PARTNERS GOLD & NAVY THEME)
+   Inšpirované moderným luxusným štýlom kapareal.sk & zahraničnými brokerskými portálmi
    ========================================================================== */
 :root {
     /* Písma */
@@ -594,10 +595,14 @@ img {
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(280px, 360px));
+    justify-content: center;
     gap: 32px;
     margin-top: 56px;
     margin-bottom: 48px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .result-card {
@@ -1777,8 +1782,12 @@ img {
         gap: 40px;
     }
     .results-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(240px, 1fr));
+        justify-content: center;
         gap: 24px;
+        max-width: 720px;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 
@@ -2040,8 +2049,12 @@ img {
     }
 
     .results-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: minmax(260px, 360px) !important;
+        justify-content: center !important;
         gap: 20px !important;
+        max-width: 360px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     
     .results-story-text p {

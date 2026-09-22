@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * Property Repository: Dátová vrstva pre nehnuteľnosti (KEYS & PARTNERS a.s.)
+ * Property Repository: Dátová vrstva pre nehnuteľnosti (KEYS PARTNERS a.s.)
  * Poskytuje čítanie a filtrovanie ponúk uložených z Realsoftu (Prisma / In-memory)
  * ==============================================================================
  */
@@ -37,7 +37,7 @@ export interface DetailedProperty extends Property {
 export const INITIAL_PROPERTIES: DetailedProperty[] = [
   {
     id: 'prop-101',
-    externalId: 'RS-88421',
+    externalId: 'KP-101',
     title: 'Exkluzívna ponuka: 21 stavebných pozemkov v obci Ľubotice',
     description:
       'Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. v zastúpení nášho Klienta Vám v portfóliu ponúka na PREDAJ 21 stavebných pozemkov v novovybudovanej obytnej zóne v obci Ľubotice. Pozemky sú rovinaté, pripravené na individuálnu výstavbu rodinných domov. Súčasťou projektu sú všetky inžinierske siete dotiahnuté k hraniciam pozemkov a nová asfaltová prístupová cesta.',
@@ -84,7 +84,7 @@ export const INITIAL_PROPERTIES: DetailedProperty[] = [
     externalId: 'RS-88422',
     title: 'Stavebný pozemok P1 a P2, Kokošovce - časť Sigord',
     description:
-      'KEYS & PARTNERS a.s. Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Kokošovce časť Sigord, situovaný na južnej strane Slánskych Vrchov. Ideálna ponuka pre klientov hľadajúcich pokoj, rekreáciu a čistú prírodu. Vhodný pre stavbu rodinného domu alebo rekreačnej chaty.',
+      'KEYS PARTNERS a.s. Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Kokošovce časť Sigord, situovaný na južnej strane Slánskych Vrchov. Ideálna ponuka pre klientov hľadajúcich pokoj, rekreáciu a čistú prírodu. Vhodný pre stavbu rodinného domu alebo rekreačnej chaty.',
     price: 68000,
     currency: 'EUR',
     transactionType: 'sale',
@@ -128,7 +128,7 @@ export const INITIAL_PROPERTIES: DetailedProperty[] = [
     externalId: 'RS-88423',
     title: 'Priestranný 3-izbový byt po kompletnej rekonštrukcii, Prešov',
     description:
-      'KEYS & PARTNERS a.s. ponúka na PREDAJ zrekonštruovaný 3-izbový byt v Prešove. Byt prešiel kompletnou a vkusnou modernou rekonštrukciou: nové rozvody elektriny, vody, stierky, sadrokartónové stropy, podlahy a moderná kuchynská linka so zabudovanými spotrebičmi. Úžitková plocha je 74 m² vrátane priestrannej loggie.',
+      'KEYS PARTNERS a.s. ponúka na PREDAJ zrekonštruovaný 3-izbový byt v Prešove. Byt prešiel kompletnou a vkusnou modernou rekonštrukciou: nové rozvody elektriny, vody, stierky, sadrokartónové stropy, podlahy a moderná kuchynská linka so zabudovanými spotrebičmi. Úžitková plocha je 74 m² vrátane priestrannej loggie.',
     price: 159000,
     currency: 'EUR',
     transactionType: 'sale',
@@ -174,7 +174,7 @@ export const INITIAL_PROPERTIES: DetailedProperty[] = [
     externalId: 'RS-88424',
     title: 'Slnečný stavebný pozemok v obci Fintice na Ružovej ulici',
     description:
-      'Hľadáte istotu a zhodnotenie? KEYS & PARTNERS a.s. Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Fintice na ulici Ružová. Podľa aktuálneho a platného územného plánu obce je pozemok určený na individuálnu výstavbu rodinného domu.',
+      'Hľadáte istotu a zhodnotenie? KEYS PARTNERS a.s. Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Fintice na ulici Ružová. Podľa aktuálneho a platného územného plánu obce je pozemok určený na individuálnu výstavbu rodinného domu.',
     price: 85000,
     currency: 'EUR',
     transactionType: 'sale',
@@ -217,7 +217,7 @@ export const INITIAL_PROPERTIES: DetailedProperty[] = [
     externalId: 'RS-88425',
     title: 'Nadštandardný 2-izbový byt na prenájom, Werferova, Košice',
     description:
-      'Na prenájom exkluzívny, kompletne a moderne zariadený 2-izbový byt s balkónom v lukratívnej novostavbe na Werferovej ulici v Košiciach (vedľa centrály KEYS & PARTNERS). Byt s úžitkovou plochou 55 m² sa nachádza na 2. poschodí s vlastným parkovacím miestom.',
+      'Na prenájom exkluzívny, kompletne a moderne zariadený 2-izbový byt s balkónom v lukratívnej novostavbe na Werferovej ulici v Košiciach (vedľa centrály KEYS PARTNERS). Byt s úžitkovou plochou 55 m² sa nachádza na 2. poschodí s vlastným parkovacím miestom.',
     price: 650,
     currency: 'EUR',
     transactionType: 'rent',

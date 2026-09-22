@@ -2,7 +2,7 @@
  * ==============================================================================
  * Next.js App Router: GET /api/properties
  * Verejné API pre zoznam nehnuteľností s filtrovaním
- * KEYS & PARTNERS a.s.
+ * KEYS PARTNERS a.s.
  * ==============================================================================
  */
 

@@ -35,9 +35,28 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
     ? `${property.price.toLocaleString('sk-SK')} € / mesiac`
     : `${property.price.toLocaleString('sk-SK')} €`;
 
-  const images = property.images && property.images.length > 0
-    ? property.images
-    : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80'];
+  const isAgentPhoto = (url?: string) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes('duda') ||
+      lower.includes('brano') ||
+      lower.includes('agent') ||
+      lower.includes('broker') ||
+      lower.includes('avatar') ||
+      lower.includes('profile') ||
+      lower.includes('makler') ||
+      lower.includes('user_photo') ||
+      lower.endsWith('duda.jpg') ||
+      lower.endsWith('brano.jpg')
+    );
+  };
+
+  const safeImages = (property.images || []).filter((img) => img && !isAgentPhoto(img));
+  const images =
+    safeImages.length > 0
+      ? safeImages
+      : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +256,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 dark:border-amber-500/20">
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              <h3 className="font-bold text-slate-900 dark:text-white">Garantovaný realitný servis KEYS & PARTNERS</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white">Garantovaný realitný servis KEYS PARTNERS</h3>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
               V cene nehnuteľnosti je zahrnutý kompletný právny servis garantovaný advokátskou kanceláriou,

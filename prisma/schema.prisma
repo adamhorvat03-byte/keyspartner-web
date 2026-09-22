@@ -1,5 +1,5 @@
 // ==============================================================================
-// Prisma Schéma: Realsoft Nehnuteľnosti (KEYS & PARTNERS a.s.)
+// Prisma Schéma: Realsoft Nehnuteľnosti (KEYS PARTNERS a.s.)
 // ==============================================================================
 
 generator client {

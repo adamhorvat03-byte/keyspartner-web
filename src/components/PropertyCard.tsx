@@ -7,9 +7,31 @@ interface PropertyCardProps {
   onSelect?: (property: DetailedProperty) => void;
 }
 
+const isAgentPhoto = (url?: string) => {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('duda') ||
+    lower.includes('brano') ||
+    lower.includes('agent') ||
+    lower.includes('broker') ||
+    lower.includes('avatar') ||
+    lower.includes('profile') ||
+    lower.includes('makler') ||
+    lower.includes('user_photo') ||
+    lower.endsWith('duda.jpg') ||
+    lower.endsWith('brano.jpg')
+  );
+};
+
+const NEUTRAL_PROPERTY_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }) => {
   const isRent = property.transactionType === 'rent';
-  const mainImage = property.images[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+  const mainImage =
+    (property.images && property.images.find((img) => img && !isAgentPhoto(img))) ||
+    (property.image && !isAgentPhoto(property.image) ? property.image : NEUTRAL_PROPERTY_PLACEHOLDER);
   
   const formattedPrice = isRent
     ? `${property.price.toLocaleString('sk-SK')} € / mesiac`

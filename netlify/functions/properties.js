@@ -4,7 +4,7 @@
  * Umiestnenie: netlify/functions/properties.js
  * Dostupné na: /api/properties a /.netlify/functions/properties
  * Netlify Functions v2 (ESM) s natívnym Netlify Blobs úložiskom
- * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
+ * KEYS PARTNERS a.s. - https://keyspartner.netlify.app
  * ==============================================================================
  */
 
@@ -14,10 +14,31 @@ export const config = {
   path: ["/api/properties", "/.netlify/functions/properties"]
 };
 
+const NEUTRAL_PROPERTY_PLACEHOLDER = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+
+function isAgentPhoto(url) {
+  if (!url || typeof url !== "string") return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("duda") ||
+    lower.includes("brano") ||
+    lower.includes("agent") ||
+    lower.includes("broker") ||
+    lower.includes("avatar") ||
+    lower.includes("profile") ||
+    lower.includes("makler") ||
+    lower.includes("user_photo") ||
+    lower.includes("makleri") ||
+    lower.includes("pouzivatel") ||
+    lower.endsWith("duda.jpg") ||
+    lower.endsWith("brano.jpg")
+  );
+}
+
 const DEFAULT_PROPERTIES = [
   {
     id: 101,
-    externalId: "RS-88421",
+    externalId: "KP-101",
     title: "Exkluzívna ponuka: 21 stavebných pozemkov v obci Ľubotice",
     shortTitle: "Stavebné pozemky, Ľubotice",
     type: "pozemi",
@@ -164,11 +185,11 @@ async function fetchBlobsProperties(storeInfo) {
       return { properties: [], keys: [], error: null };
     }
 
-    // Vyčistiť staré testovacie záznamy RS-1789* a RS-TEST*
+    // Vyčistiť staré testovacie záznamy RS-1789*, RS-TEST* a RS-88421
     const validBlobs = [];
     for (const b of blobs) {
       const key = String(b.key || "");
-      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST")) {
+      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421") {
         try {
           await storeInfo.store.delete(key);
           console.log(`[Blobs Cleanup] Odstránený starý testovací záznam: ${key}`);
@@ -195,13 +216,26 @@ async function fetchBlobsProperties(storeInfo) {
       })
     );
 
-    // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt
+    // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt ani RS-88421
     const cleanProperties = items.filter(Boolean).filter(p => {
       const idStr = String(p.id || p.externalId || "");
-      if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST")) return false;
+      if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST") || idStr === "RS-88421") return false;
       if (!p.title || String(p.title).trim() === "") return false;
+      if (String(p.title).includes("Exkluzívny 3-izbový byt")) return false;
       if (p.price === 0 && (!p.area || p.area === 0) && (!p.images || p.images.length === 0)) return false;
       return true;
+    }).map(p => {
+      const safeImages = Array.isArray(p.images)
+        ? p.images.filter(img => img && !isAgentPhoto(img))
+        : [];
+      const safeImage = (safeImages.length > 0)
+        ? safeImages[0]
+        : (p.image && !isAgentPhoto(p.image) ? p.image : NEUTRAL_PROPERTY_PLACEHOLDER);
+      return {
+        ...p,
+        image: safeImage,
+        images: safeImages.length > 0 ? safeImages : [safeImage]
+      };
     });
 
     return { properties: cleanProperties, keys, error: null };

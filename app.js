@@ -1,12 +1,12 @@
 // ==========================================================================
-// APLIKAČNÁ LOGIKA KEYS & PARTNERS a.s. (ČISTO PO SLOVENSKY)
+// APLIKAČNÁ LOGIKA KEYS PARTNERS a.s. (ČISTO PO SLOVENSKY)
 // ==========================================================================
 
 // --- Databáza nehnuteľností (Reálne ponuky realitnej divízie z Realsoftu) ---
 let PROPERTIES = [
     {
         id: 101,
-        externalId: "RS-88421",
+        externalId: "KP-101",
         title: "Exkluzívna ponuka: 21 stavebných pozemkov v obci Ľubotice",
         shortTitle: "Stavebné pozemky, Ľubotice",
         type: "pozemi",
@@ -176,7 +176,7 @@ let PROPERTIES = [
         tags: ["PRENÁJOM", "NOVINKA", "3D PREHLIADKA"],
         isReserved: false,
         agentId: 2,
-        desc: "Na prenájom exkluzívny, kompletne a moderne zariadený 2-izbový byt s balkónom v lukratívnej novostavbe na Werferovej ulici v Košiciach (vedľa centrály KEYS & PARTNERS). Byt s úžitkovou plochou 55 m² sa nachádza na 2. poschodí. Súčasťou ceny je aj vlastné vyhradené parkovacie miesto. Kompletné vybavenie vrátane spotrebičov, klimatizácie a internetu. Voľný ihneď.",
+        desc: "Na prenájom exkluzívny, kompletne a moderne zariadený 2-izbový byt s balkónom v lukratívnej novostavbe na Werferovej ulici v Košiciach (vedľa centrály KEYS PARTNERS). Byt s úžitkovou plochou 55 m² sa nachádza na 2. poschodí. Súčasťou ceny je aj vlastné vyhradené parkovacie miesto. Kompletné vybavenie vrátane spotrebičov, klimatizácie a internetu. Voľný ihneď.",
         technicalSpecs: {
             "Inžinierske siete": "Voda, elektrina, optický internet, klimatizácia",
             "Vykurovanie": "Podlahové kúrenie / vlastný termostat",
@@ -189,7 +189,7 @@ let PROPERTIES = [
     }
 ];
 
-// --- Reálni makléri a manažéri KEYS & PARTNERS a.s. ---
+// --- Reálni makléri a manažéri KEYS PARTNERS a.s. ---
 const AGENTS = [
     {
         id: 1,
@@ -241,12 +241,18 @@ async function loadPropertiesFromApi() {
         if (!res.ok) return;
         const result = await res.json();
         if (result && Array.isArray(result.data) && result.data.length > 0) {
-            PROPERTIES = result.data;
+            // Filtrovanie testovacích nehnuteľností (RS-88421, RS-1789...)
+            PROPERTIES = result.data.filter(p => {
+                const idStr = String(p.id || p.externalId || "");
+                if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST") || idStr === "RS-88421") return false;
+                if (p.title && p.title.includes("Exkluzívny 3-izbový byt")) return false;
+                return true;
+            });
             renderListings();
-            console.log(`[KEYS & PARTNERS] Načítané nehnuteľnosti z API (${result.data.length} položiek, zdroj: ${result.source || 'live'}).`);
+            console.log(`[KEYS PARTNERS] Načítané nehnuteľnosti z API (${PROPERTIES.length} položiek, zdroj: ${result.source || 'live'}).`);
         }
     } catch (err) {
-        console.warn("[KEYS & PARTNERS] API nedostupné, použijú sa východiskové ponuky:", err);
+        console.warn("[KEYS PARTNERS] API nedostupné, použijú sa východiskové ponuky:", err);
     }
 }
 
@@ -272,6 +278,55 @@ function updateThemeToggleIcon(theme) {
 // ==========================================================================
 // VYKRESLENIE PRVKOV (RENDERING)
 // ==========================================================================
+
+// --- Pomocné funkcie pre bezpečné vykresľovanie obrázkov (Fallback & prevencia fotiek maklérov) ---
+const NEUTRAL_PROPERTY_PLACEHOLDER = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+
+function isAgentPhoto(url) {
+    if (!url || typeof url !== "string") return false;
+    const lower = url.toLowerCase();
+    return (
+        lower.includes("duda") ||
+        lower.includes("brano") ||
+        lower.includes("agent") ||
+        lower.includes("broker") ||
+        lower.includes("avatar") ||
+        lower.includes("profile") ||
+        lower.includes("makler") ||
+        lower.includes("user_photo") ||
+        lower.includes("makleri") ||
+        lower.includes("pouzivatel") ||
+        lower.endsWith("duda.jpg") ||
+        lower.endsWith("brano.jpg")
+    );
+}
+
+function getSafePropertyImage(prop) {
+    if (!prop) return NEUTRAL_PROPERTY_PLACEHOLDER;
+    if (Array.isArray(prop.images) && prop.images.length > 0) {
+        const found = prop.images.find(img => img && typeof img === "string" && !isAgentPhoto(img));
+        if (found) return found;
+    }
+    if (prop.image && typeof prop.image === "string" && !isAgentPhoto(prop.image)) {
+        return prop.image;
+    }
+    return NEUTRAL_PROPERTY_PLACEHOLDER;
+}
+
+function getSafePropertyImages(prop) {
+    if (!prop) return [NEUTRAL_PROPERTY_PLACEHOLDER];
+    let imgs = [];
+    if (Array.isArray(prop.images) && prop.images.length > 0) {
+        imgs = prop.images.filter(img => img && typeof img === "string" && !isAgentPhoto(img));
+    }
+    if (imgs.length === 0 && prop.image && typeof prop.image === "string" && !isAgentPhoto(prop.image)) {
+        imgs.push(prop.image);
+    }
+    if (imgs.length === 0) {
+        imgs.push(NEUTRAL_PROPERTY_PLACEHOLDER);
+    }
+    return imgs;
+}
 
 // --- Vykreslenie nehnuteľností ---
 function renderListings() {
@@ -396,10 +451,12 @@ function renderListings() {
             `;
         }
 
+        const safeImg = getSafePropertyImage(prop);
+
         card.innerHTML = `
             <div class="card-img-wrapper">
                 <div class="card-badges">${badgesHtml}</div>
-                <img src="${prop.image}" alt="${prop.title}" loading="lazy">
+                <img src="${safeImg}" alt="${prop.title}" loading="lazy" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
                 <div class="card-price-tag">${priceFormatted}</div>
             </div>
             <div class="card-body">
@@ -546,15 +603,15 @@ function openPropertyModal(id) {
         `;
     }
     
-    // Miniatúry fotogalérie
-    const images = prop.images && prop.images.length > 0 ? prop.images : [prop.image];
+    // Miniatúry fotogalérie (odfiltrovanie fotografií maklérov)
+    const images = getSafePropertyImages(prop);
     let thumbnailsHtml = "";
     if (images.length > 1) {
         thumbnailsHtml = `
             <div class="modal-thumbnails" id="modalThumbnails">
                 ${images.map((img, idx) => `
                     <button class="modal-thumb-btn ${idx === 0 ? 'active' : ''}" data-idx="${idx}" type="button" aria-label="Fotografia ${idx + 1}">
-                        <img src="${img}" alt="Náhľad ${idx + 1}">
+                        <img src="${img}" alt="Náhľad ${idx + 1}" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
                     </button>
                 `).join("")}
             </div>
@@ -594,7 +651,7 @@ function openPropertyModal(id) {
             <div class="modal-main">
                 <div class="modal-gallery" id="modalGallery">
                     <span class="badge badge-yellow modal-gallery-badge">${prop.deal === "predaj" ? "Na predaj" : "Na prenájom"}</span>
-                    <img src="${images[0]}" alt="${prop.title}" id="modalMainImg">
+                    <img src="${images[0]}" alt="${prop.title}" id="modalMainImg" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
                 </div>
                 ${thumbnailsHtml}
                 

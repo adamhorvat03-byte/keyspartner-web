@@ -46,7 +46,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  brandName = 'KEYS & PARTNERS',
+  brandName = 'KEYS PARTNERS',
   navItems = DEFAULT_NAV_ITEMS,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

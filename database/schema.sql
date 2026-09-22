@@ -1,5 +1,5 @@
 -- ==============================================================================
--- SQL DDL Schéma: Tabuľka nehnuteľností pre Realsoft exporty (KEYS & PARTNERS a.s.)
+-- SQL DDL Schéma: Tabuľka nehnuteľností pre Realsoft exporty (KEYS PARTNERS a.s.)
 -- Kompatibilné s PostgreSQL (aj s MySQL s drobnými úpravami JSONB -> JSON)
 -- ==============================================================================
 

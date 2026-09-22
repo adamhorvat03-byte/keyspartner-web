@@ -4,7 +4,7 @@
  * Umiestnenie: netlify/functions/realsoft-webhook.js
  * Dostupné na: /.netlify/functions/realsoft-webhook a /api/realsoft-webhook
  * Netlify Functions v2 (ESM) s natívnym Netlify Blobs úložiskom
- * KEYS & PARTNERS a.s. - https://keyspartner.netlify.app
+ * KEYS PARTNERS a.s. - https://keyspartner.netlify.app
  * 
  * Špecifikácia: United Classifieds / Realsoft Export API v1 (Bod 2. Návratová hodnota)
  * https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/export/intro
@@ -40,7 +40,7 @@ function getPropertiesStore(context) {
 }
 
 /**
- * Vyčistenie starých testovacích inzerátov (začínajúcich na RS-1789 alebo RS-TEST)
+ * Vyčistenie starých testovacích inzerátov (začínajúcich na RS-1789, RS-TEST alebo RS-88421)
  */
 async function cleanupTestListings(storeInfo) {
   if (!storeInfo || !storeInfo.store || typeof storeInfo.store.list !== "function") return 0;
@@ -50,7 +50,7 @@ async function cleanupTestListings(storeInfo) {
     let deletedCount = 0;
     for (const b of blobs) {
       const key = String(b.key || "");
-      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST")) {
+      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421") {
         try {
           await storeInfo.store.delete(key);
           deletedCount++;
@@ -306,10 +306,31 @@ function extractImageUrl(item) {
   return null;
 }
 
+const NEUTRAL_PROPERTY_PLACEHOLDER = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+
+function isAgentPhoto(url) {
+  if (!url || typeof url !== "string") return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("duda") ||
+    lower.includes("brano") ||
+    lower.includes("agent") ||
+    lower.includes("broker") ||
+    lower.includes("avatar") ||
+    lower.includes("profile") ||
+    lower.includes("makler") ||
+    lower.includes("user_photo") ||
+    lower.includes("makleri") ||
+    lower.includes("pouzivatel") ||
+    lower.endsWith("duda.jpg") ||
+    lower.endsWith("brano.jpg")
+  );
+}
+
 function extractAllImages(raw) {
   const images = [];
   const addImage = (url) => {
-    if (url && typeof url === "string" && !images.includes(url)) {
+    if (url && typeof url === "string" && !isAgentPhoto(url) && !images.includes(url)) {
       images.push(url);
     }
   };
@@ -397,7 +418,7 @@ function extractAllImages(raw) {
 
   for (const single of singleCandidates) {
     const u = extractImageUrl(single);
-    if (u && !images.includes(u)) {
+    if (u && !isAgentPhoto(u) && !images.includes(u)) {
       images.unshift(u);
     }
   }
@@ -405,11 +426,11 @@ function extractAllImages(raw) {
   if (images.length > 0) {
     console.log(`[REALSOFT IMAGES] Nájdených ${images.length} fotografií pre inzerát:`, images);
   } else {
-    console.log("[REALSOFT IMAGES] Nenašli sa žiadne fotografie v payloade (použije sa fallback).");
+    console.log("[REALSOFT IMAGES] Nenašli sa žiadne fotografie v payloade (použije sa neutrálny fallback).");
   }
 
   if (images.length === 0) {
-    images.push("https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80");
+    images.push(NEUTRAL_PROPERTY_PLACEHOLDER);
   }
 
   return images;
@@ -998,7 +1019,7 @@ export default async (req, context) => {
 
     const getRes = {
       status: "online",
-      service: "KEYS & PARTNERS a.s. - Realsoft Webhook (Netlify Blobs Functions v2)",
+      service: "KEYS PARTNERS a.s. - Realsoft Webhook (Netlify Blobs Functions v2)",
       spec: "United Classifieds / Realsoft Export API v1 (Bod 2)",
       storage: "Netlify Blobs (store: properties)",
       blobsInitMode: storeInfo.mode,
