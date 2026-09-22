@@ -11,14 +11,22 @@ const isAgentPhoto = (url?: string) => {
   if (!url) return false;
   const lower = url.toLowerCase();
   return (
+    lower.includes('pella') ||
     lower.includes('duda') ||
     lower.includes('brano') ||
+    lower.includes('horvat') ||
+    lower.includes('s.unitedclassifieds.sk') ||
     lower.includes('agent') ||
     lower.includes('broker') ||
     lower.includes('avatar') ||
     lower.includes('profile') ||
     lower.includes('makler') ||
     lower.includes('user_photo') ||
+    lower.includes('makleri') ||
+    lower.includes('pouzivatel') ||
+    lower.includes('portrait') ||
+    lower.includes('face') ||
+    lower.endsWith('pella.jpg') ||
     lower.endsWith('duda.jpg') ||
     lower.endsWith('brano.jpg')
   );

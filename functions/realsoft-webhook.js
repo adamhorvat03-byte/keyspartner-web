@@ -40,7 +40,7 @@ function getPropertiesStore(context) {
 }
 
 /**
- * Vyčistenie starých testovacích inzerátov (začínajúcich na RS-1789, RS-TEST alebo RS-88421)
+ * Vyčistenie starých testovacích inzerátov a falošných inzerátov z exportu maklérov
  */
 async function cleanupTestListings(storeInfo) {
   if (!storeInfo || !storeInfo.store || typeof storeInfo.store.list !== "function") return 0;
@@ -50,11 +50,13 @@ async function cleanupTestListings(storeInfo) {
     let deletedCount = 0;
     for (const b of blobs) {
       const key = String(b.key || "");
-      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421") {
+      const isAgentDummy = /^\d{8,12}$/.test(key) || ["1162803367", "2739883856", "2742504158", "2756409051"].includes(key);
+      const isTestBlob = key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421";
+      if (isAgentDummy || isTestBlob) {
         try {
           await storeInfo.store.delete(key);
           deletedCount++;
-          console.log(`[CLEANUP] Úspešne odstránený testovací záznam: ${key}`);
+          console.log(`[CLEANUP] Úspešne odstránený záznam (maklér/test): ${key}`);
         } catch (_e) {}
       }
     }
@@ -312,8 +314,11 @@ function isAgentPhoto(url) {
   if (!url || typeof url !== "string") return false;
   const lower = url.toLowerCase();
   return (
+    lower.includes("pella") ||
     lower.includes("duda") ||
     lower.includes("brano") ||
+    lower.includes("horvat") ||
+    lower.includes("s.unitedclassifieds.sk") ||
     lower.includes("agent") ||
     lower.includes("broker") ||
     lower.includes("avatar") ||
@@ -322,6 +327,9 @@ function isAgentPhoto(url) {
     lower.includes("user_photo") ||
     lower.includes("makleri") ||
     lower.includes("pouzivatel") ||
+    lower.includes("portrait") ||
+    lower.includes("face") ||
+    lower.endsWith("pella.jpg") ||
     lower.endsWith("duda.jpg") ||
     lower.endsWith("brano.jpg")
   );
@@ -455,9 +463,13 @@ function hasRealPropertyData(rawItem) {
   }
   const raw = { ...rawItem, ...nestedData };
 
+  // Makléri a používatelia (user_id / full_name) bez objektu nehnuteľnosti NESMÚ byť ukladaní ako inzeráty
+  if ((raw.user_id || raw.full_name) && !raw.object_id && !raw.property_id && !raw.inzerat_id && !raw.extern_id) {
+    return false;
+  }
+
   if (raw.object_id !== undefined && raw.object_id !== null) return true;
   if (raw.extern_id || raw.external_id || raw.id || raw.code || raw.property_id || raw.inzerat_id) return true;
-  if (raw.user_id || raw.full_name) return true;
   if (raw.title || raw.name || raw.nazov || raw.headline) return true;
   if (raw.price !== undefined || raw.cena !== undefined) return true;
   if (raw.usable_area || raw.floor_area || raw.area || raw.vymera) return true;

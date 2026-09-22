@@ -210,6 +210,16 @@ const AGENTS = [
         rating: "4.9",
         reviews: 64,
         image: "brano.jpg"
+    },
+    {
+        id: 3,
+        name: "JUDr. Peter PELLA",
+        role: "Predseda dozornej rady / Realitný maklér",
+        phone: "+421 905 785 951",
+        email: "peter_pella@keyspartners.sk",
+        rating: "5.0",
+        reviews: 58,
+        image: "pella.jpg"
     }
 ];
 
@@ -241,11 +251,13 @@ async function loadPropertiesFromApi() {
         if (!res.ok) return;
         const result = await res.json();
         if (result && Array.isArray(result.data) && result.data.length > 0) {
-            // Filtrovanie testovacích nehnuteľností (RS-88421, RS-1789...)
+            // Filtrovanie testovacích nehnuteľností a falošných inzerátov z exportu maklérov
             PROPERTIES = result.data.filter(p => {
                 const idStr = String(p.id || p.externalId || "");
                 if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST") || idStr === "RS-88421") return false;
+                if (/^\d{8,12}$/.test(idStr) || ["1162803367", "2739883856", "2742504158", "2756409051"].includes(idStr)) return false;
                 if (p.title && p.title.includes("Exkluzívny 3-izbový byt")) return false;
+                if ((p.price === 0 || !p.price) && (!p.area || p.area === 0) && String(p.title).startsWith("Byt na predaj (Pre")) return false;
                 return true;
             });
             renderListings();
@@ -286,8 +298,11 @@ function isAgentPhoto(url) {
     if (!url || typeof url !== "string") return false;
     const lower = url.toLowerCase();
     return (
+        lower.includes("pella") ||
         lower.includes("duda") ||
         lower.includes("brano") ||
+        lower.includes("horvat") ||
+        lower.includes("s.unitedclassifieds.sk") ||
         lower.includes("agent") ||
         lower.includes("broker") ||
         lower.includes("avatar") ||
@@ -296,6 +311,9 @@ function isAgentPhoto(url) {
         lower.includes("user_photo") ||
         lower.includes("makleri") ||
         lower.includes("pouzivatel") ||
+        lower.includes("portrait") ||
+        lower.includes("face") ||
+        lower.endsWith("pella.jpg") ||
         lower.endsWith("duda.jpg") ||
         lower.endsWith("brano.jpg")
     );
@@ -544,13 +562,20 @@ function openPropertyModal(id) {
     const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id));
     if (!prop) return;
 
-    const agent = (prop.agent && prop.agent.name) ? {
-        name: prop.agent.name,
-        phone: prop.agent.phone || "+421 907 441 405",
-        email: prop.agent.email || "peter_duda@keyspartners.sk",
-        image: prop.agent.photo || (prop.agentId === 2 ? "brano.jpg" : "duda.jpg"),
-        role: "Vzťahový manažér / Maklér"
-    } : (AGENTS.find(a => a.id === prop.agentId) || AGENTS[0]);
+    let modalAgent = AGENTS[0];
+    if (prop.agent && prop.agent.name) {
+        const aName = String(prop.agent.name).toLowerCase();
+        if (aName.includes("pella")) {
+            modalAgent = AGENTS.find(a => a.id === 3) || AGENTS[0];
+        } else if (aName.includes("horv")) {
+            modalAgent = AGENTS.find(a => a.id === 2) || AGENTS[0];
+        } else {
+            modalAgent = AGENTS.find(a => a.id === 1) || AGENTS[0];
+        }
+    } else if (prop.agentId) {
+        modalAgent = AGENTS.find(a => a.id === Number(prop.agentId)) || AGENTS[0];
+    }
+    const agent = modalAgent;
     
     let priceFormatted = "";
     if (prop.priceCustom && typeof prop.priceCustom === "string") {

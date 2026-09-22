@@ -20,8 +20,11 @@ function isAgentPhoto(url) {
   if (!url || typeof url !== "string") return false;
   const lower = url.toLowerCase();
   return (
+    lower.includes("pella") ||
     lower.includes("duda") ||
     lower.includes("brano") ||
+    lower.includes("horvat") ||
+    lower.includes("s.unitedclassifieds.sk") ||
     lower.includes("agent") ||
     lower.includes("broker") ||
     lower.includes("avatar") ||
@@ -30,6 +33,9 @@ function isAgentPhoto(url) {
     lower.includes("user_photo") ||
     lower.includes("makleri") ||
     lower.includes("pouzivatel") ||
+    lower.includes("portrait") ||
+    lower.includes("face") ||
+    lower.endsWith("pella.jpg") ||
     lower.endsWith("duda.jpg") ||
     lower.endsWith("brano.jpg")
   );
@@ -185,14 +191,16 @@ async function fetchBlobsProperties(storeInfo) {
       return { properties: [], keys: [], error: null };
     }
 
-    // Vyčistiť staré testovacie záznamy RS-1789*, RS-TEST* a RS-88421
+    // Vyčistiť staré testovacie záznamy RS-1789*, RS-TEST*, RS-88421 a falošné inzeráty z exportu maklérov (číselné ID)
     const validBlobs = [];
     for (const b of blobs) {
       const key = String(b.key || "");
-      if (key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421") {
+      const isAgentDummy = /^\d{8,12}$/.test(key) || ["1162803367", "2739883856", "2742504158", "2756409051"].includes(key);
+      const isTestBlob = key.startsWith("RS-1789") || key.startsWith("RS-TEST") || key === "RS-88421";
+      if (isAgentDummy || isTestBlob) {
         try {
           await storeInfo.store.delete(key);
-          console.log(`[Blobs Cleanup] Odstránený starý testovací záznam: ${key}`);
+          console.log(`[Blobs Cleanup] Odstránený nepotrebný záznam (maklér/test): ${key}`);
         } catch (_e) {}
       } else {
         validBlobs.push(b);
@@ -216,13 +224,15 @@ async function fetchBlobsProperties(storeInfo) {
       })
     );
 
-    // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt ani RS-88421
+    // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt ani export makléra
     const cleanProperties = items.filter(Boolean).filter(p => {
       const idStr = String(p.id || p.externalId || "");
       if (idStr.startsWith("RS-1789") || idStr.startsWith("RS-TEST") || idStr === "RS-88421") return false;
+      if (/^\d{8,12}$/.test(idStr) || ["1162803367", "2739883856", "2742504158", "2756409051"].includes(idStr)) return false;
       if (!p.title || String(p.title).trim() === "") return false;
       if (String(p.title).includes("Exkluzívny 3-izbový byt")) return false;
-      if (p.price === 0 && (!p.area || p.area === 0) && (!p.images || p.images.length === 0)) return false;
+      // Vylúčiť generické záznamy vytvorené z exportu maklérov bez ceny a plochy
+      if ((p.price === 0 || !p.price) && (!p.area || p.area === 0) && String(p.title).startsWith("Byt na predaj (Pre")) return false;
       return true;
     }).map(p => {
       const safeImages = Array.isArray(p.images)
