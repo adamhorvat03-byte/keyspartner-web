@@ -211,7 +211,7 @@ const AGENTS = [
         id: 3,
         name: "JUDr. Peter PELLA",
         role: "Predseda dozornej rady / Realitný maklér",
-        phone: "0917 817 207",
+        phone: "+421 917 817 207",
         email: "peter_pella@keyspartners.sk",
         image: "pella.jpg"
     }
