@@ -292,10 +292,12 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
             {(() => {
               const isSolnik = (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('soľník') ||
                                (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('solnik');
-              const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : 'Peter DUDA');
-              const agentRole = isSolnik ? 'Partner / Realitný maklér' : 'Vzťahový riaditeľ / Realitný maklér';
-              const agentPhone = property.agent?.phone || (isSolnik ? '+421 905 785 951' : '+421 907 441 405');
-              const agentEmail = property.agent?.email || (isSolnik ? 'branislav_horvat@keyspartners.sk' : 'peter_duda@keyspartners.sk');
+              const isPella = (property.agent?.name || '').toLowerCase().includes('pella');
+              const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : (isPella ? 'JUDr. Peter PELLA' : 'Peter DUDA'));
+              const agentRole = isSolnik ? 'Partner / Realitný maklér' : (isPella ? 'Predseda dozornej rady / Realitný maklér' : 'Vzťahový riaditeľ / Realitný maklér');
+              const agentPhone = property.agent?.phone || (isSolnik ? '+421 905 785 951' : (isPella ? '0917 817 207' : '+421 907 441 405'));
+              const agentEmail = property.agent?.email || (isSolnik ? 'branislav_horvat@keyspartners.sk' : (isPella ? 'peter_pella@keyspartners.sk' : 'peter_duda@keyspartners.sk'));
+              const telHref = agentPhone.startsWith('+') ? agentPhone.replace(/\s+/g, '') : '+421' + agentPhone.replace(/^0/, '').replace(/\s+/g, '');
 
               return (
                 <>
@@ -314,7 +316,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
                   {/* Tlačidlá na priamy kontakt */}
                   <div className="space-y-2 mb-6">
                     <a
-                      href={`tel:${agentPhone.replace(/\s+/g, '')}`}
+                      href={`tel:${telHref}`}
                       className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200"
                     >
                       <Phone className="h-4 w-4 text-amber-600" />

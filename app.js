@@ -211,7 +211,7 @@ const AGENTS = [
         id: 3,
         name: "JUDr. Peter PELLA",
         role: "Predseda dozornej rady / Realitný maklér",
-        phone: "+421 905 785 951",
+        phone: "0917 817 207",
         email: "peter_pella@keyspartners.sk",
         image: "pella.jpg"
     }
@@ -510,6 +510,10 @@ function renderAgents() {
         const card = document.createElement("div");
         card.className = "agent-card";
         
+        const telHref = agent.phone.startsWith("+") 
+            ? agent.phone.replace(/\s/g, '') 
+            : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
+        
         card.innerHTML = `
             <div class="agent-img-wrapper">
                 <img src="${agent.image}" alt="${agent.name}">
@@ -517,7 +521,7 @@ function renderAgents() {
             <h3>${agent.name}</h3>
             <div class="agent-role">${agent.role}</div>
             <div class="agent-contact">
-                <a href="tel:${agent.phone.replace(/\s/g, '')}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
+                <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
                 <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
             </div>
         `;
@@ -863,7 +867,7 @@ function openPropertyModal(id) {
                         </div>
                     </div>
                     <div class="modal-agent-contact">
-                        <a href="tel:${agent.phone.replace(/\s/g, '')}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
+                        <a href="tel:${agent.phone.startsWith('+') ? agent.phone.replace(/\s/g, '') : '+421' + agent.phone.replace(/^0/, '').replace(/\s/g, '')}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
                         <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
                     </div>
                     
