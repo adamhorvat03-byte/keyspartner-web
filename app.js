@@ -114,8 +114,9 @@ let PROPERTIES = [
             "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&w=1200&q=80",
             "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80"
         ],
-        tags: ["PREDAJ", "INVESTÍCIA", "OVERENÝ"],
-        isReserved: false,
+        tags: ["PREDAJ", "REZERVOVANÉ"],
+        isReserved: true,
+        status: "reserved",
         agentId: 2,
         desc: "Hľadáte istotu a zhodnotenie? Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners a.s. v zastúpení nášho klienta Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Fintice na ulici Ružová. Podľa aktuálneho a platného územného plánu obce je pozemok určený na individuálnu bytovú výstavbu rodinného domu. Siete a prístupová komunikácia priamo pri pozemku. Skvelá a bezpečná investícia.",
         technicalSpecs: {
@@ -143,8 +144,9 @@ let PROPERTIES = [
             "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80",
             "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80"
         ],
-        tags: ["PREDAJ", "DOBRÁ CENA"],
+        tags: ["SPROSTREDKOVANÉ", "PREDANÉ"],
         isReserved: false,
+        status: "sold",
         agentId: 2,
         desc: "Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. Vám v zastúpení klienta ponúka NA PREDAJ stavebný pozemok v meste Hanušovce nad Topľou. Pozemok je rovinatý až mierne svahovitý, nachádza sa v tichej zastavanej časti mesta. Inžinierske siete sú dostupné na hranici pozemku. Ideálna možnosť stavby domu za dostupnú cenu.",
         technicalSpecs: {
@@ -345,10 +347,156 @@ function getSafePropertyImages(prop) {
     return imgs;
 }
 
-// --- Vykreslenie nehnuteľností ---
+// --- Pomocná funkcia: Rozdelenie nehnuteľnosti do 3 skupín podľa stavu transakcie ---
+function getPropertyStatusGroup(prop) {
+    if (!prop) return "active";
+    
+    const status = String(prop.status || "").toLowerCase().trim();
+    const tags = Array.isArray(prop.tags) ? prop.tags.map(t => String(t).toUpperCase()) : [];
+    const title = String(prop.title || "").toUpperCase();
+    
+    // 1. Sprostredkované (predané / prenajaté / zrealizované)
+    if (
+        status === "sold" ||
+        status.includes("predan") ||
+        status.includes("prenajat") ||
+        status.includes("sprostredkov") ||
+        status.includes("zrealizov") ||
+        tags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("ZREALIZOVANÉ") || t.includes("PRENAJATÉ")) ||
+        title.includes("[PREDANÉ]") ||
+        title.includes("[SPROSTREDKOVANÉ]")
+    ) {
+        return "sold";
+    }
+    
+    // 2. Rezervované
+    if (
+        prop.isReserved === true ||
+        status === "reserved" ||
+        status.includes("rezerv") ||
+        tags.some(t => t.includes("REZERVOVANÉ")) ||
+        title.includes("[REZERVOVANÉ]")
+    ) {
+        return "reserved";
+    }
+    
+    // 3. Novinky / Na predaj (aktívne, voľné ponuky)
+    return "active";
+}
+
+// --- Vytvorenie elementu karty nehnuteľnosti vrátane avatara makléra ---
+function createPropertyCardElement(prop) {
+    const card = document.createElement("div");
+    card.className = `listing-card ${prop.isReserved ? "reserved" : ""}`;
+    card.setAttribute("data-id", prop.id);
+    
+    // Dynamické priradenie správneho makléra (Horvát pre Soľník, Duda pre ostatné atď.)
+    const agent = getAgentForProperty(prop);
+    
+    // Vytvorenie odznakov (vynechanie štítku REALSOFT)
+    let badgesHtml = "";
+    const cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
+    cleanTags.forEach(tag => {
+        let badgeClass = "badge-dark";
+        if (tag.includes("REZERVOVANÉ")) badgeClass = "badge-red";
+        if (tag.includes("SPROSTREDKOVANÉ") || tag.includes("PREDANÉ")) badgeClass = "badge-green";
+        if (tag.includes("3D PREHLIADKA") || tag.includes("VOĽNÝ IHNEĎ") || tag.includes("NOVINKA")) badgeClass = "badge-yellow";
+        badgesHtml += `<span class="badge ${badgeClass}">${tag}</span>`;
+    });
+    
+    // Formátovanie ceny
+    let priceFormatted = "";
+    if (prop.priceCustom && typeof prop.priceCustom === "string") {
+        priceFormatted = prop.priceCustom;
+    } else if (prop.price && Number(prop.price) > 0) {
+        priceFormatted = prop.deal === "prenajom" 
+            ? `${Number(prop.price).toLocaleString("sk-SK")} € / mesiac`
+            : `${Number(prop.price).toLocaleString("sk-SK")} €`;
+    } else {
+        priceFormatted = "Cena na vyžiadanie";
+    }
+        
+    // Formátovanie detailov na spodku
+    let specsHtml = "";
+    const areaStr = (prop.area && Number(prop.area) > 0) ? `${prop.area} m²` : null;
+    const validRooms = prop.rooms !== null && prop.rooms !== undefined && String(prop.rooms).trim() !== "" && String(prop.rooms).toLowerCase() !== "null" && String(prop.rooms).trim() !== "-";
+    const validFloor = prop.floor !== null && prop.floor !== undefined && String(prop.floor).trim() !== "" && String(prop.floor).toLowerCase() !== "null" && String(prop.floor).trim() !== "-";
+
+    if (prop.type === "byt" || prop.type === "dom") {
+        let roomsStr = "";
+        if (validRooms) {
+            const rNum = Number(prop.rooms);
+            if (!isNaN(rNum)) {
+                roomsStr = rNum === 1 ? "1 izba" : (rNum >= 2 && rNum <= 4 ? `${rNum} izby` : `${rNum} izieb`);
+            } else {
+                roomsStr = String(prop.rooms);
+            }
+        }
+
+        let floorStr = "";
+        if (validFloor) {
+            floorStr = String(prop.floor).includes("p.") ? String(prop.floor) : `${prop.floor} p.`;
+        }
+
+        specsHtml = `
+            ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
+            ${roomsStr ? `<div class="spec-item"><i class="fa-solid fa-bed"></i> <span>${roomsStr}</span></div>` : ''}
+            ${floorStr ? `<div class="spec-item"><i class="fa-solid fa-building"></i> <span>${floorStr}</span></div>` : ''}
+        `;
+        if (!specsHtml.trim()) {
+            specsHtml = `<div class="spec-item"><i class="fa-solid fa-home"></i> <span>${prop.type === 'dom' ? 'Rodinný dom' : 'Rezidenčné'}</span></div>`;
+        }
+    } else if (prop.type === "pozemi") {
+        specsHtml = `
+            ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
+            <div class="spec-item"><i class="fa-solid fa-seedling"></i> <span>Pozemok</span></div>
+            <div class="spec-item"><i class="fa-solid fa-map"></i> <span>Stavebný</span></div>
+        `;
+    } else {
+        specsHtml = `
+            ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
+            <div class="spec-item"><i class="fa-solid fa-briefcase"></i> <span>Komerčné</span></div>
+            <div class="spec-item"><i class="fa-solid fa-key"></i> <span>Voľné</span></div>
+        `;
+    }
+
+    const safeImg = getSafePropertyImage(prop);
+
+    card.innerHTML = `
+        <div class="card-img-wrapper">
+            <div class="card-badges">${badgesHtml}</div>
+            <img src="${safeImg}" alt="${prop.title}" loading="lazy" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
+            <div class="card-agent-badge" title="Zodpovedný maklér: ${agent.name}">
+                <img src="${agent.image}" alt="${agent.name}" class="card-agent-img">
+            </div>
+            <div class="card-price-tag">${priceFormatted}</div>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="card-type">${prop.type === "byt" ? "Rezidenčné" : prop.type === "dom" ? "Rodinný dom" : prop.type === "pozemi" ? "Stavebný pozemok" : "Komerčné / Investícia"}</span>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">ID: ${prop.externalId || prop.id}</span>
+            </div>
+            <h3 class="card-title">${prop.title}</h3>
+            <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
+            <div class="card-specs">${specsHtml}</div>
+            <div class="card-action" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--brand-yellow);">
+                <span>Detail ponuky</span>
+                <i class="fa-solid fa-arrow-right" style="margin-left: 6px; font-size: 0.75rem;"></i>
+            </div>
+        </div>
+    `;
+    
+    // Kliknutie otvorí modálne okno s detailom
+    card.addEventListener("click", () => openPropertyModal(prop.id || prop.externalId));
+    
+    return card;
+}
+
+// --- Vykreslenie nehnuteľností rozdelených do troch samostatných sekcií ---
 function renderListings() {
-    const grid = document.getElementById("listingsGrid");
+    const container = document.getElementById("listingsGrid");
     const noResults = document.getElementById("noResults");
+    if (!container) return;
     
     // Filtrovanie dát
     const filtered = PROPERTIES.filter(item => {
@@ -375,9 +523,9 @@ function renderListings() {
         // Filter podľa vyhľadávacieho dopytu
         if (activeFilters.query.trim() !== "") {
             const q = activeFilters.query.toLowerCase();
-            const titleMatch = item.title.toLowerCase().includes(q);
-            const locationMatch = item.location.toLowerCase().includes(q);
-            const descMatch = item.desc.toLowerCase().includes(q);
+            const titleMatch = (item.title || "").toLowerCase().includes(q);
+            const locationMatch = (item.location || "").toLowerCase().includes(q);
+            const descMatch = (item.desc || "").toLowerCase().includes(q);
             if (!titleMatch && !locationMatch && !descMatch) {
                 return false;
             }
@@ -386,116 +534,90 @@ function renderListings() {
         return true;
     });
 
-    // Vyčistenie gridu
-    grid.innerHTML = "";
+    // Vyčistenie kontajnera
+    container.innerHTML = "";
     
     if (filtered.length === 0) {
-        grid.style.display = "none";
-        noResults.style.display = "block";
+        container.style.display = "none";
+        if (noResults) noResults.style.display = "block";
         return;
     }
     
-    grid.style.display = "grid";
-    noResults.style.display = "none";
-    
+    container.style.display = "flex";
+    if (noResults) noResults.style.display = "none";
+
+    // Rozdelenie do 3 kategórií: Novinky / Na predaj, Rezervované, Sprostredkované
+    const groups = [
+        {
+            key: "active",
+            title: "Novinky / Na predaj",
+            badgeClass: "badge-active",
+            icon: "fa-solid fa-fire",
+            items: []
+        },
+        {
+            key: "reserved",
+            title: "Rezervované",
+            badgeClass: "badge-reserved",
+            icon: "fa-solid fa-bookmark",
+            items: []
+        },
+        {
+            key: "sold",
+            title: "Sprostredkované",
+            badgeClass: "badge-sold",
+            icon: "fa-solid fa-circle-check",
+            items: []
+        }
+    ];
+
     filtered.forEach(prop => {
-        const card = document.createElement("div");
-        card.className = `listing-card ${prop.isReserved ? "reserved" : ""}`;
-        card.setAttribute("data-id", prop.id);
-        
-        // Vytvorenie odznakov (vynechanie štítku REALSOFT)
-        let badgesHtml = "";
-        const cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
-        cleanTags.forEach(tag => {
-            let badgeClass = "badge-dark";
-            if (tag.includes("REZERVOVANÉ")) badgeClass = "badge-red";
-            if (tag.includes("3D PREHLIADKA") || tag.includes("VOĽNÝ IHNEĎ") || tag.includes("NOVINKA")) badgeClass = "badge-yellow";
-            badgesHtml += `<span class="badge ${badgeClass}">${tag}</span>`;
-        });
-        
-        // Formátovanie ceny
-        let priceFormatted = "";
-        if (prop.priceCustom && typeof prop.priceCustom === "string") {
-            priceFormatted = prop.priceCustom;
-        } else if (prop.price && Number(prop.price) > 0) {
-            priceFormatted = prop.deal === "prenajom" 
-                ? `${Number(prop.price).toLocaleString("sk-SK")} € / mesiac`
-                : `${Number(prop.price).toLocaleString("sk-SK")} €`;
+        const grpKey = getPropertyStatusGroup(prop);
+        if (grpKey === "sold") {
+            groups[2].items.push(prop);
+        } else if (grpKey === "reserved") {
+            groups[1].items.push(prop);
         } else {
-            priceFormatted = "Cena na vyžiadanie";
+            groups[0].items.push(prop);
         }
-            
-        // Formátovanie detailov na spodku
-        let specsHtml = "";
-        const areaStr = (prop.area && Number(prop.area) > 0) ? `${prop.area} m²` : null;
-        const validRooms = prop.rooms !== null && prop.rooms !== undefined && String(prop.rooms).trim() !== "" && String(prop.rooms).toLowerCase() !== "null" && String(prop.rooms).trim() !== "-";
-        const validFloor = prop.floor !== null && prop.floor !== undefined && String(prop.floor).trim() !== "" && String(prop.floor).toLowerCase() !== "null" && String(prop.floor).trim() !== "-";
+    });
 
-        if (prop.type === "byt" || prop.type === "dom") {
-            let roomsStr = "";
-            if (validRooms) {
-                const rNum = Number(prop.rooms);
-                if (!isNaN(rNum)) {
-                    roomsStr = rNum === 1 ? "1 izba" : (rNum >= 2 && rNum <= 4 ? `${rNum} izby` : `${rNum} izieb`);
-                } else {
-                    roomsStr = String(prop.rooms);
-                }
-            }
+    groups.forEach(group => {
+        const sectionEl = document.createElement("div");
+        sectionEl.className = "portfolio-group-section";
+        sectionEl.setAttribute("data-group", group.key);
 
-            let floorStr = "";
-            if (validFloor) {
-                floorStr = String(prop.floor).includes("p.") ? String(prop.floor) : `${prop.floor} p.`;
-            }
+        const countText = group.items.length === 1 
+            ? "1 ponuka" 
+            : (group.items.length >= 2 && group.items.length <= 4 
+                ? `${group.items.length} ponuky` 
+                : `${group.items.length} ponúk`);
 
-            specsHtml = `
-                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
-                ${roomsStr ? `<div class="spec-item"><i class="fa-solid fa-bed"></i> <span>${roomsStr}</span></div>` : ''}
-                ${floorStr ? `<div class="spec-item"><i class="fa-solid fa-building"></i> <span>${floorStr}</span></div>` : ''}
-            `;
-            if (!specsHtml.trim()) {
-                specsHtml = `<div class="spec-item"><i class="fa-solid fa-home"></i> <span>${prop.type === 'dom' ? 'Rodinný dom' : 'Rezidenčné'}</span></div>`;
-            }
-        } else if (prop.type === "pozemi") {
-            specsHtml = `
-                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
-                <div class="spec-item"><i class="fa-solid fa-seedling"></i> <span>Pozemok</span></div>
-                <div class="spec-item"><i class="fa-solid fa-map"></i> <span>Stavebný</span></div>
-            `;
-        } else {
-            specsHtml = `
-                ${areaStr ? `<div class="spec-item"><i class="fa-solid fa-ruler-combined"></i> <span>${areaStr}</span></div>` : ''}
-                <div class="spec-item"><i class="fa-solid fa-briefcase"></i> <span>Komerčné</span></div>
-                <div class="spec-item"><i class="fa-solid fa-key"></i> <span>Voľné</span></div>
-            `;
-        }
-
-        const safeImg = getSafePropertyImage(prop);
-
-        card.innerHTML = `
-            <div class="card-img-wrapper">
-                <div class="card-badges">${badgesHtml}</div>
-                <img src="${safeImg}" alt="${prop.title}" loading="lazy" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
-                <div class="card-price-tag">${priceFormatted}</div>
-            </div>
-            <div class="card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span class="card-type">${prop.type === "byt" ? "Rezidenčné" : prop.type === "dom" ? "Rodinný dom" : prop.type === "pozemi" ? "Stavebný pozemok" : "Komerčné / Investícia"}</span>
-                    <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">ID: ${prop.externalId || prop.id}</span>
-                </div>
-                <h3 class="card-title">${prop.title}</h3>
-                <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
-                <div class="card-specs">${specsHtml}</div>
-                <div class="card-action" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--brand-yellow);">
-                    <span>Detail ponuky</span>
-                    <i class="fa-solid fa-arrow-right" style="margin-left: 6px; font-size: 0.75rem;"></i>
-                </div>
+        sectionEl.innerHTML = `
+            <div class="portfolio-group-header">
+                <h3 class="portfolio-group-title">
+                    <i class="${group.icon}"></i>
+                    <span>${group.title}</span>
+                </h3>
+                <span class="portfolio-group-badge ${group.badgeClass}">${countText}</span>
             </div>
         `;
-        
-        // Kliknutie otvorí modálne okno s detailom
-        card.addEventListener("click", () => openPropertyModal(prop.id || prop.externalId));
-        
-        grid.appendChild(card);
+
+        if (group.items.length > 0) {
+            const gridEl = document.createElement("div");
+            gridEl.className = "listings-grid";
+            group.items.forEach(prop => {
+                gridEl.appendChild(createPropertyCardElement(prop));
+            });
+            sectionEl.appendChild(gridEl);
+        } else {
+            const emptyEl = document.createElement("div");
+            emptyEl.className = "portfolio-group-empty";
+            emptyEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>Aktuálne žiadne ponuky v tejto kategórii.</span>`;
+            sectionEl.appendChild(emptyEl);
+        }
+
+        container.appendChild(sectionEl);
     });
 }
 

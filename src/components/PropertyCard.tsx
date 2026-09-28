@@ -53,6 +53,12 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
     other: 'Nehnuteľnosť',
   }[property.propertyType] || 'Nehnuteľnosť';
 
+  const isSolnik = (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('soľník') ||
+                   (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('solnik');
+  const isPella = (property.agent?.name || '').toLowerCase().includes('pella');
+  const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : (isPella ? 'JUDr. Peter PELLA' : 'Peter DUDA'));
+  const agentImage = isSolnik ? 'brano.jpg' : (isPella ? 'pella.jpg' : 'duda.jpg');
+
   return (
     <div
       onClick={() => onSelect && onSelect(property)}
@@ -84,13 +90,30 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
               Rezervované
             </span>
           )}
+          {property.status === 'sold' && (
+            <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+              Sprostredkované
+            </span>
+          )}
         </div>
 
         {/* Cenovka */}
-        <div className="absolute bottom-3 left-3 rounded-lg bg-slate-950/80 px-3 py-1.5 backdrop-blur-md">
+        <div className="absolute bottom-3 right-3 rounded-lg bg-slate-950/80 px-3 py-1.5 backdrop-blur-md">
           <span className="font-heading text-lg font-extrabold text-white sm:text-xl">
             {formattedPrice}
           </span>
+        </div>
+
+        {/* Avatar makléra */}
+        <div
+          className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-slate-950 shadow-md transition-transform hover:scale-110"
+          title={`Zodpovedný maklér: ${agentName}`}
+        >
+          <img
+            src={agentImage}
+            alt={agentName}
+            className="h-full w-full object-cover object-[center_15%]"
+          />
         </div>
       </div>
 

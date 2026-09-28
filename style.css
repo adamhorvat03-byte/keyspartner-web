@@ -771,6 +771,100 @@ img {
     border-color: var(--brand-yellow);
 }
 
+/* Kontajner a rozdelenie na 3 sekcie (Novinky/Na predaj, Rezervované, Sprostredkované) */
+.portfolio-sections-container {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+    width: 100%;
+}
+
+.portfolio-group-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.portfolio-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.portfolio-group-title {
+    font-family: var(--font-heading);
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.01em;
+}
+
+.portfolio-group-title i {
+    color: var(--brand-yellow);
+    font-size: 1.25rem;
+}
+
+.portfolio-group-section[data-group="reserved"] .portfolio-group-title i {
+    color: var(--danger);
+}
+
+.portfolio-group-section[data-group="sold"] .portfolio-group-title i {
+    color: #10b981;
+}
+
+.portfolio-group-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--font-body);
+}
+
+.portfolio-group-badge.badge-active {
+    background-color: rgba(223, 186, 115, 0.15);
+    color: var(--brand-yellow);
+    border: 1px solid rgba(223, 186, 115, 0.35);
+}
+
+.portfolio-group-badge.badge-reserved {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.portfolio-group-badge.badge-sold {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.portfolio-group-empty {
+    background-color: var(--bg-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 36px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.portfolio-group-empty i {
+    color: var(--brand-yellow);
+    font-size: 1.1rem;
+}
+
 .listings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -891,6 +985,43 @@ img {
 .badge-red {
     background-color: var(--danger);
     color: white;
+}
+
+.badge-green {
+    background-color: #10b981;
+    color: white;
+}
+
+/* Avatar makléra v rohu náhľadovej karty nehnuteľnosti */
+.card-agent-badge {
+    position: absolute;
+    bottom: 14px;
+    left: 16px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid var(--brand-yellow);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    z-index: 3;
+    background: #0b1020;
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+}
+
+.card-agent-badge:hover {
+    transform: scale(1.15);
+    border-color: #ffffff;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 12px rgba(223, 186, 115, 0.6);
+}
+
+.card-agent-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+    border-radius: 50%;
+    display: block;
 }
 
 .card-price-tag {

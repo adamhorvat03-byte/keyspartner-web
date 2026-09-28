@@ -154,6 +154,50 @@ const DEFAULT_PROPERTIES = [
       "Vykurovanie": "Podlahové kúrenie / vlastný termostat",
       "Parkovanie": "Vyhradené parkovacie státie v cene"
     }
+  },
+  {
+    id: 104,
+    externalId: "RS-88424",
+    title: "Slnečný stavebný pozemok v obci Fintice na Ružovej ulici",
+    shortTitle: "Stavebný pozemok, Fintice",
+    type: "pozemi",
+    deal: "predaj",
+    price: 85000,
+    area: 820,
+    rooms: null,
+    floor: null,
+    location: "Fintice, Ružová ulica",
+    image: "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["PREDAJ", "REZERVOVANÉ"],
+    status: "reserved",
+    isReserved: true,
+    agentId: 2,
+    desc: "Slnečný stavebný pozemok v obci Fintice pripravený na individuálnu výstavbu rodinného domu."
+  },
+  {
+    id: 105,
+    externalId: "RS-88425",
+    title: "Stavebný pozemok pre rodinný dom, Hanušovce nad Topľou",
+    shortTitle: "Pozemok, Hanušovce n/T",
+    type: "pozemi",
+    deal: "predaj",
+    price: 42000,
+    area: 1150,
+    rooms: null,
+    floor: null,
+    location: "Hanušovce nad Topľou",
+    image: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["SPROSTREDKOVANÉ", "PREDANÉ"],
+    status: "sold",
+    isReserved: false,
+    agentId: 2,
+    desc: "Úspešne sprostredkovaný stavebný pozemok v meste Hanušovce nad Topľou."
   }
 ];
 
