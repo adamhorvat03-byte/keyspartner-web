@@ -241,8 +241,12 @@ async function fetchBlobsProperties(storeInfo) {
       const safeImage = (safeImages.length > 0)
         ? safeImages[0]
         : (p.image && !isAgentPhoto(p.image) ? p.image : NEUTRAL_PROPERTY_PLACEHOLDER);
+      const safeTags = Array.isArray(p.tags)
+        ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
+        : [p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
       return {
         ...p,
+        tags: safeTags,
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage]
       };

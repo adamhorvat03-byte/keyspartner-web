@@ -253,6 +253,11 @@ async function loadPropertiesFromApi() {
                 if (p.title && p.title.includes("Exkluzívny 3-izbový byt")) return false;
                 if ((p.price === 0 || !p.price) && (!p.area || p.area === 0) && String(p.title).startsWith("Byt na predaj (Pre")) return false;
                 return true;
+            }).map(p => {
+                if (Array.isArray(p.tags)) {
+                    p.tags = p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT");
+                }
+                return p;
             });
             renderListings();
             console.log(`[KEYS PARTNERS] Načítané nehnuteľnosti z API (${PROPERTIES.length} položiek, zdroj: ${result.source || 'live'}).`);
@@ -398,9 +403,10 @@ function renderListings() {
         card.className = `listing-card ${prop.isReserved ? "reserved" : ""}`;
         card.setAttribute("data-id", prop.id);
         
-        // Vytvorenie odznakov
+        // Vytvorenie odznakov (vynechanie štítku REALSOFT)
         let badgesHtml = "";
-        prop.tags.forEach(tag => {
+        const cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
+        cleanTags.forEach(tag => {
             let badgeClass = "badge-dark";
             if (tag.includes("REZERVOVANÉ")) badgeClass = "badge-red";
             if (tag.includes("3D PREHLIADKA") || tag.includes("VOĽNÝ IHNEĎ") || tag.includes("NOVINKA")) badgeClass = "badge-yellow";

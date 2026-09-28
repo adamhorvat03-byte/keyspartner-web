@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Facebook, Instagram, Menu, X, Key } from 'lucide-react';
+import { Facebook, Instagram, Youtube, Menu, X, Key } from 'lucide-react';
 import { NavItem, SocialLink } from '../types';
 
 /**
@@ -29,6 +29,12 @@ export const SOCIAL_LINKS: SocialLink[] = [
     href: 'https://www.instagram.com/keyspartners/',
     icon: Instagram,
     ariaLabel: 'Navštíviť náš Instagram profil',
+  },
+  {
+    name: 'YouTube',
+    href: 'https://www.youtube.com/@keyspartners',
+    icon: Youtube,
+    ariaLabel: 'Navštíviť náš YouTube kanál',
   },
 ];
 

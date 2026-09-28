@@ -934,7 +934,7 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         location: locationVal,
         image: allImages[0],
         images: allImages,
-        tags: raw.tags || [dealType === "predaj" ? "PREDAJ" : "PRENÁJOM", "REALSOFT"],
+        tags: (raw.tags || [dealType === "predaj" ? "PREDAJ" : "PRENÁJOM"]).filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT"),
         isReserved: isReserved,
         agentId: raw.agentId || raw.agent_id || 1,
         agent: raw.agent || raw.broker || raw.makler || {
