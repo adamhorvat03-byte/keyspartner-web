@@ -192,24 +192,20 @@ let PROPERTIES = [
 // --- Reálni makléri a manažéri KEYS PARTNERS a.s. ---
 const AGENTS = [
     {
+        id: 2,
+        name: "Ing. Branislav HORVÁT",
+        role: "Partner / Realitný maklér",
+        phone: "+421 905 785 951",
+        email: "branislav_horvat@keyspartners.sk",
+        image: "brano.jpg"
+    },
+    {
         id: 1,
         name: "Peter DUDA",
         role: "Vzťahový riaditeľ / Realitný maklér",
         phone: "+421 907 441 405",
         email: "peter_duda@keyspartners.sk",
-        rating: "5.0",
-        reviews: 72,
         image: "duda.jpg"
-    },
-    {
-        id: 2,
-        name: "Ing. Branislav HORVÁT",
-        role: "Vzťahový riaditeľ / Realitný maklér",
-        phone: "+421 905 785 951",
-        email: "branislav_horvat@keyspartners.sk",
-        rating: "4.9",
-        reviews: 64,
-        image: "brano.jpg"
     },
     {
         id: 3,
@@ -217,8 +213,6 @@ const AGENTS = [
         role: "Predseda dozornej rady / Realitný maklér",
         phone: "+421 905 785 951",
         email: "peter_pella@keyspartners.sk",
-        rating: "5.0",
-        reviews: 58,
         image: "pella.jpg"
     }
 ];
@@ -516,11 +510,6 @@ function renderAgents() {
             </div>
             <h3>${agent.name}</h3>
             <div class="agent-role">${agent.role}</div>
-            <div class="review-rating" style="justify-content: center; margin-bottom: 8px;">
-                <i class="fa-solid fa-star"></i>
-                <span style="font-weight: 700; margin-left: 4px;">${agent.rating}</span>
-                <span style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 6px;">(${agent.reviews} recenzií)</span>
-            </div>
             <div class="agent-contact">
                 <a href="tel:${agent.phone.replace(/\s/g, '')}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
                 <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
