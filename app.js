@@ -548,6 +548,162 @@ function initScrollReveal() {
     });
 }
 
+// --- Získanie správneho makléra pre nehnuteľnosť (podľa dát z Realsoftu) ---
+function getAgentForProperty(prop) {
+    const duda = AGENTS.find(a => a.name.toLowerCase().includes("duda")) || AGENTS[1];
+    const horvat = AGENTS.find(a => a.name.toLowerCase().includes("horv")) || AGENTS[0];
+    const pella = AGENTS.find(a => a.name.toLowerCase().includes("pella")) || AGENTS[2];
+
+    if (!prop) return duda;
+
+    // 1. Zistiť meno a kontakt makléra z objektu alebo reťazca
+    let rawAgent = prop.agent || prop.broker || prop.makler;
+    let agentName = "";
+    let agentPhone = "";
+    let agentEmail = "";
+
+    if (typeof rawAgent === "string") {
+        agentName = rawAgent;
+    } else if (rawAgent && typeof rawAgent === "object") {
+        agentName = rawAgent.name || rawAgent.fullName || rawAgent.full_name || rawAgent.meno || "";
+        agentPhone = rawAgent.phone || rawAgent.telefon || rawAgent.mobil || "";
+        agentEmail = rawAgent.email || rawAgent.mail || "";
+    }
+
+    const agentIdStr = String(prop.agentId || prop.agent_id || "");
+    const titleStr = String(prop.title || "").toLowerCase();
+    const locationStr = String(prop.location || "").toLowerCase();
+    const descStr = String(prop.desc || "").toLowerCase();
+
+    // 2. Branislav Horvát:
+    // Dom v obci Soľník predáva výhradne Branislav Horvát
+    const isHorvat = 
+        agentName.toLowerCase().includes("horv") ||
+        agentIdStr === "2739883856" ||
+        agentIdStr === "2" ||
+        titleStr.includes("soľník") ||
+        titleStr.includes("solnik") ||
+        locationStr.includes("soľník") ||
+        locationStr.includes("solnik") ||
+        descStr.includes("branislav horvát") ||
+        descStr.includes("branislav horvat") ||
+        descStr.includes("777 001");
+
+    if (isHorvat) {
+        return {
+            ...horvat,
+            phone: agentPhone || horvat.phone,
+            email: agentEmail || horvat.email
+        };
+    }
+
+    // 3. JUDr. Peter Pella:
+    const isPella = 
+        agentName.toLowerCase().includes("pella") ||
+        agentIdStr === "2742504158" ||
+        agentIdStr === "3" ||
+        descStr.includes("peter pella");
+
+    if (isPella) {
+        return {
+            ...pella,
+            phone: agentPhone || pella.phone,
+            email: agentEmail || pella.email
+        };
+    }
+
+    // 4. Všetky ostatné nehnuteľnosti predáva Peter Duda (predvolený maklér)
+    return {
+        ...duda,
+        phone: agentPhone || duda.phone,
+        email: agentEmail || duda.email
+    };
+}
+
+// --- Formátovanie textu popisu nehnuteľnosti z API do štruktúrovaného HTML ---
+function formatPropertyDescription(text) {
+    if (!text || typeof text !== "string") {
+        return `<p class="modal-desc-p">Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.</p>`;
+    }
+
+    // Normalizácia kódovania odrážok (Windows-1250/UTF-8 artefakty: \u00D4\u00C7\u00F3, ÔÇó), riadkov a tabulátorov
+    const normalized = text
+        .replace(/\u00D4\u00C7\u00F3/g, "•")
+        .replace(/ÔÇó/g, "•")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/([^\n])\s*•\s*/g, "$1\n• ")
+        .trim();
+
+    const rawLines = normalized.split("\n");
+    const blocks = [];
+    let currentList = [];
+    let currentParagraphLines = [];
+
+    function flushParagraph() {
+        if (currentParagraphLines.length > 0) {
+            const pContent = currentParagraphLines.join("<br>");
+            blocks.push(`<p class="modal-desc-p">${pContent}</p>`);
+            currentParagraphLines = [];
+        }
+    }
+
+    function flushList() {
+        if (currentList.length > 0) {
+            const lis = currentList.map(item => `<li>${item}</li>`).join("");
+            blocks.push(`<ul class="modal-desc-list">${lis}</ul>`);
+            currentList = [];
+        }
+    }
+
+    for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i].trim();
+
+        // Prázdny riadok oddeľuje odseky
+        if (!line) {
+            flushList();
+            flushParagraph();
+            continue;
+        }
+
+        // Kontrola odrážky: •, -, *, alebo číselný zoznam
+        const isBullet = /^[•\-\*]\s*/.test(line) || /^\d+\.\s+/.test(line);
+
+        if (isBullet) {
+            flushParagraph();
+            let cleanItem = line
+                .replace(/^[•\-\*]\s*/, "")
+                .replace(/^\d+\.\s+/, "")
+                .trim();
+
+            // Zvýraznenie kľúča na začiatku odrážky (napr. "Kvalitná rekonštrukcia:", "Pozemok:", atď.)
+            cleanItem = cleanItem.replace(/^([^:\n]{2,40}:)/, "<strong>$1</strong>");
+            currentList.push(cleanItem);
+        } else {
+            flushList();
+
+            // Zvýraznenie podnadpisov a dôležitých otázok
+            const isSubheading = 
+                /^([A-ZÁČĎÉÍĽĹŇÓÔŔŠŤÚÝŽ][^:\n]{2,45}:)$/.test(line) ||
+                /^([A-ZÁČĎÉÍĽĹŇÓÔŔŠŤÚÝŽ][^\?\n]{2,45}\?)$/.test(line) ||
+                line.startsWith("ZNÍŽENÁ CENA") ||
+                line.startsWith("NA PREDAJ");
+
+            if (isSubheading) {
+                flushParagraph();
+                blocks.push(`<p class="modal-desc-p modal-desc-subheading"><strong>${line}</strong></p>`);
+            } else {
+                currentParagraphLines.push(line);
+            }
+        }
+    }
+
+    flushList();
+    flushParagraph();
+
+    return blocks.length > 0 ? blocks.join("") : `<p class="modal-desc-p">${text}</p>`;
+}
+
 // ==========================================================================
 // MODÁLNE OKNO S DETAILMI NEHNUTEĽNOSTI
 // ==========================================================================
@@ -557,20 +713,8 @@ function openPropertyModal(id) {
     const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id));
     if (!prop) return;
 
-    let modalAgent = AGENTS[0];
-    if (prop.agent && prop.agent.name) {
-        const aName = String(prop.agent.name).toLowerCase();
-        if (aName.includes("pella")) {
-            modalAgent = AGENTS.find(a => a.id === 3) || AGENTS[0];
-        } else if (aName.includes("horv")) {
-            modalAgent = AGENTS.find(a => a.id === 2) || AGENTS[0];
-        } else {
-            modalAgent = AGENTS.find(a => a.id === 1) || AGENTS[0];
-        }
-    } else if (prop.agentId) {
-        modalAgent = AGENTS.find(a => a.id === Number(prop.agentId)) || AGENTS[0];
-    }
-    const agent = modalAgent;
+    // Priradenie správneho makléra podľa dát z Realsoftu
+    const agent = getAgentForProperty(prop);
     
     let priceFormatted = "";
     if (prop.priceCustom && typeof prop.priceCustom === "string") {
@@ -686,7 +830,9 @@ function openPropertyModal(id) {
                 </div>
                 
                 <h3 class="modal-desc-title">Popis nehnuteľnosti</h3>
-                <p class="modal-description">${prop.desc}</p>
+                <div class="modal-description">
+                    ${formatPropertyDescription(prop.desc)}
+                </div>
 
                 ${specsTableHtml}
                 

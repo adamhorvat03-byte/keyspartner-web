@@ -289,39 +289,48 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="font-bold text-slate-900 dark:text-white mb-4">Váš realitný maklér</h3>
             
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 font-bold text-amber-700 dark:text-amber-400">
-                {property.agent?.name?.charAt(0) || 'K'}
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-900 dark:text-white">
-                  {property.agent?.name || 'Ing. Branislav HORVÁT'}
-                </h4>
-                <p className="text-xs text-slate-500">Vzťahový riaditeľ / Maklér</p>
-              </div>
-            </div>
+            {(() => {
+              const isSolnik = (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('soľník') ||
+                               (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('solnik');
+              const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : 'Peter DUDA');
+              const agentRole = isSolnik ? 'Partner / Realitný maklér' : 'Vzťahový riaditeľ / Realitný maklér';
+              const agentPhone = property.agent?.phone || (isSolnik ? '+421 905 785 951' : '+421 907 441 405');
+              const agentEmail = property.agent?.email || (isSolnik ? 'branislav_horvat@keyspartners.sk' : 'peter_duda@keyspartners.sk');
 
-            {/* Tlačidlá na priamy kontakt */}
-            <div className="space-y-2 mb-6">
-              {property.agent?.phone && (
-                <a
-                  href={`tel:${property.agent.phone.replace(/\s+/g, '')}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200"
-                >
-                  <Phone className="h-4 w-4 text-amber-600" />
-                  <span>{property.agent.phone}</span>
-                </a>
-              )}
-              {property.agent?.email && (
-                <a
-                  href={`mailto:${property.agent.email}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200"
-                >
-                  <Mail className="h-4 w-4 text-amber-600" />
-                  <span>{property.agent.email}</span>
-                </a>
-              )}
-            </div>
+              return (
+                <>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 font-bold text-amber-700 dark:text-amber-400">
+                      {agentName.charAt(0) || 'K'}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">
+                        {agentName}
+                      </h4>
+                      <p className="text-xs text-slate-500">{agentRole}</p>
+                    </div>
+                  </div>
+
+                  {/* Tlačidlá na priamy kontakt */}
+                  <div className="space-y-2 mb-6">
+                    <a
+                      href={`tel:${agentPhone.replace(/\s+/g, '')}`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200"
+                    >
+                      <Phone className="h-4 w-4 text-amber-600" />
+                      <span>{agentPhone}</span>
+                    </a>
+                    <a
+                      href={`mailto:${agentEmail}`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200"
+                    >
+                      <Mail className="h-4 w-4 text-amber-600" />
+                      <span>{agentEmail}</span>
+                    </a>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Rýchly dopytový formulár pre záujemcu */}
             <div className="border-t border-slate-100 pt-5 dark:border-slate-800">
