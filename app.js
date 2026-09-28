@@ -518,11 +518,13 @@ function renderAgents() {
             <div class="agent-img-wrapper">
                 <img src="${agent.image}" alt="${agent.name}">
             </div>
-            <h3>${agent.name}</h3>
-            <div class="agent-role">${agent.role}</div>
-            <div class="agent-contact">
-                <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
-                <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
+            <div class="agent-info">
+                <h3>${agent.name}</h3>
+                <div class="agent-role">${agent.role}</div>
+                <div class="agent-contact">
+                    <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
+                    <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
+                </div>
             </div>
         `;
         
