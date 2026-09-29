@@ -384,6 +384,211 @@
         </div>
     </section>
 
+    <!-- Hypotekárna kalkulačka s prepojením na konzultáciu (Reveal) -->
+    <section class="mortgage-section reveal" id="hypoteka">
+        <div class="container mortgage-container">
+            <!-- Ľavá strana: Text a vysvetlenie (na mobile hore) -->
+            <div class="mortgage-info">
+                <div class="badge-premium" style="margin-bottom: 16px;">
+                    <i class="fa-solid fa-calculator text-gold"></i> Financovanie bývania
+                </div>
+                <h2>Hypotekárna kalkulačka</h2>
+                <p>Plánujete kúpu vysnívaného bývania? Zistite, aká bude vaša orientačná mesačná splátka. Naša kalkulačka vám pomôže získať rýchly prehľad o možnostiach financovania. Ak máte záujem o porovnanie ponúk z bánk, dohodnite si nezáväznú konzultáciu s našim maklérom, ktorý sa postará o to, aby ste získali tie najlepšie podmienky na trhu.</p>
+                
+                <ul class="mortgage-advantages">
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Nezávislé porovnanie hypoték naprieč všetkými bankami na trhu</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Vyjednanie najvýhodnejšieho úroku a odpustenie bankových poplatkov</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Kompletný servis od znaleckého posudku až po čerpanie úveru</li>
+                </ul>
+
+                <div class="mortgage-info-card">
+                    <div class="mortgage-card-icon">
+                        <i class="fa-solid fa-shield-halved text-gold"></i>
+                    </div>
+                    <div class="mortgage-card-text">
+                        <h4>100% bezplatná a nezáväzná služba</h4>
+                        <p>Naše hypotekárne poradenstvo je pre vás úplne bezplatné. Odmenu hypotekárnemu špecialistovi vypláca priamo banka.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pravá strana: Interaktívny nástroj kalkulačky s formulárom (na mobile dole) -->
+            <div class="mortgage-tool-container">
+                <div class="mortgage-tool-header">
+                    <h3>Výpočet mesačnej splátky</h3>
+                    <p>Nastavte parametre úveru a okamžite zistite odhadovanú výšku vašej mesačnej splátky.</p>
+                </div>
+
+                <div class="mortgage-inputs">
+                    <!-- 1. Cena nehnuteľnosti -->
+                    <div class="mortgage-input-block">
+                        <div class="mortgage-input-header">
+                            <label for="mortgagePriceInput"><i class="fa-solid fa-house-chimney text-gold"></i> Cena nehnuteľnosti</label>
+                            <div class="mortgage-val-badge">
+                                <input type="number" id="mortgagePriceInput" value="150000" min="20000" max="1000000" step="1000">
+                                <span>€</span>
+                            </div>
+                        </div>
+                        <div class="range-slider-wrapper">
+                            <input type="range" id="mortgagePriceSlider" class="custom-range" min="20000" max="1000000" step="5000" value="150000">
+                            <div class="range-bounds">
+                                <span>20 000 €</span>
+                                <span>1 000 000 €</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Vlastné prostriedky -->
+                    <div class="mortgage-input-block">
+                        <div class="mortgage-input-header">
+                            <label for="mortgageOwnInput"><i class="fa-solid fa-wallet text-gold"></i> Vlastné prostriedky <span class="mortgage-ltv-badge" id="mortgageDownpaymentPercent">(20 %)</span></label>
+                            <div class="mortgage-val-badge">
+                                <input type="number" id="mortgageOwnInput" value="30000" min="0" max="1000000" step="1000">
+                                <span>€</span>
+                            </div>
+                        </div>
+                        <div class="range-slider-wrapper">
+                            <input type="range" id="mortgageOwnSlider" class="custom-range" min="0" max="500000" step="2500" value="30000">
+                            <div class="range-bounds">
+                                <span>0 €</span>
+                                <span>500 000 €</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Odvodená výška úveru -->
+                    <div class="mortgage-derived-row">
+                        <div class="derived-item">
+                            <span class="derived-label">Výška úveru z banky:</span>
+                            <span class="derived-value text-gold" id="mortgageLoanAmount">120 000 €</span>
+                        </div>
+                        <div class="derived-item">
+                            <span class="derived-label">Financovanie (LTV):</span>
+                            <span class="derived-value" id="mortgageLtvValue">80 %</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Doba splácania a Úroková sadzba -->
+                    <div class="form-row mortgage-secondary-inputs">
+                        <!-- Doba splácania -->
+                        <div class="mortgage-input-block">
+                            <div class="mortgage-input-header">
+                                <label for="mortgageYearsInput"><i class="fa-solid fa-calendar-days text-gold"></i> Doba splácania</label>
+                                <div class="mortgage-val-badge">
+                                    <input type="number" id="mortgageYearsInput" value="30" min="5" max="30" step="1">
+                                    <span>r.</span>
+                                </div>
+                            </div>
+                            <div class="range-slider-wrapper">
+                                <input type="range" id="mortgageYearsSlider" class="custom-range" min="5" max="30" step="1" value="30">
+                                <div class="range-bounds">
+                                    <span>5 rokov</span>
+                                    <span>30 rokov</span>
+                                </div>
+                            </div>
+                            <div class="quick-years-pills">
+                                <button type="button" class="btn-pill" data-years="15">15 r.</button>
+                                <button type="button" class="btn-pill" data-years="20">20 r.</button>
+                                <button type="button" class="btn-pill" data-years="25">25 r.</button>
+                                <button type="button" class="btn-pill active" data-years="30">30 r.</button>
+                            </div>
+                        </div>
+
+                        <!-- Úroková sadzba -->
+                        <div class="mortgage-input-block">
+                            <div class="mortgage-input-header">
+                                <label for="mortgageRateInput"><i class="fa-solid fa-percent text-gold"></i> Úroková sadzba</label>
+                                <div class="mortgage-val-badge">
+                                    <input type="number" id="mortgageRateInput" value="4.29" min="0.5" max="12.0" step="0.05">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="range-slider-wrapper">
+                                <input type="range" id="mortgageRateSlider" class="custom-range" min="1.0" max="10.0" step="0.05" value="4.29">
+                                <div class="range-bounds">
+                                    <span>1.0 %</span>
+                                    <span>10.0 %</span>
+                                </div>
+                            </div>
+                            <div class="quick-rate-note">
+                                <small><i class="fa-solid fa-circle-info text-gold"></i> Aktuálny trhový priemer (4,29 %)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dominantné zobrazenie odhadovanej mesačnej splátky -->
+                <div class="mortgage-result-banner">
+                    <div class="mortgage-result-meta">
+                        <span class="mortgage-result-tag">Odhadovaná mesačná splátka</span>
+                        <div class="mortgage-result-main">
+                            <span class="mortgage-payment-number" id="mortgageMonthlyPayment">593</span>
+                            <span class="mortgage-payment-currency">€ <small>/ mesiac</small></span>
+                        </div>
+                    </div>
+                    <div class="mortgage-result-subdetails">
+                        <div class="subdetail-item">
+                            <span>Výška úveru:</span>
+                            <strong id="subLoanAmount">120 000 €</strong>
+                        </div>
+                        <div class="subdetail-item">
+                            <span>Celkovo zaplatíte:</span>
+                            <strong id="subTotalAmount">213 540 €</strong>
+                        </div>
+                        <div class="subdetail-item">
+                            <span>Preplatenie na úrokoch:</span>
+                            <strong id="subInterestAmount">93 540 €</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontaktný formulár pre nezáväznú konzultáciu -->
+                <form id="mortgageConsultForm" class="mortgage-consult-form">
+                    <div class="consult-form-heading">
+                        <h4>Máte záujem o nezáväznú konzultáciu k hypotéke?</h4>
+                        <p>Zanechajte nám kontakt a náš maklér pre vás bezplatne pripraví porovnanie a vybaví najlepšie podmienky.</p>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mortgageClientName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
+                            <input type="text" id="mortgageClientName" required placeholder="Napr. Peter Kováč">
+                        </div>
+                        <div class="form-group">
+                            <label for="mortgageClientPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
+                            <input type="tel" id="mortgageClientPhone" required placeholder="+421 900 000 000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mortgageClientEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
+                        <input type="email" id="mortgageClientEmail" required placeholder="peter.kovac@email.sk">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-mortgage-submit" id="btnMortgageSubmit">
+                        <i class="fa-solid fa-paper-plane"></i> Nezáväzná konzultácia s našim maklérom k hypotéke
+                    </button>
+                    <p class="form-disclaimer">Odoslaním údajov súhlasíte s bezplatným spracovaním a kontaktovaním.</p>
+                </form>
+
+                <!-- Úspešné odoslanie (Success message) -->
+                <div class="mortgage-success-box" id="mortgageSuccessBox" style="display: none;">
+                    <i class="fa-solid fa-circle-check success-icon"></i>
+                    <h3>Ďakujeme. Váš prepočet sme prijali a náš maklér vás bude čoskoro kontaktovať.</h3>
+                    <p>Prešli sme si vaše požiadavky a pripravíme vám komplexné porovnanie hypotekárnych možností s najvýhodnejším úrokom.</p>
+                    <div class="mortgage-success-details">
+                        <div class="succ-row"><span>Cena nehnuteľnosti:</span> <strong id="succPrice">150 000 €</strong></div>
+                        <div class="succ-row"><span>Výška úveru:</span> <strong id="succLoan">120 000 €</strong></div>
+                        <div class="succ-row"><span>Odhadovaná splátka:</span> <strong id="succPayment">593 € / mesiac</strong></div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnMortgageRecalc" style="margin-top: 20px;">
+                        <i class="fa-solid fa-rotate-left"></i> Upraviť parametre
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Štatistiky pobočky (Reveal) -->
     <section class="stats-section reveal">
         <div class="container stats-container">

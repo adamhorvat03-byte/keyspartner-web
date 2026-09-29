@@ -1417,7 +1417,234 @@ function setupEventListeners() {
                 </div>
             `;
         });
+        
+        // Inicializácia hypotekárnej kalkulačky
+        initMortgageCalculator();
     }
+}
+
+// ==========================================================================
+// HYPOTEKÁRNA KALKULAČKA S PREPOJENÍM NA KONZULTÁCIU
+// ==========================================================================
+function initMortgageCalculator() {
+    const priceSlider = document.getElementById("mortgagePriceSlider");
+    const priceInput = document.getElementById("mortgagePriceInput");
+    const ownSlider = document.getElementById("mortgageOwnSlider");
+    const ownInput = document.getElementById("mortgageOwnInput");
+    const yearsSlider = document.getElementById("mortgageYearsSlider");
+    const yearsInput = document.getElementById("mortgageYearsInput");
+    const rateSlider = document.getElementById("mortgageRateSlider");
+    const rateInput = document.getElementById("mortgageRateInput");
+
+    const loanAmountEl = document.getElementById("mortgageLoanAmount");
+    const ltvValueEl = document.getElementById("mortgageLtvValue");
+    const downpaymentPercentEl = document.getElementById("mortgageDownpaymentPercent");
+    const monthlyPaymentEl = document.getElementById("mortgageMonthlyPayment");
+    const subLoanAmountEl = document.getElementById("subLoanAmount");
+    const subTotalAmountEl = document.getElementById("subTotalAmount");
+    const subInterestAmountEl = document.getElementById("subInterestAmount");
+
+    const consultForm = document.getElementById("mortgageConsultForm");
+    const successBox = document.getElementById("mortgageSuccessBox");
+    const btnRecalc = document.getElementById("btnMortgageRecalc");
+
+    if (!priceSlider || !consultForm) return;
+
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString("sk-SK");
+    }
+
+    function updateSliderTrack(slider) {
+        if (!slider) return;
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const pct = ((val - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(to right, var(--brand-yellow) 0%, var(--brand-yellow) ${pct}%, var(--bg-tertiary) ${pct}%, var(--bg-tertiary) 100%)`;
+    }
+
+    function calculateMortgage() {
+        let price = parseFloat(priceInput.value) || 0;
+        let own = parseFloat(ownInput.value) || 0;
+        let years = parseInt(yearsInput.value, 10) || 30;
+        let rate = parseFloat(rateInput.value) || 0;
+
+        if (price < 0) price = 0;
+        if (own < 0) own = 0;
+        if (own > price) {
+            own = price;
+            ownInput.value = own;
+            ownSlider.value = own;
+        }
+        if (years < 5) years = 5;
+        if (years > 30) years = 30;
+        if (rate < 0) rate = 0;
+
+        const loan = Math.max(0, price - own);
+        const ltv = price > 0 ? Math.round((loan / price) * 100) : 0;
+        const downPct = price > 0 ? Math.round((own / price) * 100) : 0;
+
+        // Anuitný výpočet: M = P * (r * (1 + r)^n) / ((1 + r)^n - 1)
+        const n = years * 12; // počet mesiacov
+        let monthly = 0;
+        let total = 0;
+        let interest = 0;
+
+        if (loan > 0) {
+            if (rate > 0) {
+                const r = (rate / 100) / 12; // mesačná úroková miera
+                const factor = Math.pow(1 + r, n);
+                monthly = Math.round(loan * (r * factor) / (factor - 1));
+            } else {
+                monthly = Math.round(loan / n);
+            }
+            total = monthly * n;
+            interest = Math.max(0, total - loan);
+        }
+
+        // Zobrazenie hodnôt
+        if (loanAmountEl) loanAmountEl.textContent = formatNumber(loan) + " €";
+        if (ltvValueEl) ltvValueEl.textContent = ltv + " %";
+        if (downpaymentPercentEl) downpaymentPercentEl.textContent = `(${downPct} %)`;
+        if (monthlyPaymentEl) monthlyPaymentEl.textContent = formatNumber(monthly);
+        if (subLoanAmountEl) subLoanAmountEl.textContent = formatNumber(loan) + " €";
+        if (subTotalAmountEl) subTotalAmountEl.textContent = formatNumber(total) + " €";
+        if (subInterestAmountEl) subInterestAmountEl.textContent = formatNumber(interest) + " €";
+
+        // Vizuálna aktualizácia sliderov
+        updateSliderTrack(priceSlider);
+        updateSliderTrack(ownSlider);
+        updateSliderTrack(yearsSlider);
+        updateSliderTrack(rateSlider);
+    }
+
+    // Obojsmerná synchronizácia slidera a číselného poľa
+    function bindSync(slider, input, isFloat = false) {
+        slider.addEventListener("input", () => {
+            input.value = isFloat ? parseFloat(slider.value).toFixed(2) : slider.value;
+            calculateMortgage();
+        });
+
+        input.addEventListener("input", () => {
+            slider.value = input.value;
+            calculateMortgage();
+        });
+
+        input.addEventListener("change", () => {
+            let val = isFloat ? parseFloat(input.value) : parseInt(input.value, 10);
+            if (isNaN(val)) val = isFloat ? parseFloat(slider.value) : parseInt(slider.value, 10);
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            if (val < min) val = min;
+            if (val > max) val = max;
+            input.value = isFloat ? val.toFixed(2) : val;
+            slider.value = val;
+            calculateMortgage();
+        });
+    }
+
+    bindSync(priceSlider, priceInput, false);
+    bindSync(ownSlider, ownInput, false);
+    bindSync(yearsSlider, yearsInput, false);
+    bindSync(rateSlider, rateInput, true);
+
+    // Rýchle tlačidlá pre výber doby splácania
+    const pillButtons = document.querySelectorAll(".quick-years-pills .btn-pill");
+    pillButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            pillButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const y = btn.getAttribute("data-years");
+            yearsSlider.value = y;
+            yearsInput.value = y;
+            calculateMortgage();
+        });
+    });
+
+    yearsSlider.addEventListener("input", () => {
+        pillButtons.forEach(b => {
+            if (b.getAttribute("data-years") === yearsSlider.value) {
+                b.classList.add("active");
+            } else {
+                b.classList.remove("active");
+            }
+        });
+    });
+
+    // Odoslanie formulára pre nezáväznú konzultáciu k hypotéke
+    consultForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const clientName = document.getElementById("mortgageClientName").value.trim();
+        const clientPhone = document.getElementById("mortgageClientPhone").value.trim();
+        const clientEmail = document.getElementById("mortgageClientEmail").value.trim();
+
+        const priceVal = parseFloat(priceInput.value) || 0;
+        const ownVal = parseFloat(ownInput.value) || 0;
+        const loanVal = Math.max(0, priceVal - ownVal);
+        const yearsVal = parseInt(yearsInput.value, 10) || 30;
+        const rateVal = parseFloat(rateInput.value) || 0;
+        const paymentVal = monthlyPaymentEl.textContent;
+
+        const submitBtn = document.getElementById("btnMortgageSubmit");
+        const origBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Odosielam požiadavku...`;
+
+        // Odoslanie údajov cez FormSubmit AJAX API na Branislava Horváta
+        fetch("https://formsubmit.co/ajax/branislav_horvat@keyspartners.sk", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                _subject: "Nový dopyt: Hypotekárna konzultácia – Keys Partners",
+                "Meno a priezvisko": clientName,
+                "Telefón": clientPhone,
+                "E-mail": clientEmail,
+                "Cena nehnuteľnosti": formatNumber(priceVal) + " €",
+                "Vlastné prostriedky": formatNumber(ownVal) + " €",
+                "Výška úveru": formatNumber(loanVal) + " €",
+                "Doba splácania": yearsVal + " rokov (" + (yearsVal * 12) + " mesiacov)",
+                "Úroková sadzba": rateVal.toFixed(2).replace('.', ',') + " % p.a.",
+                "Odhadovaná mesačná splátka": paymentVal + " € / mesiac"
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("[KEYS PARTNERS] Hypotekárna konzultácia úspešne odoslaná:", data);
+        })
+        .catch(err => {
+            console.error("[KEYS PARTNERS] Chyba pri odosielaní hypotéky:", err);
+        })
+        .finally(() => {
+            // Vyplnenie údajov v success message
+            const succPrice = document.getElementById("succPrice");
+            const succLoan = document.getElementById("succLoan");
+            const succPayment = document.getElementById("succPayment");
+            if (succPrice) succPrice.textContent = formatNumber(priceVal) + " €";
+            if (succLoan) succLoan.textContent = formatNumber(loanVal) + " €";
+            if (succPayment) succPayment.textContent = paymentVal + " € / mesiac";
+
+            // Zobrazenie správy o úspechu
+            consultForm.style.display = "none";
+            successBox.style.display = "block";
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origBtnHtml;
+        });
+    });
+
+    if (btnRecalc) {
+        btnRecalc.addEventListener("click", () => {
+            successBox.style.display = "none";
+            consultForm.style.display = "block";
+            calculateMortgage();
+        });
+    }
+
+    // Prvotný výpočet
+    calculateMortgage();
 }
 
 // --- Pomocná funkcia pre animované počítadlo cien ---
