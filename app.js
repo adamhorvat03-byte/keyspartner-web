@@ -273,7 +273,7 @@ async function loadPropertiesFromApi() {
 function initTheme() {
     let savedTheme = localStorage.getItem("theme");
     if (!savedTheme) {
-        savedTheme = "light"; // Predvolene svetlý režim podľa vzoru kapareal.sk
+        savedTheme = "dark"; // Predvolene tmavý režim pre každého zákazníka pri prvej návšteve
     }
     document.documentElement.setAttribute("data-theme", savedTheme);
     updateThemeToggleIcon(savedTheme);
@@ -1149,23 +1149,62 @@ function setupEventListeners() {
     // --- Mobilné menu ---
     const mobileNavToggle = document.getElementById("mobileNavToggle");
     const navMenu = document.getElementById("navMenu");
-    mobileNavToggle.addEventListener("click", () => {
-        navMenu.classList.toggle("active");
-        const isOpen = navMenu.classList.contains("active");
-        mobileNavToggle.innerHTML = isOpen 
-            ? `<i class="fa-solid fa-xmark"></i>` 
-            : `<i class="fa-solid fa-bars"></i>`;
-    });
     
-    const navLinks = navMenu.querySelectorAll("a");
-    navLinks.forEach(link => {
-        link.addEventListener("click", () => {
-            navMenu.classList.remove("active");
-            mobileNavToggle.innerHTML = `<i class="fa-solid fa-bars"></i>`;
-            navLinks.forEach(l => l.classList.remove("active"));
-            link.classList.add("active");
+    if (mobileNavToggle && navMenu) {
+        const toggleMobileMenu = (forceClose = false) => {
+            const shouldOpen = forceClose ? false : !navMenu.classList.contains("active");
+            if (shouldOpen) {
+                navMenu.classList.add("active");
+                mobileNavToggle.classList.add("is-active");
+                mobileNavToggle.setAttribute("aria-expanded", "true");
+                mobileNavToggle.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+                document.body.style.overflow = "hidden";
+            } else {
+                navMenu.classList.remove("active");
+                mobileNavToggle.classList.remove("is-active");
+                mobileNavToggle.setAttribute("aria-expanded", "false");
+                mobileNavToggle.innerHTML = `<i class="fa-solid fa-bars"></i>`;
+                document.body.style.overflow = "";
+            }
+        };
+
+        mobileNavToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleMobileMenu();
         });
-    });
+        
+        const navLinks = navMenu.querySelectorAll("a");
+        navLinks.forEach(link => {
+            link.addEventListener("click", () => {
+                toggleMobileMenu(true);
+                if (link.getAttribute("href")?.startsWith("#")) {
+                    navLinks.forEach(l => l.classList.remove("active"));
+                    link.classList.add("active");
+                }
+            });
+        });
+
+        // Close on clicking outside the menu
+        document.addEventListener("click", (e) => {
+            if (navMenu.classList.contains("active") && !navMenu.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+                toggleMobileMenu(true);
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && navMenu.classList.contains("active")) {
+                toggleMobileMenu(true);
+            }
+        });
+
+        // Close on window resize to desktop
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 768 && navMenu.classList.contains("active")) {
+                toggleMobileMenu(true);
+            }
+        });
+    }
 
     // --- Zatvorenie modálu ---
     document.getElementById("modalClose").addEventListener("click", closePropertyModal);
@@ -1331,7 +1370,7 @@ function setupEventListeners() {
             const nameVal = document.getElementById("ownerName").value;
             const emailVal = document.getElementById("ownerEmail").value;
             
-            fetch("https://formsubmit.co/ajax/adam.horvat03@gmail.com", {
+            fetch("https://formsubmit.co/ajax/branislav_horvat@keyspartners.sk", {
                 method: "POST",
                 headers: { 
                     'Content-Type': 'application/json',

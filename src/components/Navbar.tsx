@@ -171,6 +171,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </ul>
           </nav>
 
+          {/* CTA Tlačidlo v mobilnom menu */}
+          <div className="mb-4">
+            <a
+              href="#chcem-predat"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-amber-700 hover:shadow-md dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400"
+            >
+              <Key className="h-4 w-4" />
+              <span>Chcem predať</span>
+            </a>
+          </div>
+
           {/* Sociálne siete v mobilnom menu */}
           <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
