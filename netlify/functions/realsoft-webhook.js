@@ -772,6 +772,7 @@ async function parseAnyPayload(req, rawBody) {
  * 5 = Zrušená / Vymazaná
  */
 function normalizePropertyStatus(raw) {
+  const titleText = `${raw.title || ""} ${raw.shortTitle || ""} ${raw.name || ""} ${raw.nazov || ""} ${raw.headline || ""}`.toLowerCase();
   const statusStr = String(
     raw.status ||
     raw.stav ||
@@ -783,21 +784,19 @@ function normalizePropertyStatus(raw) {
     raw.dovod_ukoncenia ||
     ""
   ).toLowerCase().trim();
+  const tagsText = Array.isArray(raw.tags) ? raw.tags.join(" ").toLowerCase() : String(raw.tags || "").toLowerCase();
 
+  const combined = `${titleText} ${statusStr} ${tagsText}`;
   const numStatus = Number(raw.status);
 
-  // 1. Sprostredkované (predané / prenajaté / v prenájme / zrealizované)
+  // Regex pre ukončené obchody (predané / predaný / sprostredkované / sprostredkovaný / v nájme / v prenájme / prenajaté / prenajatý / sold / rented)
+  const soldRegex = /\b(predan[eéyýaá]|sprostredkovan[eéyýaá]|prenajat[eéyýaá]|sold|rented|zrealizovan[eéyýaá])\b|predan[eéyýaá][_\s\-]|sprostredkovan[eéyýaá][_\s\-]|prenajat[eéyýaá][_\s\-]|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en/i;
+
+  // 1. Sprostredkované (predané / prenajaté / v nájme / v prenájme / zrealizované)
   if (
     numStatus === 4 ||
     raw.status === "4" ||
-    statusStr.includes("predan") ||
-    statusStr.includes("sold") ||
-    statusStr.includes("prenajat") ||
-    statusStr.includes("prenajm") ||
-    statusStr.includes("rented") ||
-    statusStr.includes("sprostredkov") ||
-    statusStr.includes("zrealizov") ||
-    statusStr.includes("completed") ||
+    soldRegex.test(combined) ||
     raw.is_sold === true ||
     raw.is_rented === true ||
     raw.sold === 1 ||
@@ -805,7 +804,7 @@ function normalizePropertyStatus(raw) {
     raw.rented === 1 ||
     raw.rented === true
   ) {
-    const isRental = statusStr.includes("prenaj") || raw.deal === "prenajom" || raw.transaction_type === "rent";
+    const isRental = combined.includes("prenaj") || combined.includes("nájm") || combined.includes("najm") || raw.deal === "prenajom" || raw.transaction_type === "rent";
     return {
       status: "sold", // Skupina 'Sprostredkované'
       substatus: isRental ? "prenajate" : "predane",
@@ -815,11 +814,11 @@ function normalizePropertyStatus(raw) {
   }
 
   // 2. Rezervované
+  const reservedRegex = /\b(rezervovan[eéyýaá]|reserved)\b|rezervovan[eéyýaá][_\s\-]/i;
   if (
     numStatus === 3 ||
     raw.status === "3" ||
-    statusStr.includes("rezerv") ||
-    statusStr.includes("reserv") ||
+    reservedRegex.test(combined) ||
     raw.is_reserved === true ||
     raw.rezervovane === true
   ) {
@@ -1003,12 +1002,14 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         : [];
 
       if (statusInfo.status === "sold") {
+        safeTags = safeTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
         const isRent = statusInfo.substatus === "prenajate" || dealType === "prenajom";
         const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
-        if (!safeTags.includes("SPROSTREDKOVANÉ")) safeTags.unshift("SPROSTREDKOVANÉ");
-        if (!safeTags.includes(statusTag)) safeTags.unshift(statusTag);
+        if (!safeTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) safeTags.unshift("SPROSTREDKOVANÉ");
+        if (!safeTags.some(t => String(t).toUpperCase().includes("PREDANÉ") || String(t).toUpperCase().includes("PRENAJATÉ"))) safeTags.unshift(statusTag);
       } else if (statusInfo.status === "reserved") {
-        if (!safeTags.includes("REZERVOVANÉ")) safeTags.unshift("REZERVOVANÉ");
+        safeTags = safeTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        if (!safeTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) safeTags.unshift("REZERVOVANÉ");
       } else {
         if (safeTags.length === 0) {
           safeTags = [dealType === "prenajom" ? "PRENÁJOM" : "PREDAJ"];

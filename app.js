@@ -316,6 +316,13 @@ async function loadPropertiesFromApi() {
                 if (Array.isArray(p.tags)) {
                     p.tags = p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT");
                 }
+                if (isPropertySoldOrCompleted(p)) {
+                    p.status = "sold";
+                    p.isReserved = false;
+                } else if (isPropertyReserved(p)) {
+                    p.status = "reserved";
+                    p.isReserved = true;
+                }
                 return p;
             });
             renderListings();
@@ -404,44 +411,78 @@ function getSafePropertyImages(prop) {
     return imgs;
 }
 
+// --- Detekcia ukončených obchodov (Sprostredkované: predané, prenajaté, v nájme, sprostredkované) ---
+function isPropertySoldOrCompleted(item) {
+    if (!item) return false;
+    
+    const titleText = `${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`.toLowerCase();
+    const statusText = `${item.status || ""} ${item.substatus || ""} ${item.stav || ""} ${item.stav_zakazky || ""} ${item.status_name || ""} ${item.deal_status || ""} ${item.dovod_ukoncenia || ""}`.toLowerCase();
+    const tagsText = Array.isArray(item.tags) ? item.tags.join(" ").toLowerCase() : String(item.tags || "").toLowerCase();
+    
+    const combined = `${titleText} ${statusText} ${tagsText}`;
+
+    // Regex pokrývajúci všetky slovenské aj medzinárodné variácie kľúčových slov:
+    // "predané", "predaný", "predana", "predany", "predane", "sprostredkované", "sprostredkovaný", "v nájme", "v prenájme", "prenajaté", "prenajatý", "sold", "rented"
+    const soldRegex = /\b(predan[eéyýaá]|sprostredkovan[eéyýaá]|prenajat[eéyýaá]|sold|rented|zrealizovan[eéyýaá])\b|predan[eéyýaá][_\s\-]|sprostredkovan[eéyýaá][_\s\-]|prenajat[eéyýaá][_\s\-]|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en/i;
+
+    if (soldRegex.test(combined)) {
+        return true;
+    }
+
+    if (
+        item.status === "sold" ||
+        item.status === "rented" ||
+        Number(item.status) === 4 ||
+        item.status === "4" ||
+        item.isSold === true ||
+        item.is_sold === true ||
+        item.is_rented === true ||
+        item.sold === 1 ||
+        item.sold === true ||
+        item.rented === 1 ||
+        item.rented === true
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+// --- Detekcia rezervovaných ponúk ---
+function isPropertyReserved(item) {
+    if (!item) return false;
+    if (isPropertySoldOrCompleted(item)) return false;
+
+    const titleText = `${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`.toLowerCase();
+    const statusText = `${item.status || ""} ${item.substatus || ""} ${item.stav || ""} ${item.stav_zakazky || ""}`.toLowerCase();
+    const tagsText = Array.isArray(item.tags) ? item.tags.join(" ").toLowerCase() : String(item.tags || "").toLowerCase();
+    
+    const combined = `${titleText} ${statusText} ${tagsText}`;
+    const reservedRegex = /\b(rezervovan[eéyýaá]|reserved)\b|rezervovan[eéyýaá][_\s\-]/i;
+
+    if (reservedRegex.test(combined)) {
+        return true;
+    }
+
+    if (
+        item.isReserved === true ||
+        item.is_reserved === true ||
+        item.rezervovane === true ||
+        item.status === "reserved" ||
+        Number(item.status) === 3 ||
+        item.status === "3"
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
 // --- Pomocná funkcia: Rozdelenie nehnuteľnosti do 3 skupín podľa stavu transakcie ---
 function getPropertyStatusGroup(prop) {
     if (!prop) return "active";
-    
-    const status = String(prop.status || "").toLowerCase().trim();
-    const tags = Array.isArray(prop.tags) ? prop.tags.map(t => String(t).toUpperCase()) : [];
-    const title = String(prop.title || "").toUpperCase();
-    
-    // 1. Sprostredkované (ukončené transakcie: predané, prenajaté, v prenájme, zrealizované)
-    if (
-        status === "sold" ||
-        status === "rented" ||
-        status.includes("predan") ||
-        status.includes("prenajat") ||
-        status.includes("prenajm") ||
-        status.includes("sprostredkov") ||
-        status.includes("zrealizov") ||
-        tags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("ZREALIZOVANÉ") || t.includes("PRENAJATÉ") || t.includes("V PRENÁJME")) ||
-        title.includes("[PREDANÉ]") ||
-        title.includes("[SPROSTREDKOVANÉ]") ||
-        title.includes("[PRENAJATÉ]") ||
-        title.includes("[V PRENÁJME]")
-    ) {
-        return "sold";
-    }
-    
-    // 2. Rezervované
-    if (
-        prop.isReserved === true ||
-        status === "reserved" ||
-        status.includes("rezerv") ||
-        tags.some(t => t.includes("REZERVOVANÉ")) ||
-        title.includes("[REZERVOVANÉ]")
-    ) {
-        return "reserved";
-    }
-    
-    // 3. Novinky / Na predaj (aktívne, voľné ponuky)
+    if (isPropertySoldOrCompleted(prop)) return "sold";
+    if (isPropertyReserved(prop)) return "reserved";
     return "active";
 }
 
@@ -456,9 +497,29 @@ function createPropertyCardElement(prop) {
     // Dynamické priradenie správneho makléra (Horvát pre Soľník, Duda pre ostatné atď.)
     const agent = getAgentForProperty(prop);
     
-    // Vytvorenie odznakov (vynechanie štítku REALSOFT)
+    // Vytvorenie odznakov (vynechanie štítku REALSOFT a čistenie pre ukončené/rezervované obchody)
     let badgesHtml = "";
-    const cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
+    let cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
+
+    if (grp === "sold") {
+        // Pre kategóriu Sprostredkované odstránime zavádzajúci štítok "PREDAJ" a pridáme zelené štítky
+        cleanTags = cleanTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        const isRent = String(prop.deal).includes("prenaj") || /prenaj|n[aá]jm/i.test(`${prop.title || ""} ${prop.status || ""}`);
+        const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
+        if (!cleanTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) {
+            cleanTags.unshift("SPROSTREDKOVANÉ");
+        }
+        if (!cleanTags.some(t => String(t).toUpperCase().includes("PREDANÉ") || String(t).toUpperCase().includes("PRENAJATÉ"))) {
+            cleanTags.unshift(statusTag);
+        }
+    } else if (grp === "reserved") {
+        // Pre kategóriu Rezervované odstránime štítok "PREDAJ" a zabezpečíme červený štítok "REZERVOVANÉ"
+        cleanTags = cleanTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        if (!cleanTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) {
+            cleanTags.unshift("REZERVOVANÉ");
+        }
+    }
+
     cleanTags.forEach(tag => {
         let badgeClass = "badge-dark";
         if (tag.includes("REZERVOVANÉ")) badgeClass = "badge-red";

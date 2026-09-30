@@ -145,16 +145,24 @@ function normalizePropertyType(value?: string): PropertyType {
 /**
  * 5. Normalizácia stavu ponuky
  */
-function normalizeStatus(value?: string, isActive?: boolean): PropertyStatus {
-  if (!value && isActive === false) return 'inactive';
-  if (!value) return 'active';
-
-  const val = value.toLowerCase().trim();
-  if (val.includes('rezerv') || val === 'reserved') return 'reserved';
-  if (val.includes('predan') || val.includes('prenajat') || val.includes('prenajm') || val === 'sold' || val === 'rented' || val.includes('sprostredkov')) {
+function normalizeStatus(value?: string, isActive?: boolean, title?: string): PropertyStatus {
+  const combined = `${value || ''} ${title || ''}`.toLowerCase().trim();
+  if (
+    combined.includes('predan') ||
+    combined.includes('prenajat') ||
+    combined.includes('prenajm') ||
+    combined.includes('v nájme') ||
+    combined.includes('v najme') ||
+    combined.includes('sold') ||
+    combined.includes('rented') ||
+    combined.includes('sprostredkov')
+  ) {
     return 'sold';
   }
-  if (isActive === false || val.includes('zmazan') || val.includes('neaktiv') || val === 'deleted' || val === 'inactive') {
+  if (combined.includes('rezerv') || combined.includes('reserved')) {
+    return 'reserved';
+  }
+  if (isActive === false || combined.includes('zmazan') || combined.includes('neaktiv') || combined.includes('deleted') || combined.includes('inactive')) {
     return 'inactive';
   }
 
@@ -275,7 +283,7 @@ export function normalizePropertyData(raw: RealsoftPropertyData): UpsertProperty
     currency,
     transactionType: normalizeTransactionType(raw.transaction_type || raw.deal_type),
     propertyType: normalizePropertyType(raw.property_type || raw.category),
-    status: normalizeStatus(raw.status, raw.is_active),
+    status: normalizeStatus(raw.status, raw.is_active, raw.title || raw.name),
     location: {
       city,
       district,

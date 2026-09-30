@@ -333,21 +333,53 @@ async function fetchBlobsProperties(storeInfo) {
       const safeTags = Array.isArray(p.tags)
         ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
         : [p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
-      const statusVal = p.status || (
-        p.isReserved ? "reserved" : (
-          safeTags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("PRENAJATÉ") || t.includes("V PRENÁJME")) ||
-          String(p.title || "").includes("[PREDANÉ]") ||
-          String(p.title || "").includes("[SPROSTREDKOVANÉ]")
-            ? "sold"
-            : "active"
-        )
-      );
+      const titleText = `${p.title || ""} ${p.shortTitle || ""} ${p.name || ""}`.toLowerCase();
+      const statusText = `${p.status || ""} ${p.substatus || ""} ${p.stav || ""}`.toLowerCase();
+      const tagsText = safeTags.join(" ").toLowerCase();
+      const combined = `${titleText} ${statusText} ${tagsText}`;
+
+      const soldRegex = /\b(predan[eéyýaá]|sprostredkovan[eéyýaá]|prenajat[eéyýaá]|sold|rented|zrealizovan[eéyýaá])\b|predan[eéyýaá][_\s\-]|sprostredkovan[eéyýaá][_\s\-]|prenajat[eéyýaá][_\s\-]|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en/i;
+      const reservedRegex = /\b(rezervovan[eéyýaá]|reserved)\b|rezervovan[eéyýaá][_\s\-]/i;
+
+      let statusVal = "active";
+      let isReserved = false;
+
+      if (
+        soldRegex.test(combined) ||
+        p.status === "sold" ||
+        p.status === "rented" ||
+        Number(p.status) === 4 ||
+        p.isSold === true
+      ) {
+        statusVal = "sold";
+        isReserved = false;
+      } else if (
+        reservedRegex.test(combined) ||
+        p.isReserved === true ||
+        p.status === "reserved" ||
+        Number(p.status) === 3
+      ) {
+        statusVal = "reserved";
+        isReserved = true;
+      }
+
+      let finalTags = [...safeTags];
+      if (statusVal === "sold") {
+        finalTags = finalTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        const isRent = combined.includes("prenaj") || combined.includes("nájm") || combined.includes("najm") || p.deal === "prenajom";
+        const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
+        if (!finalTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) finalTags.unshift("SPROSTREDKOVANÉ");
+        if (!finalTags.some(t => String(t).toUpperCase().includes("PREDANÉ") || String(t).toUpperCase().includes("PRENAJATÉ"))) finalTags.unshift(statusTag);
+      } else if (statusVal === "reserved") {
+        finalTags = finalTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        if (!finalTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) finalTags.unshift("REZERVOVANÉ");
+      }
 
       return {
         ...p,
-        tags: safeTags,
+        tags: finalTags,
         status: statusVal,
-        isReserved: Boolean(p.isReserved || statusVal === "reserved"),
+        isReserved: isReserved,
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage]
       };
