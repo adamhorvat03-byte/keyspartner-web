@@ -1038,12 +1038,8 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         substatus: statusInfo.substatus,
         isReserved: statusInfo.isReserved,
         isSold: statusInfo.isSold,
-        agentId: raw.agentId || raw.agent_id || 1,
-        agent: raw.agent || raw.broker || raw.makler || {
-          name: "Peter DUDA",
-          phone: "+421 907 441 405",
-          email: "peter_duda@keyspartners.sk"
-        },
+        agentId: raw.agentId || raw.agent_id || null,
+        agent: raw.agent || raw.broker || raw.makler || null,
         desc: raw.description || raw.desc || raw.popis || raw.text || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
         technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || {
           "Inžinierske siete": raw.utilities || "Voda, elektrina, plyn, kanalizácia",

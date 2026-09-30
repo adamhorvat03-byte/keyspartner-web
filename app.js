@@ -590,9 +590,10 @@ function createPropertyCardElement(prop) {
         <div class="card-img-wrapper">
             <div class="card-badges">${badgesHtml}</div>
             <img src="${safeImg}" alt="${prop.title}" loading="lazy" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
+            ${agent ? `
             <div class="card-agent-badge" title="Zodpovedný maklér: ${agent.name}">
                 <img src="${agent.image}" alt="${agent.name}" class="card-agent-img">
-            </div>
+            </div>` : ''}
             <div class="card-price-tag">${priceFormatted}</div>
         </div>
         <div class="card-body">
@@ -889,11 +890,11 @@ function initScrollReveal() {
 
 // --- Získanie správneho makléra pre nehnuteľnosť (podľa dát z Realsoftu) ---
 function getAgentForProperty(prop) {
+    if (!prop) return null;
+
     const duda = AGENTS.find(a => a.name.toLowerCase().includes("duda")) || AGENTS[1];
     const horvat = AGENTS.find(a => a.name.toLowerCase().includes("horv")) || AGENTS[0];
     const pella = AGENTS.find(a => a.name.toLowerCase().includes("pella")) || AGENTS[2];
-
-    if (!prop) return duda;
 
     // 1. Zistiť meno a kontakt makléra z objektu alebo reťazca
     let rawAgent = prop.agent || prop.broker || prop.makler;
@@ -902,24 +903,40 @@ function getAgentForProperty(prop) {
     let agentEmail = "";
 
     if (typeof rawAgent === "string") {
-        agentName = rawAgent;
+        agentName = rawAgent.trim();
     } else if (rawAgent && typeof rawAgent === "object") {
-        agentName = rawAgent.name || rawAgent.fullName || rawAgent.full_name || rawAgent.meno || "";
-        agentPhone = rawAgent.phone || rawAgent.telefon || rawAgent.mobil || "";
-        agentEmail = rawAgent.email || rawAgent.mail || "";
+        agentName = String(rawAgent.name || rawAgent.fullName || rawAgent.full_name || rawAgent.meno || "").trim();
+        agentPhone = String(rawAgent.phone || rawAgent.telefon || rawAgent.mobil || "").trim();
+        agentEmail = String(rawAgent.email || rawAgent.mail || "").trim();
     }
 
-    const agentIdStr = String(prop.agentId || prop.agent_id || "");
+    const agentIdStr = String(prop.agentId || prop.agent_id || "").trim();
     const titleStr = String(prop.title || "").toLowerCase();
     const locationStr = String(prop.location || "").toLowerCase();
     const descStr = String(prop.desc || "").toLowerCase();
+    const agentNameLower = agentName.toLowerCase();
+
+    // Staré Realsoft ID 2869562781 zodpovedá historickým/neznámym maklérom bez overenej identity.
+    // Tieto zákazky nesmú mať priradeného žiadneho makléra (odstránenie falošného fallbacku na Petra Dudu).
+    if (agentIdStr === "2869562781") {
+        if (descStr.includes("branislav horvát") || descStr.includes("branislav horvat") || descStr.includes("777 001")) {
+            return { ...horvat, phone: agentPhone || horvat.phone, email: agentEmail || horvat.email };
+        }
+        if (descStr.includes("peter pella")) {
+            return { ...pella, phone: agentPhone || pella.phone, email: agentEmail || pella.email };
+        }
+        if (descStr.includes("peter duda") || descStr.includes("441 405")) {
+            return { ...duda, phone: agentPhone || duda.phone, email: agentEmail || duda.email };
+        }
+        return null;
+    }
 
     // 2. Branislav Horvát:
-    // Dom v obci Soľník predáva výhradne Branislav Horvát
+    // Realsoft ID 2739883856, interné ID 2, obec Soľník, alebo priame overené meno v objekte / popise
     const isHorvat = 
-        agentName.toLowerCase().includes("horv") ||
         agentIdStr === "2739883856" ||
         agentIdStr === "2" ||
+        agentNameLower.includes("horv") ||
         titleStr.includes("soľník") ||
         titleStr.includes("solnik") ||
         locationStr.includes("soľník") ||
@@ -937,10 +954,11 @@ function getAgentForProperty(prop) {
     }
 
     // 3. JUDr. Peter Pella:
+    // Realsoft ID 2742504158, interné ID 3, alebo priame overené meno v objekte / popise
     const isPella = 
-        agentName.toLowerCase().includes("pella") ||
         agentIdStr === "2742504158" ||
         agentIdStr === "3" ||
+        agentNameLower.includes("pella") ||
         descStr.includes("peter pella");
 
     if (isPella) {
@@ -951,12 +969,25 @@ function getAgentForProperty(prop) {
         };
     }
 
-    // 4. Všetky ostatné nehnuteľnosti predáva Peter Duda (predvolený maklér)
-    return {
-        ...duda,
-        phone: agentPhone || duda.phone,
-        email: agentEmail || duda.email
-    };
+    // 4. Peter Duda:
+    // Realsoft ID 1162803367, interné ID 1 (pre predvolené ponuky KP), alebo priame overené meno / kontakt
+    const isDuda = 
+        agentIdStr === "1162803367" ||
+        agentIdStr === "1" ||
+        agentNameLower.includes("duda") ||
+        descStr.includes("peter duda") ||
+        descStr.includes("441 405");
+
+    if (isDuda) {
+        return {
+            ...duda,
+            phone: agentPhone || duda.phone,
+            email: agentEmail || duda.email
+        };
+    }
+
+    // 5. Ak maklér nie je s istotou overený z dát API, NEPRIRAĎUJEME žiadneho makléra (zrušený univerzálny fallback)
+    return null;
 }
 
 // --- Formátovanie textu popisu nehnuteľnosti z API do štruktúrovaného HTML ---
@@ -1192,6 +1223,7 @@ function openPropertyModal(id) {
                     ${tourButtonHtml}
                 </div>
                 
+                ${agent ? `
                 <div class="modal-agent-card">
                     <h4>Vzťahový manažér</h4>
                     <div class="modal-agent-info">
@@ -1218,7 +1250,7 @@ function openPropertyModal(id) {
                             <input type="email" id="modalClientEmail" placeholder="Váš e-mail" style="padding: 8px 12px; font-size: 0.9rem;">
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
-                            <textarea id="modalClientMsg" rows="2" style="width: 100%; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); padding: 8px 12px; font-size: 0.85rem;" placeholder="Správa pre makléra">Dobrý deň, mám záujem o obhliadku nehnuteľnosti ${prop.title} (ID: ${prop.externalId || prop.id}).</textarea>
+                            <textarea id="modalClientMsg" rows="2" style="width: 100%; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); padding: 8px 12px; font-size: 0.85rem;" placeholder="Správa pre makléra">Dobrý deň, mám záujem o informácie k nehnuteľnosti ${prop.title} (ID: ${prop.externalId || prop.id}).</textarea>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block" style="padding: 10px; font-size: 0.9rem;">
                             <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Mám záujem o obhliadku
@@ -1227,7 +1259,45 @@ function openPropertyModal(id) {
                     <div id="modalFormSuccess" style="display: none; text-align: center; color: var(--success); font-weight: 600; margin-top: 12px; font-size: 0.9rem;">
                         <i class="fa-solid fa-circle-check"></i> Ďakujeme! Vaša požiadavka bola odoslaná maklérovi.
                     </div>
-                </div>
+                </div>` : `
+                <div class="modal-agent-card">
+                    <h4>Centrála spoločnosti</h4>
+                    <div class="modal-agent-info">
+                        <div class="modal-agent-avatar" style="display:flex;align-items:center;justify-content:center;background:rgba(212,175,55,0.15);border:2px solid var(--brand-yellow);border-radius:50%;color:var(--brand-yellow);font-size:1.3rem;">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                        <div>
+                            <div class="modal-agent-name">KEYS PARTNERS a.s.</div>
+                            <div class="modal-agent-role">Obchodné oddelenie</div>
+                        </div>
+                    </div>
+                    <div class="modal-agent-contact">
+                        <a href="tel:+421905785951"><i class="fa-solid fa-phone"></i> +421 905 785 951</a>
+                        <a href="mailto:info@keyspartners.sk"><i class="fa-solid fa-envelope"></i> info@keyspartners.sk</a>
+                    </div>
+                    
+                    <form id="modalContactForm" style="margin-top: 20px;">
+                        <input type="hidden" name="propId" value="${prop.id}">
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <input type="text" id="modalClientName" placeholder="Vaše meno a priezvisko *" required style="padding: 8px 12px; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <input type="tel" id="modalClientPhone" placeholder="Telefónne číslo *" required style="padding: 8px 12px; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <input type="email" id="modalClientEmail" placeholder="Váš e-mail" style="padding: 8px 12px; font-size: 0.9rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <textarea id="modalClientMsg" rows="2" style="width: 100%; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); padding: 8px 12px; font-size: 0.85rem;" placeholder="Správa do centrály">Dobrý deň, mám záujem o informácie k nehnuteľnosti ${prop.title} (ID: ${prop.externalId || prop.id}).</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" style="padding: 10px; font-size: 0.9rem;">
+                            <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Odoslať dopyt
+                        </button>
+                    </form>
+                    <div id="modalFormSuccess" style="display: none; text-align: center; color: var(--success); font-weight: 600; margin-top: 12px; font-size: 0.9rem;">
+                        <i class="fa-solid fa-circle-check"></i> Ďakujeme! Vaša požiadavka bola odoslaná nášmu tímu.
+                    </div>
+                </div>`}
             </div>
         </div>
     `;

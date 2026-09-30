@@ -55,9 +55,23 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
 
   const isSolnik = (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('soľník') ||
                    (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('solnik');
-  const isPella = (property.agent?.name || '').toLowerCase().includes('pella');
-  const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : (isPella ? 'JUDr. Peter PELLA' : 'Peter DUDA'));
-  const agentImage = isSolnik ? 'brano.jpg' : (isPella ? 'pella.jpg' : 'duda.jpg');
+  const rawAgentName = property.agent?.name || '';
+  const isPella = rawAgentName.toLowerCase().includes('pella');
+  const isHorvat = isSolnik || rawAgentName.toLowerCase().includes('horv');
+  const isDuda = rawAgentName.toLowerCase().includes('duda');
+
+  let agentName = '';
+  let agentImage = '';
+  if (isHorvat) {
+    agentName = 'Ing. Branislav HORVÁT';
+    agentImage = 'brano.jpg';
+  } else if (isPella) {
+    agentName = 'JUDr. Peter PELLA';
+    agentImage = 'pella.jpg';
+  } else if (isDuda) {
+    agentName = 'Peter DUDA';
+    agentImage = 'duda.jpg';
+  }
 
   return (
     <div
@@ -104,17 +118,19 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
           </span>
         </div>
 
-        {/* Avatar makléra */}
-        <div
-          className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-slate-950 shadow-md transition-transform hover:scale-110"
-          title={`Zodpovedný maklér: ${agentName}`}
-        >
-          <img
-            src={agentImage}
-            alt={agentName}
-            className="h-full w-full object-cover object-[center_15%]"
-          />
-        </div>
+        {/* Avatar makléra - zobrazuje sa len pri overenom priradenom maklérovi */}
+        {agentName && agentImage ? (
+          <div
+            className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-slate-950 shadow-md transition-transform hover:scale-110"
+            title={`Zodpovedný maklér: ${agentName}`}
+          >
+            <img
+              src={agentImage}
+              alt={agentName}
+              className="h-full w-full object-cover object-[center_15%]"
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Telo karty */}

@@ -375,8 +375,20 @@ async function fetchBlobsProperties(storeInfo) {
         if (!finalTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) finalTags.unshift("REZERVOVANÉ");
       }
 
+      const agentIdStr = String(p.agentId || p.agent_id || "").trim();
+      let cleanAgent = p.agent || p.broker || p.makler || null;
+      let cleanAgentId = p.agentId || p.agent_id || null;
+
+      // Odstránenie generického fallbacku Peter Duda pre historické/neznáme zákazky
+      if (agentIdStr === "2869562781") {
+        cleanAgent = null;
+        cleanAgentId = null;
+      }
+
       return {
         ...p,
+        agent: cleanAgent,
+        agentId: cleanAgentId,
         tags: finalTags,
         status: statusVal,
         isReserved: isReserved,

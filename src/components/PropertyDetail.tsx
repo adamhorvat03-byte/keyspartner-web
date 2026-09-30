@@ -292,11 +292,38 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
             {(() => {
               const isSolnik = (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('soľník') ||
                                (property.title + ' ' + (property.location?.city || '')).toLowerCase().includes('solnik');
-              const isPella = (property.agent?.name || '').toLowerCase().includes('pella');
-              const agentName = property.agent?.name || (isSolnik ? 'Ing. Branislav HORVÁT' : (isPella ? 'JUDr. Peter PELLA' : 'Peter DUDA'));
-              const agentRole = isSolnik ? 'Partner / Realitný maklér' : (isPella ? 'Predseda dozornej rady / Realitný maklér' : 'Vzťahový riaditeľ / Realitný maklér');
-              const agentPhone = property.agent?.phone || (isSolnik ? '+421 905 785 951' : (isPella ? '+421 917 817 207' : '+421 907 441 405'));
-              const agentEmail = property.agent?.email || (isSolnik ? 'branislav_horvat@keyspartners.sk' : (isPella ? 'peter_pella@keyspartners.sk' : 'peter_duda@keyspartners.sk'));
+              const rawAgentName = property.agent?.name || '';
+              const isPella = rawAgentName.toLowerCase().includes('pella');
+              const isHorvat = isSolnik || rawAgentName.toLowerCase().includes('horv');
+              const isDuda = rawAgentName.toLowerCase().includes('duda');
+
+              let agentName = '';
+              let agentRole = '';
+              let agentPhone = '';
+              let agentEmail = '';
+
+              if (isHorvat) {
+                agentName = 'Ing. Branislav HORVÁT';
+                agentRole = 'Realitný maklér / Partner';
+                agentPhone = property.agent?.phone || '+421 905 785 951';
+                agentEmail = property.agent?.email || 'branislav_horvat@keyspartners.sk';
+              } else if (isPella) {
+                agentName = 'JUDr. Peter PELLA';
+                agentRole = 'Realitný maklér';
+                agentPhone = property.agent?.phone || '+421 917 817 207';
+                agentEmail = property.agent?.email || 'peter_pella@keyspartners.sk';
+              } else if (isDuda) {
+                agentName = 'Peter DUDA';
+                agentRole = 'Realitný maklér / Vzťahový poradca';
+                agentPhone = property.agent?.phone || '+421 907 441 405';
+                agentEmail = property.agent?.email || 'peter_duda@keyspartners.sk';
+              } else {
+                agentName = 'KEYS PARTNERS a.s.';
+                agentRole = 'Centrálne obchodné oddelenie';
+                agentPhone = '+421 905 785 951';
+                agentEmail = 'info@keyspartners.sk';
+              }
+
               const telHref = agentPhone.startsWith('+') ? agentPhone.replace(/\s+/g, '') : '+421' + agentPhone.replace(/^0/, '').replace(/\s+/g, '');
 
               return (
