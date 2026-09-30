@@ -875,6 +875,134 @@ img {
     gap: 32px;
 }
 
+/* ==========================================================================
+   CAROUSEL / SLIDER PRE 3 SEKCIE NEHNUTEĽNOSTÍ
+   ========================================================================== */
+.portfolio-carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.portfolio-carousel-track {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 12px 4px 24px 4px;
+}
+
+.portfolio-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+/* Vždy max 3 karty vedľa seba na desktope */
+.portfolio-carousel-track > .listing-card {
+    scroll-snap-align: start;
+    flex: 0 0 calc((100% - 48px) / 3);
+    min-width: calc((100% - 48px) / 3);
+    max-width: calc((100% - 48px) / 3);
+    box-sizing: border-box;
+}
+
+/* Navigačná šípka (umiestnená vedľa tretej nehnuteľnosti na pravej strane) */
+.carousel-nav-btn {
+    position: absolute;
+    top: calc(50% - 6px);
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(11, 16, 32, 0.94);
+    border: 1.5px solid var(--brand-yellow);
+    color: var(--brand-yellow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 16px rgba(223, 186, 115, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                background-color 0.25s ease, 
+                color 0.25s ease, 
+                box-shadow 0.25s ease, 
+                opacity 0.25s ease;
+}
+
+.carousel-nav-btn:hover:not(:disabled):not(.nav-disabled) {
+    background: var(--brand-yellow);
+    color: #0b1020;
+    transform: translateY(-50%) scale(1.12);
+    box-shadow: 0 8px 25px rgba(223, 186, 115, 0.6);
+}
+
+.carousel-nav-btn:disabled,
+.carousel-nav-btn.nav-disabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+/* Šípka na pravej strane (vedľa 3. karty) */
+.carousel-next-btn {
+    right: -16px;
+}
+
+/* Šípka na ľavej strane */
+.carousel-prev-btn {
+    left: -16px;
+}
+
+/* Responzívne zobrazenie a plynulý swipe */
+@media (max-width: 1024px) {
+    .portfolio-carousel-track > .listing-card {
+        flex: 0 0 calc((100% - 20px) / 2);
+        min-width: calc((100% - 20px) / 2);
+        max-width: calc((100% - 20px) / 2);
+    }
+    .portfolio-carousel-track {
+        gap: 20px;
+    }
+    .carousel-next-btn {
+        right: -6px;
+    }
+    .carousel-prev-btn {
+        left: -6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .portfolio-carousel-track {
+        gap: 16px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+    .portfolio-carousel-track > .listing-card {
+        flex: 0 0 88%;
+        min-width: 88%;
+        max-width: 88%;
+    }
+    .carousel-nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 0.95rem;
+    }
+    .carousel-next-btn {
+        right: 4px;
+    }
+    .carousel-prev-btn {
+        left: 4px;
+    }
+}
+
 .loading-spinner {
     grid-column: 1 / -1;
     text-align: center;

@@ -154,6 +154,95 @@ const DEFAULT_PROPERTIES = [
       "Vykurovanie": "Podlahové kúrenie / vlastný termostat",
       "Parkovanie": "Vyhradené parkovacie státie v cene"
     }
+  },
+  {
+    id: 104,
+    externalId: "RS-88424",
+    title: "Slnečný stavebný pozemok v obci Fintice na Ružovej ulici",
+    shortTitle: "Stavebný pozemok, Fintice",
+    type: "pozemi",
+    deal: "predaj",
+    price: 85000,
+    area: 820,
+    rooms: null,
+    floor: null,
+    location: "Fintice, Ružová ulica",
+    image: "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["PREDAJ", "REZERVOVANÉ"],
+    status: "reserved",
+    isReserved: true,
+    agentId: 2,
+    desc: "Slnečný stavebný pozemok v obci Fintice pripravený na individuálnu výstavbu rodinného domu."
+  },
+  {
+    id: 105,
+    externalId: "RS-88425",
+    title: "Stavebný pozemok pre rodinný dom, Hanušovce nad Topľou",
+    shortTitle: "Pozemok, Hanušovce n/T",
+    type: "pozemi",
+    deal: "predaj",
+    price: 42000,
+    area: 1150,
+    rooms: null,
+    floor: null,
+    location: "Hanušovce nad Topľou",
+    image: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["SPROSTREDKOVANÉ", "PREDANÉ"],
+    status: "sold",
+    isReserved: false,
+    agentId: 2,
+    desc: "Úspešne sprostredkovaný stavebný pozemok v meste Hanušovce nad Topľou."
+  },
+  {
+    id: 107,
+    externalId: "RS-88427",
+    title: "Moderný 4-izbový rodinný dom so záhradou, Prešov - Šidlovec",
+    shortTitle: "4-izbový dom, Šidlovec",
+    type: "dom",
+    deal: "predaj",
+    price: 265000,
+    area: 145,
+    rooms: 4,
+    floor: null,
+    location: "Prešov, Šidlovec",
+    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["PREDAJ", "REZERVOVANÉ"],
+    status: "reserved",
+    isReserved: true,
+    agentId: 1,
+    desc: "Exkluzívny rodinný dom v tichej a vyhľadávanej lokalite Prešov - Šidlovec. Nehnuteľnosť je aktuálne v štádiu rezervácie."
+  },
+  {
+    id: 108,
+    externalId: "RS-88428",
+    title: "Zrekonštruovaný 2-izbový byt s loggiou, Solivar (Prenajaté)",
+    shortTitle: "2-izbový byt, Solivar",
+    type: "byt",
+    deal: "prenajom",
+    price: 550,
+    area: 58,
+    rooms: 2,
+    floor: "3/6",
+    location: "Prešov, Solivar",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["SPROSTREDKOVANÉ", "PRENAJATÉ", "V PRENÁJME"],
+    status: "sold",
+    isReserved: false,
+    agentId: 2,
+    desc: "Úspešne sprostredkovaný prenájom kompletne zrekonštruovaného 2-izbového bytu v Prešove na Solivare."
   }
 ];
 
@@ -244,9 +333,21 @@ async function fetchBlobsProperties(storeInfo) {
       const safeTags = Array.isArray(p.tags)
         ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
         : [p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
+      const statusVal = p.status || (
+        p.isReserved ? "reserved" : (
+          safeTags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("PRENAJATÉ") || t.includes("V PRENÁJME")) ||
+          String(p.title || "").includes("[PREDANÉ]") ||
+          String(p.title || "").includes("[SPROSTREDKOVANÉ]")
+            ? "sold"
+            : "active"
+        )
+      );
+
       return {
         ...p,
         tags: safeTags,
+        status: statusVal,
+        isReserved: Boolean(p.isReserved || statusVal === "reserved"),
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage]
       };

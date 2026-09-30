@@ -188,6 +188,63 @@ let PROPERTIES = [
             "Parkovanie": "Vyhradené parkovacie státie v cene",
             "Energetický certifikát": "Trieda A"
         }
+    },
+    {
+        id: 107,
+        externalId: "RS-88427",
+        title: "Moderný 4-izbový rodinný dom so záhradou, Prešov - Šidlovec",
+        shortTitle: "4-izbový dom, Šidlovec",
+        type: "dom",
+        deal: "predaj",
+        price: 265000,
+        area: 145,
+        rooms: 4,
+        floor: null,
+        location: "Prešov, Šidlovec",
+        image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+        images: [
+            "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+        ],
+        tags: ["PREDAJ", "REZERVOVANÉ"],
+        status: "reserved",
+        isReserved: true,
+        agentId: 1,
+        desc: "Exkluzívny rodinný dom v tichej a vyhľadávanej lokalite Prešov - Šidlovec. Nehnuteľnosť je aktuálne v štádiu rezervácie.",
+        technicalSpecs: {
+            "Inžinierske siete": "Voda, elektrina, plyn, kanalizácia, optika",
+            "Stav objektu": "Novostavba",
+            "Konštrukcia": "Tehla / zateplenie",
+            "Energetický certifikát": "Trieda A"
+        }
+    },
+    {
+        id: 108,
+        externalId: "RS-88428",
+        title: "Zrekonštruovaný 2-izbový byt s loggiou, Solivar (Prenajaté)",
+        shortTitle: "2-izbový byt, Solivar",
+        type: "byt",
+        deal: "prenajom",
+        price: 550,
+        area: 58,
+        rooms: 2,
+        floor: "3/6",
+        location: "Prešov, Solivar",
+        image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+        images: [
+            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+        ],
+        tags: ["SPROSTREDKOVANÉ", "PRENAJATÉ", "V PRENÁJME"],
+        status: "sold",
+        isReserved: false,
+        agentId: 2,
+        desc: "Úspešne sprostredkovaný prenájom kompletne zrekonštruovaného 2-izbového bytu v Prešove na Solivare.",
+        technicalSpecs: {
+            "Inžinierske siete": "Voda, elektrina, optický internet",
+            "Vykurovanie": "Ústredné diaľkové",
+            "Stav objektu": "Kompletná rekonštrukcia",
+            "Balkón / Loggia": "Zasklená loggia"
+        }
     }
 ];
 
@@ -355,16 +412,20 @@ function getPropertyStatusGroup(prop) {
     const tags = Array.isArray(prop.tags) ? prop.tags.map(t => String(t).toUpperCase()) : [];
     const title = String(prop.title || "").toUpperCase();
     
-    // 1. Sprostredkované (predané / prenajaté / zrealizované)
+    // 1. Sprostredkované (ukončené transakcie: predané, prenajaté, v prenájme, zrealizované)
     if (
         status === "sold" ||
+        status === "rented" ||
         status.includes("predan") ||
         status.includes("prenajat") ||
+        status.includes("prenajm") ||
         status.includes("sprostredkov") ||
         status.includes("zrealizov") ||
-        tags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("ZREALIZOVANÉ") || t.includes("PRENAJATÉ")) ||
+        tags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("ZREALIZOVANÉ") || t.includes("PRENAJATÉ") || t.includes("V PRENÁJME")) ||
         title.includes("[PREDANÉ]") ||
-        title.includes("[SPROSTREDKOVANÉ]")
+        title.includes("[SPROSTREDKOVANÉ]") ||
+        title.includes("[PRENAJATÉ]") ||
+        title.includes("[V PRENÁJME]")
     ) {
         return "sold";
     }
@@ -387,7 +448,9 @@ function getPropertyStatusGroup(prop) {
 // --- Vytvorenie elementu karty nehnuteľnosti vrátane avatara makléra ---
 function createPropertyCardElement(prop) {
     const card = document.createElement("div");
-    card.className = `listing-card ${prop.isReserved ? "reserved" : ""}`;
+    const grp = getPropertyStatusGroup(prop);
+    const cardStatusClass = grp === "reserved" ? "reserved" : (grp === "sold" ? "sold" : "");
+    card.className = `listing-card ${cardStatusClass}`;
     card.setAttribute("data-id", prop.id);
     
     // Dynamické priradenie správneho makléra (Horvát pre Soľník, Duda pre ostatné atď.)
@@ -399,7 +462,7 @@ function createPropertyCardElement(prop) {
     cleanTags.forEach(tag => {
         let badgeClass = "badge-dark";
         if (tag.includes("REZERVOVANÉ")) badgeClass = "badge-red";
-        if (tag.includes("SPROSTREDKOVANÉ") || tag.includes("PREDANÉ")) badgeClass = "badge-green";
+        if (tag.includes("SPROSTREDKOVANÉ") || tag.includes("PREDANÉ") || tag.includes("PRENAJATÉ") || tag.includes("V PRENÁJME")) badgeClass = "badge-green";
         if (tag.includes("3D PREHLIADKA") || tag.includes("VOĽNÝ IHNEĎ") || tag.includes("NOVINKA")) badgeClass = "badge-yellow";
         badgesHtml += `<span class="badge ${badgeClass}">${tag}</span>`;
     });
@@ -604,12 +667,99 @@ function renderListings() {
         `;
 
         if (group.items.length > 0) {
-            const gridEl = document.createElement("div");
-            gridEl.className = "listings-grid";
+            const carouselWrapper = document.createElement("div");
+            carouselWrapper.className = "portfolio-carousel-wrapper";
+
+            const prevBtn = document.createElement("button");
+            prevBtn.type = "button";
+            prevBtn.className = "carousel-nav-btn carousel-prev-btn";
+            prevBtn.setAttribute("aria-label", "Predchádzajúca ponuka");
+            prevBtn.setAttribute("title", "Predchádzajúca ponuka");
+            prevBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
+
+            const nextBtn = document.createElement("button");
+            nextBtn.type = "button";
+            nextBtn.className = "carousel-nav-btn carousel-next-btn";
+            nextBtn.setAttribute("aria-label", "Ďalšia ponuka");
+            nextBtn.setAttribute("title", "Ďalšia ponuka");
+            nextBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
+
+            const trackEl = document.createElement("div");
+            trackEl.className = "portfolio-carousel-track";
+
             group.items.forEach(prop => {
-                gridEl.appendChild(createPropertyCardElement(prop));
+                trackEl.appendChild(createPropertyCardElement(prop));
             });
-            sectionEl.appendChild(gridEl);
+
+            // Výpočet šírky posunu (1 karta + medzera)
+            const getSlideStep = () => {
+                const firstCard = trackEl.querySelector(".listing-card");
+                if (firstCard) {
+                    const cardWidth = firstCard.getBoundingClientRect().width;
+                    const style = window.getComputedStyle(trackEl);
+                    const gap = parseFloat(style.columnGap || style.gap) || 24;
+                    return cardWidth + gap;
+                }
+                return 380;
+            };
+
+            // Dynamická aktualizácia stavu navigačných šípok
+            const updateArrows = () => {
+                const maxScroll = trackEl.scrollWidth - trackEl.clientWidth;
+                if (maxScroll <= 8) {
+                    prevBtn.style.display = "none";
+                    nextBtn.style.display = "none";
+                    return;
+                }
+                prevBtn.style.display = "flex";
+                nextBtn.style.display = "flex";
+
+                if (trackEl.scrollLeft <= 10) {
+                    prevBtn.classList.add("nav-disabled");
+                } else {
+                    prevBtn.classList.remove("nav-disabled");
+                }
+
+                if (trackEl.scrollLeft >= maxScroll - 10) {
+                    nextBtn.classList.add("nav-at-end");
+                } else {
+                    nextBtn.classList.remove("nav-at-end");
+                }
+            };
+
+            nextBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const step = getSlideStep();
+                const maxScroll = trackEl.scrollWidth - trackEl.clientWidth;
+                if (trackEl.scrollLeft >= maxScroll - 15) {
+                    trackEl.scrollTo({ left: 0, behavior: "smooth" });
+                } else {
+                    trackEl.scrollBy({ left: step, behavior: "smooth" });
+                }
+            });
+
+            prevBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const step = getSlideStep();
+                if (trackEl.scrollLeft <= 15) {
+                    trackEl.scrollTo({ left: trackEl.scrollWidth - trackEl.clientWidth, behavior: "smooth" });
+                } else {
+                    trackEl.scrollBy({ left: -step, behavior: "smooth" });
+                }
+            });
+
+            trackEl.addEventListener("scroll", updateArrows, { passive: true });
+            window.addEventListener("resize", updateArrows, { passive: true });
+
+            carouselWrapper.appendChild(prevBtn);
+            carouselWrapper.appendChild(trackEl);
+            carouselWrapper.appendChild(nextBtn);
+            sectionEl.appendChild(carouselWrapper);
+
+            // Úvodná kontrola viditeľnosti šípok
+            setTimeout(updateArrows, 60);
         } else {
             const emptyEl = document.createElement("div");
             emptyEl.className = "portfolio-group-empty";

@@ -198,6 +198,51 @@ const DEFAULT_PROPERTIES = [
     isReserved: false,
     agentId: 2,
     desc: "Úspešne sprostredkovaný stavebný pozemok v meste Hanušovce nad Topľou."
+  },
+  {
+    id: 107,
+    externalId: "RS-88427",
+    title: "Moderný 4-izbový rodinný dom so záhradou, Prešov - Šidlovec",
+    shortTitle: "4-izbový dom, Šidlovec",
+    type: "dom",
+    deal: "predaj",
+    price: 265000,
+    area: 145,
+    rooms: 4,
+    floor: null,
+    location: "Prešov, Šidlovec",
+    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["PREDAJ", "REZERVOVANÉ"],
+    status: "reserved",
+    isReserved: true,
+    agentId: 1,
+    desc: "Exkluzívny rodinný dom v tichej a vyhľadávanej lokalite Prešov - Šidlovec. Nehnuteľnosť je aktuálne v štádiu rezervácie."
+  },
+  {
+    id: 108,
+    externalId: "RS-88428",
+    title: "Zrekonštruovaný 2-izbový byt s loggiou, Solivar (Prenajaté)",
+    shortTitle: "2-izbový byt, Solivar",
+    type: "byt",
+    deal: "prenajom",
+    price: 550,
+    area: 58,
+    rooms: 2,
+    floor: "3/6",
+    location: "Prešov, Solivar",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["SPROSTREDKOVANÉ", "PRENAJATÉ", "V PRENÁJME"],
+    status: "sold",
+    isReserved: false,
+    agentId: 2,
+    desc: "Úspešne sprostredkovaný prenájom kompletne zrekonštruovaného 2-izbového bytu v Prešove na Solivare."
   }
 ];
 
@@ -288,9 +333,21 @@ async function fetchBlobsProperties(storeInfo) {
       const safeTags = Array.isArray(p.tags)
         ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
         : [p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
+      const statusVal = p.status || (
+        p.isReserved ? "reserved" : (
+          safeTags.some(t => t.includes("PREDANÉ") || t.includes("SPROSTREDKOVANÉ") || t.includes("PRENAJATÉ") || t.includes("V PRENÁJME")) ||
+          String(p.title || "").includes("[PREDANÉ]") ||
+          String(p.title || "").includes("[SPROSTREDKOVANÉ]")
+            ? "sold"
+            : "active"
+        )
+      );
+
       return {
         ...p,
         tags: safeTags,
+        status: statusVal,
+        isReserved: Boolean(p.isReserved || statusVal === "reserved"),
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage]
       };

@@ -146,13 +146,15 @@ function normalizePropertyType(value?: string): PropertyType {
  * 5. Normalizácia stavu ponuky
  */
 function normalizeStatus(value?: string, isActive?: boolean): PropertyStatus {
-  if (isActive === false) return 'inactive';
+  if (!value && isActive === false) return 'inactive';
   if (!value) return 'active';
 
   const val = value.toLowerCase().trim();
   if (val.includes('rezerv') || val === 'reserved') return 'reserved';
-  if (val.includes('predan') || val.includes('prenajat') || val === 'sold') return 'sold';
-  if (val.includes('zmazan') || val.includes('neaktiv') || val === 'deleted' || val === 'inactive') {
+  if (val.includes('predan') || val.includes('prenajat') || val.includes('prenajm') || val === 'sold' || val === 'rented' || val.includes('sprostredkov')) {
+    return 'sold';
+  }
+  if (isActive === false || val.includes('zmazan') || val.includes('neaktiv') || val === 'deleted' || val === 'inactive') {
     return 'inactive';
   }
 
