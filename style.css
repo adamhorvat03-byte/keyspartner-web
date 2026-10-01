@@ -2133,14 +2133,15 @@ img {
 }
 
 .modal-content {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-    width: 90%;
-    max-width: 900px;
+    background-color: #0b1020;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+    width: 92%;
+    max-width: 980px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     z-index: 2;
     transform: translateY(30px);
@@ -2153,19 +2154,19 @@ img {
 
 .modal-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    width: 40px;
-    height: 40px;
+    top: 18px;
+    right: 18px;
+    background-color: #161e31;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     z-index: 10;
     transition: var(--transition);
 }
@@ -2177,27 +2178,43 @@ img {
 }
 
 .modal-body {
-    padding: 40px;
+    padding: 32px;
+    overflow-x: hidden;
 }
 
-/* Modálny obsah */
+/* Modálny obsah - Dvojstĺpcový moderný layout */
 .modal-grid {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 32px;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.modal-main {
+    min-width: 0;
+    width: 100%;
+}
+
+.modal-sidebar {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .modal-gallery {
-    border-radius: var(--border-radius-md);
+    border-radius: 16px;
     overflow: hidden;
     position: relative;
-    height: 350px;
+    height: 360px;
+    background-color: #050813;
 }
 
 .modal-gallery img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .modal-gallery-badge {
@@ -2205,31 +2222,59 @@ img {
     top: 16px;
     left: 16px;
     z-index: 2;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 14px;
+    border-radius: 6px;
 }
 
-.modal-info h2 {
-    font-size: 1.8rem;
-    margin: 16px 0 8px;
-    line-height: 1.3;
-    color: var(--text-primary);
+.modal-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 18px;
+    gap: 12px;
+}
+
+.modal-property-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #ffffff;
+    margin: 0;
+}
+
+.modal-property-id {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .modal-location {
-    color: var(--text-secondary);
+    color: #94a3b8;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    margin-top: 8px;
     margin-bottom: 20px;
+}
+
+.modal-location i {
+    color: #cbd5e1;
 }
 
 .modal-specs-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    padding: 16px;
-    border-radius: var(--border-radius-md);
+    gap: 12px;
+    background-color: #050813;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px 14px;
+    border-radius: 14px;
     margin-bottom: 24px;
 }
 
@@ -2239,34 +2284,36 @@ img {
 
 .modal-spec-val {
     font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--brand-yellow);
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: #ffffff;
+    margin-bottom: 2px;
 }
 
 .modal-spec-lbl {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
+    font-size: 0.8rem;
+    color: #94a3b8;
     font-weight: 600;
 }
 
 .modal-desc-title {
-    font-size: 1.25rem;
-    margin-bottom: 8px;
-    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #ffffff;
 }
 
 .modal-description {
-    color: var(--text-secondary);
+    color: #cbd5e1;
     margin-bottom: 24px;
-    line-height: 1.75;
-    font-size: 0.95rem;
+    line-height: 1.7;
+    font-size: 0.92rem;
 }
 
 .modal-description p,
 .modal-description .modal-desc-p {
     margin-bottom: 14px;
-    line-height: 1.75;
+    line-height: 1.7;
 }
 
 .modal-description .modal-desc-subheading {
@@ -2287,7 +2334,7 @@ img {
     margin-bottom: 8px;
     line-height: 1.65;
     padding-left: 4px;
-    color: var(--text-secondary);
+    color: #cbd5e1;
 }
 
 .modal-description .modal-desc-list li::marker {
@@ -2295,107 +2342,245 @@ img {
 }
 
 .modal-description strong {
-    color: var(--text-primary);
+    color: #ffffff;
     font-weight: 700;
 }
 
-.modal-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
+/* Pravý bočný panel */
 .modal-price-card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    padding: 24px;
-    border-radius: var(--border-radius-md);
+    background-color: #050813;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 24px 20px;
+    border-radius: 16px;
     text-align: center;
 }
 
 .modal-price-lbl {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #94a3b8;
     margin-bottom: 4px;
 }
 
 .modal-price-val {
     font-family: var(--font-heading);
     font-weight: 800;
-    font-size: 2.2rem;
-    color: var(--text-primary);
+    font-size: 2.1rem;
+    color: #ffffff;
+    letter-spacing: -0.02em;
 }
 
 .modal-tour-btn {
-    margin-top: 16px;
+    margin-top: 18px;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition);
+}
+
+.btn-tour-active {
+    background: #d4af37;
+    color: #05080f;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-tour-active:hover {
+    background: #e5c158;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
+}
+
+.btn-tour-disabled {
+    background: #171f30;
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
 }
 
 .modal-agent-card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    padding: 24px;
-    border-radius: var(--border-radius-md);
+    background-color: #050813;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 24px 20px;
+    border-radius: 16px;
 }
 
 .modal-agent-card h4 {
     margin-bottom: 16px;
-    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .modal-agent-info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     margin-bottom: 16px;
 }
 
+.modal-agent-clickable {
+    cursor: pointer;
+    padding: 8px 10px;
+    margin: -8px -10px 10px -10px;
+    border-radius: 12px;
+    transition: var(--transition);
+}
+
+.modal-agent-clickable:hover {
+    background-color: rgba(212, 175, 55, 0.12);
+}
+
+.modal-agent-clickable:hover .modal-agent-name {
+    color: var(--brand-yellow);
+}
+
+.modal-agent-clickable:hover .modal-agent-avatar {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.45);
+}
+
 .modal-agent-avatar {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--brand-yellow);
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.modal-agent-details {
+    min-width: 0;
 }
 
 .modal-agent-name {
     font-weight: 700;
-    font-size: 1rem;
-    color: var(--text-primary);
+    font-size: 1.05rem;
+    color: #ffffff;
+    line-height: 1.25;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.modal-agent-ext-icon {
+    font-size: 0.72rem;
+    opacity: 0.65;
+    transition: opacity 0.2s ease;
+}
+
+.modal-agent-clickable:hover .modal-agent-ext-icon {
+    opacity: 1;
 }
 
 .modal-agent-role {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: var(--brand-yellow);
     font-weight: 600;
+    margin-top: 2px;
 }
 
 .modal-agent-contact {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-size: 0.95rem;
-    color: var(--text-secondary);
+    font-size: 0.92rem;
+    margin-bottom: 18px;
 }
 
+.modal-agent-contact a {
+    color: #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.modal-agent-contact a.text-gold,
 .modal-agent-contact a:hover {
     color: var(--brand-yellow);
+}
+
+.modal-compact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-compact-input {
+    width: 100%;
+    background: #0b1120;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    color: #ffffff;
+    transition: var(--transition);
+}
+
+.modal-compact-input:focus {
+    outline: none;
+    border-color: var(--brand-yellow);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.modal-compact-input::placeholder {
+    color: #64748b;
+}
+
+.btn-modal-submit {
+    width: 100%;
+    background: #d4af37;
+    color: #05080f;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 4px;
+}
+
+.btn-modal-submit:hover {
+    background: #e5c158;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
+}
+
+.modal-form-success {
+    text-align: center;
+    color: var(--success);
+    font-weight: 600;
+    margin-top: 14px;
+    font-size: 0.9rem;
+    padding: 10px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
 }
 
 /* --- Miniatúry fotogalérie nehnuteľnosti --- */
 .modal-thumbnails {
     display: flex;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: 12px;
     overflow-x: auto;
+    max-width: 100%;
     padding-bottom: 6px;
     scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-thumb-btn {
-    width: 72px;
-    height: 52px;
-    border-radius: var(--border-radius-sm);
+    width: 70px;
+    height: 50px;
+    border-radius: 8px;
     overflow: hidden;
     border: 2px solid transparent;
     padding: 0;
@@ -2409,7 +2594,7 @@ img {
 .modal-thumb-btn.active {
     border-color: var(--brand-yellow);
     opacity: 1;
-    box-shadow: 0 0 8px rgba(181, 137, 32, 0.3);
+    box-shadow: 0 0 10px rgba(181, 137, 32, 0.4);
 }
 
 .modal-thumb-btn:hover {
@@ -2420,6 +2605,7 @@ img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 /* --- Tabuľka technických parametrov --- */
@@ -2428,15 +2614,15 @@ img {
     border-collapse: collapse;
     margin-top: 12px;
     margin-bottom: 24px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
+    background-color: #050813;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     overflow: hidden;
     font-size: 0.88rem;
 }
 
 .modal-specs-table tr {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .modal-specs-table tr:last-child {
@@ -2449,13 +2635,92 @@ img {
 
 .modal-specs-table td.spec-lbl {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #94a3b8;
     width: 40%;
 }
 
 .modal-specs-table td.spec-val {
-    color: var(--text-primary);
+    color: #ffffff;
     font-weight: 500;
+}
+
+/* --- Banner aktívneho filtra makléra --- */
+.agent-filter-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.14) 0%, rgba(11, 16, 32, 0.95) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.agent-filter-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.agent-filter-banner-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--brand-yellow);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+}
+
+.agent-filter-banner-label {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.agent-filter-banner-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.agent-filter-banner-count {
+    font-size: 0.88rem;
+    color: var(--brand-yellow);
+    font-weight: 600;
+}
+
+.btn-clear-agent-filter {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.btn-clear-agent-filter:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
 }
 
 /* ==========================================================================
@@ -2758,14 +3023,27 @@ img {
     
     .modal-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
     
     .modal-body {
-        padding: 24px;
+        padding: 20px 16px;
     }
     
     .modal-gallery {
-        height: 260px !important;
+        height: 250px !important;
+    }
+
+    .agent-filter-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .btn-clear-agent-filter {
+        width: 100%;
+        justify-content: center;
     }
     
     .footer-grid {
