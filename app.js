@@ -261,7 +261,7 @@ const AGENTS = [
     {
         id: 1,
         name: "Peter DUDA",
-        role: "Realitný maklér / Vzťahový poradca",
+        role: "Realitný maklér / Vzťahový riaditeľ",
         phone: "+421 907 441 405",
         email: "peter_duda@keyspartners.sk",
         image: "duda.jpg"
@@ -328,6 +328,11 @@ async function loadPropertiesFromApi() {
                 return p;
             });
             renderListings();
+            renderAgents();
+            if (activeFilters.agentId) {
+                const curAgent = AGENTS.find(a => String(a.id) === String(activeFilters.agentId));
+                if (curAgent) renderAgentFilterBanner(curAgent);
+            }
             console.log(`[KEYS PARTNERS] Načítané nehnuteľnosti z API (${PROPERTIES.length} položiek, zdroj: ${result.source || 'live'}).`);
         }
     } catch (err) {
@@ -526,6 +531,59 @@ function getPropertyStatusGroup(prop) {
     return "active";
 }
 
+// --- Pomocné funkcie pre bezpečné triedenie kategórií / typov nehnuteľností ---
+function isHouseProperty(item) {
+    if (!item) return false;
+    if (item.type === "dom") return true;
+    if (item.type === "byt" || item.type === "pozemi" || item.type === "pozemok" || item.type === "komercne") {
+        return false;
+    }
+    const text = cleanTextForStatusCheck(`${item.title || ""} ${item.category || ""} ${item.shortTitle || ""} ${Array.isArray(item.tags) ? item.tags.join(" ") : ""}`);
+    if (/\bpozem(?:ok|ky)?\b/i.test(text) && !/\b(?:rodinn[eéyý]|dom[yu]?|vil[aeu])\b/i.test(item.category || "")) {
+        return false;
+    }
+    return /\b(rodinny dom|rodinne domy|vila|vily|chalupa|chalupy)\b/i.test(text) || (/\bdom\b/i.test(text) && !/\bpozem(?:ok|ky)?\b/i.test(text));
+}
+
+function isFlatProperty(item) {
+    if (!item) return false;
+    if (item.type === "byt") return true;
+    if (item.type === "dom" || item.type === "pozemi" || item.type === "pozemok" || item.type === "komercne") {
+        return false;
+    }
+    const text = cleanTextForStatusCheck(`${item.title || ""} ${item.category || ""} ${item.shortTitle || ""}`);
+    return /\b(byt|byty|garsonk|apartman)\b/i.test(text);
+}
+
+function isLandProperty(item) {
+    if (!item) return false;
+    if (item.type === "pozemi" || item.type === "pozemok") return true;
+    if (item.type === "dom" || item.type === "byt" || item.type === "komercne") {
+        return false;
+    }
+    const text = cleanTextForStatusCheck(`${item.title || ""} ${item.category || ""} ${item.shortTitle || ""}`);
+    return /\b(pozemok|pozemky|ornej pody|zahrada)\b/i.test(text);
+}
+
+function isCommercialProperty(item) {
+    if (!item) return false;
+    if (item.type === "komercne") return true;
+    if (item.type === "dom" || item.type === "byt" || item.type === "pozemi" || item.type === "pozemok") {
+        return false;
+    }
+    const text = cleanTextForStatusCheck(`${item.title || ""} ${item.category || ""} ${item.shortTitle || ""}`);
+    return /\b(komerc|priestor|kancelar|sklad|hala|budova)\b/i.test(text);
+}
+
+function matchesPropertyTypeFilter(item, filterVal) {
+    if (!filterVal || filterVal === "vsetky") return true;
+    if (filterVal === "dom") return isHouseProperty(item);
+    if (filterVal === "byt") return isFlatProperty(item);
+    if (filterVal === "pozemi") return isLandProperty(item);
+    if (filterVal === "komercne") return isCommercialProperty(item);
+    return item.type === filterVal;
+}
+
 // --- Vytvorenie elementu karty nehnuteľnosti vrátane avatara makléra ---
 function createPropertyCardElement(prop) {
     const card = document.createElement("div");
@@ -671,8 +729,8 @@ function renderListings() {
             if (!propAgent || String(propAgent.id) !== String(activeFilters.agentId)) {
                 return false;
             }
-            // Zobraziť iba aktívne ponuky makléra (vylúčiť ukončené/predané obchody)
-            if (isPropertySoldOrCompleted(item)) {
+            // Zobraziť iba aktívne ponuky makléra (vylúčiť ukončené/predané obchody aj rezervované)
+            if (getPropertyStatusGroup(item) !== "active") {
                 return false;
             }
         }
@@ -683,12 +741,12 @@ function renderListings() {
         }
         
         // Filter podľa kategórie (tabs)
-        if (activeFilters.category !== "vsetky" && item.type !== activeFilters.category) {
+        if (activeFilters.category !== "vsetky" && !matchesPropertyTypeFilter(item, activeFilters.category)) {
             return false;
         }
         
         // Filter podľa typu (select z vyhľadávača)
-        if (activeFilters.propertyType !== "vsetky" && item.type !== activeFilters.propertyType) {
+        if (activeFilters.propertyType !== "vsetky" && !matchesPropertyTypeFilter(item, activeFilters.propertyType)) {
             return false;
         }
         
@@ -970,7 +1028,7 @@ function renderAgentFilterBanner(agent) {
     
     const agentProps = PROPERTIES.filter(p => {
         const a = getAgentForProperty(p);
-        return a && String(a.id) === String(agent.id) && !isPropertySoldOrCompleted(p);
+        return a && String(a.id) === String(agent.id) && getPropertyStatusGroup(p) === "active";
     });
     const count = agentProps.length;
     const countStr = count === 1 ? "1 aktívna ponuka" : (count >= 2 && count <= 4 ? `${count} aktívne ponuky` : `${count} aktívnych ponúk`);
@@ -1011,7 +1069,7 @@ function renderAgents() {
         
         const activeOffers = PROPERTIES.filter(p => {
             const a = getAgentForProperty(p);
-            return a && String(a.id) === String(agent.id) && !isPropertySoldOrCompleted(p);
+            return a && String(a.id) === String(agent.id) && getPropertyStatusGroup(p) === "active";
         }).length;
         const offersCountText = activeOffers === 1 ? "1 ponuka" : (activeOffers >= 2 && activeOffers <= 4 ? `${activeOffers} ponuky` : `${activeOffers} ponúk`);
 

@@ -314,7 +314,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onBack
                 agentEmail = property.agent?.email || 'peter_pella@keyspartners.sk';
               } else if (isDuda) {
                 agentName = 'Peter DUDA';
-                agentRole = 'Realitný maklér / Vzťahový poradca';
+                agentRole = 'Realitný maklér / Vzťahový riaditeľ';
                 agentPhone = property.agent?.phone || '+421 907 441 405';
                 agentEmail = property.agent?.email || 'peter_duda@keyspartners.sk';
               } else {
