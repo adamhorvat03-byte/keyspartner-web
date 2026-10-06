@@ -781,16 +781,32 @@ function cleanTextForStatusCheck(str) {
 }
 
 /**
- * Overenie, či má nehnuteľnosť stav "Voľný" (Dostupnosť = Voľný) v Realsoft CRM.
+ * Overenie a kategorizácia stavu nehnuteľnosti z Realsoft CRM:
  *
- * Podľa požiadavky:
- * 1. Zverejnené alebo aktualizované na webe môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný".
- * 2. Ak má nehnuteľnosť akýkoľvek iný stav (Predaný, Rezervovaný, Zrušený, Prenajatý alebo nedefinovaný "-"),
- *    musí byť automaticky odstránená z Netlify Blobs (zmazať z webu).
- * 3. Prepínače v záložke 'Zverejniť' (Vlastný web / Inzertné portály) sa úplne ignorujú.
+ * Povolené na webe (ukladajú a aktualizujú sa v Netlify Blobs):
+ * 1. "Voľný" (Novinky / Na predaj - status: 'active', substatus: 'volny')
+ * 2. "Rezervovaný" (Rezervované - status: 'reserved', substatus: 'rezervovany')
+ * 3. "Predaný" (Sprostredkované - status: 'sold', substatus: 'predane')
+ *
+ * Neaktívne stavy (automaticky sa odstraňujú z Netlify Blobs):
+ * - "Zrušený" (kód 5 / zrušená ponuka)
+ * - "Prenajatý" (kód 6 / prenajaté / v prenájme)
+ * - "-" (nedefinovaný / pomlčka / prázdny stav)
+ * - Explicitné vymazanie (action: 'delete', deleted: 1, ...)
+ *
+ * Prepínače v záložke 'Zverejniť' (Vlastný web / Inzertné portály) sa ignorujú.
  */
-function isPropertyAvailable(raw) {
-  if (!raw || typeof raw !== "object") return false;
+function getPropertyStatus(raw) {
+  if (!raw || typeof raw !== "object") {
+    return {
+      isAllowed: false,
+      status: "unknown",
+      substatus: "empty",
+      isReserved: false,
+      isSold: false,
+      reason: "empty_data"
+    };
+  }
 
   // 1. Explicitná požiadavka na vymazanie / zrušenie
   if (
@@ -805,10 +821,17 @@ function isPropertyAvailable(raw) {
     raw.status === "zmazane" ||
     raw.status === "zmazané"
   ) {
-    return false;
+    return {
+      isAllowed: false,
+      status: "deleted",
+      substatus: "zruseny",
+      isReserved: false,
+      isSold: false,
+      reason: "explicit_delete"
+    };
   }
 
-  // 2. Extrahovanie všetkých možných polí pre Dostupnosť a Stav z Realsoft payloadu
+  // 2. Extrahovanie hodnôt stavu a dostupnosti
   const statusCandidates = [
     raw.dostupnost,
     raw.dostupnosť,
@@ -822,98 +845,200 @@ function isPropertyAvailable(raw) {
     raw.deal_status,
     raw.state,
     raw.dovod_ukoncenia
-  ].filter(v => v !== undefined && v !== null && String(v).trim() !== "");
+  ].filter(v => v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "-");
 
-  // 3. Kontrola explicitných nežiaducich číselných kódov z číselníka Realsoftu
-  // 3 = Rezervovaný
-  // 4 = Predaný / Prenajatý (zrealizovaný)
-  // 5 = Zrušený / Vymazaný
-  // 6 = Prenajatý
   const numStatus = Number(raw.status !== undefined ? raw.status : (raw.dostupnost !== undefined ? raw.dostupnost : NaN));
-  if ([3, 4, 5, 6].includes(numStatus)) {
-    return false;
+
+  // Kód 5 v Realsofte = Zrušený (maže sa z Blobs)
+  if (numStatus === 5 || raw.status === "5" || raw.dostupnost === 5 || raw.dostupnost === "5") {
+    return {
+      isAllowed: false,
+      status: "deleted",
+      substatus: "zruseny",
+      isReserved: false,
+      isSold: false,
+      reason: "code_5_cancelled"
+    };
   }
 
-  // Boolean príznaky nežiaducich stavov
-  if (raw.is_sold === true || raw.sold === 1 || raw.sold === true) return false;
-  if (raw.is_reserved === true || raw.rezervovane === true || raw.reserved === 1 || raw.reserved === true) return false;
-  if (raw.is_rented === true || raw.rented === 1 || raw.rented === true) return false;
+  // Kód 6 v Realsofte = Prenajatý (maže sa z Blobs)
+  if (numStatus === 6 || raw.status === "6" || raw.dostupnost === 6 || raw.dostupnost === "6") {
+    return {
+      isAllowed: false,
+      status: "rented",
+      substatus: "prenajaty",
+      isReserved: false,
+      isSold: false,
+      reason: "code_6_rented"
+    };
+  }
 
   const combinedStatus = statusCandidates.map(v => String(v)).join(" ");
   const cleanedStatus = " " + cleanTextForStatusCheck(combinedStatus) + " ";
 
-  // Negatívne vzory: predaný, rezervovaný, zrušený, prenajatý, v nájme, zmazaný
-  const notFreeRegex = /\s(predan[eéyýaáou]?|rezervovan[eéyýaáou]?|zrusen[eéyýaáou]?|prenajat[eéyýaáou]?|zmazan[eéyýaáou]?|sold|reserved|rented|deleted|cancelled|canceled|inactive)\b/i;
-  const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
-
-  if (notFreeRegex.test(cleanedStatus) || rentPhraseRegex.test(cleanedStatus)) {
-    return false;
-  }
-
-  // Negatívna kontrola v názve nehnuteľnosti (ak je priamo v názve "PREDANÉ", "REZERVOVANÉ", "PRENAJATÉ", "ZRUŠENÉ")
-  const titleText = `${raw.title || ""} ${raw.shortTitle || ""} ${raw.name || ""} ${raw.nazov || ""} ${raw.headline || ""}`;
-  const cleanedTitle = " " + cleanTextForStatusCheck(titleText) + " ";
-  if (notFreeRegex.test(cleanedTitle) || rentPhraseRegex.test(cleanedTitle)) {
-    return false;
-  }
-
-  // Zákazka 'PREDANÝ - Stavebný pozemok TIMEA' (RS-3253858396)
-  const idStr = String(raw.id || raw.externalId || raw.external_id || "").trim();
-  if (idStr === "RS-3253858396" || idStr === "3253858396") {
-    return false;
-  }
-
-  // 4. Pozitívna kontrola: Je stav skutočne "Voľný"?
-  // Číselný kód 1 v Realsofte = Voľná / Aktívna zákazka
-  if (numStatus === 1 || raw.status === "1" || raw.dostupnost === 1 || raw.dostupnost === "1") {
-    return true;
-  }
-
-  // Textový stav: "volny", "volna", "volne", "free", "available", "aktivny", "aktivna", "active"
-  const volnyRegex = /\s(voln[eéyýaáou]?|free|available|aktivn[eéyýaáou]?|active)\b/i;
-  if (volnyRegex.test(cleanedStatus)) {
-    return true;
-  }
-
-  // Ak stav neobsahuje "Voľný" (napr. "-" pomlčka, prázdny reťazec alebo iná hodnota), nehnuteľnosť NIE JE voľná
-  return false;
-}
-
-/**
- * Normalizácia stavu nehnuteľnosti:
- * Vráti 'active' pre voľné ponuky alebo konkrétny substatus pre logovanie.
- */
-function normalizePropertyStatus(raw) {
-  const isAvailable = isPropertyAvailable(raw);
-  if (isAvailable) {
+  // Negatívna kontrola 1: Zrušený / Zmazaný
+  const cancelledRegex = /\s(zrusen[eéyýaáou]?|zmazan[eéyýaáou]?|cancelled|canceled|deleted)\b/i;
+  if (cancelledRegex.test(cleanedStatus)) {
     return {
-      status: "active",
-      substatus: "volny",
+      isAllowed: false,
+      status: "deleted",
+      substatus: "zruseny",
       isReserved: false,
-      isSold: false
+      isSold: false,
+      reason: "cancelled_text"
     };
   }
 
-  const titleText = `${raw.title || ""} ${raw.shortTitle || ""} ${raw.name || ""}`;
-  const statusStr = String(raw.dostupnost || raw.status || raw.stav || "").trim();
-  const combined = cleanTextForStatusCheck(`${titleText} ${statusStr}`);
-  
-  if (/rezervov/i.test(combined) || Number(raw.status) === 3) {
-    return { status: "reserved", substatus: "rezervovany", isReserved: true, isSold: false };
+  // Negatívna kontrola 2: Prenajatý / v prenájme (podľa požiadavky sa odstraňuje z Netlify Blobs)
+  const rentedWordRegex = /\s(prenajat[eéyýaáou]?|rented)\b/i;
+  const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
+  if (
+    raw.is_rented === true ||
+    raw.rented === 1 ||
+    raw.rented === true ||
+    rentedWordRegex.test(cleanedStatus) ||
+    rentPhraseRegex.test(cleanedStatus)
+  ) {
+    return {
+      isAllowed: false,
+      status: "rented",
+      substatus: "prenajaty",
+      isReserved: false,
+      isSold: false,
+      reason: "rented_text"
+    };
   }
-  if (/prenaj/i.test(combined)) {
-    return { status: "rented", substatus: "prenajaty", isReserved: false, isSold: true };
+
+  const titleText = `${raw.title || ""} ${raw.shortTitle || ""} ${raw.name || ""} ${raw.nazov || ""} ${raw.headline || ""}`;
+  const cleanedTitle = " " + cleanTextForStatusCheck(titleText) + " ";
+
+  // Negatívna kontrola v názve: ak je v názve explicitne uvedené "PRENAJATÉ" alebo "ZRUŠENÉ"
+  if (rentedWordRegex.test(cleanedTitle) || rentPhraseRegex.test(cleanedTitle)) {
+    return {
+      isAllowed: false,
+      status: "rented",
+      substatus: "prenajaty",
+      isReserved: false,
+      isSold: false,
+      reason: "title_rented"
+    };
   }
-  if (/zrus/i.test(combined) || Number(raw.status) === 5) {
-    return { status: "deleted", substatus: "zruseny", isReserved: false, isSold: false };
+  if (cancelledRegex.test(cleanedTitle)) {
+    return {
+      isAllowed: false,
+      status: "deleted",
+      substatus: "zruseny",
+      isReserved: false,
+      isSold: false,
+      reason: "title_cancelled"
+    };
   }
-  return { status: "sold", substatus: "predany", isReserved: false, isSold: true };
+
+  // 3. Pozitívne overenie pre 3 povolené stavy:
+
+  // A) REZERVOVANÝ (kód 3, príznak is_reserved, text "rezervovaný" v stave / názve)
+  const reservedRegex = /\s(rezervovan[eéyýaáou]?|reserved)\b/i;
+  if (
+    numStatus === 3 ||
+    raw.status === "3" ||
+    raw.dostupnost === 3 ||
+    raw.dostupnost === "3" ||
+    raw.is_reserved === true ||
+    raw.rezervovane === true ||
+    raw.reserved === 1 ||
+    raw.reserved === true ||
+    reservedRegex.test(cleanedStatus) ||
+    reservedRegex.test(cleanedTitle)
+  ) {
+    return {
+      isAllowed: true,
+      status: "reserved",
+      substatus: "rezervovany",
+      isReserved: true,
+      isSold: false,
+      reason: "reserved"
+    };
+  }
+
+  // B) PREDANÝ (kód 4, príznak is_sold, text "predaný" / "sprostredkovaný" v stave / názve)
+  const soldRegex = /\s(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|sold|zrealizovan[eéyýaáou]?)\b/i;
+  const endSalePhraseRegex = /\spredaj\s+ukoncen/i;
+  const directSoldRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|sold|zrealizovan[eéyýaáou]?|predaj\s+ukon[cč]en)/i;
+
+  const idStr = String(raw.id || raw.externalId || raw.external_id || "").trim();
+  const isTimeaPlot = idStr === "RS-3253858396" || idStr === "3253858396";
+
+  if (
+    isTimeaPlot ||
+    numStatus === 4 ||
+    raw.status === "4" ||
+    raw.dostupnost === 4 ||
+    raw.dostupnost === "4" ||
+    raw.is_sold === true ||
+    raw.sold === 1 ||
+    raw.sold === true ||
+    soldRegex.test(cleanedStatus) ||
+    soldRegex.test(cleanedTitle) ||
+    endSalePhraseRegex.test(cleanedTitle) ||
+    directSoldRegex.test(titleText)
+  ) {
+    return {
+      isAllowed: true,
+      status: "sold",
+      substatus: "predane",
+      isReserved: false,
+      isSold: true,
+      reason: "sold"
+    };
+  }
+
+  // C) VOĽNÝ (kód 1, text "voľný" / "volny" / "free" / "available" / "active" / "aktivny")
+  const volnyRegex = /\s(voln[eéyýaáou]?|free|available|aktivn[eéyýaáou]?|active)\b/i;
+  if (
+    numStatus === 1 ||
+    raw.status === "1" ||
+    raw.dostupnost === 1 ||
+    raw.dostupnost === "1" ||
+    volnyRegex.test(cleanedStatus) ||
+    volnyRegex.test(cleanedTitle)
+  ) {
+    return {
+      isAllowed: true,
+      status: "active",
+      substatus: "volny",
+      isReserved: false,
+      isSold: false,
+      reason: "free"
+    };
+  }
+
+  // 4. Ak stav nepatrí medzi Voľný, Rezervovaný ani Predaný (napr. "-", prázdny stav alebo nedefinovaný), maže sa z Netlify Blobs
+  return {
+    isAllowed: false,
+    status: "unknown",
+    substatus: "empty",
+    isReserved: false,
+    isSold: false,
+    reason: "not_in_allowed_statuses_or_dash"
+  };
 }
 
 /**
- * Vyčistenie starých nehnuteľností, ktoré nemajú stav "Voľný" (Predané, Rezervované, Zrušené, Prenajaté)
+ * Spätná kompatibilita pre overenie dostupnosti
  */
-async function cleanupNonFreeListings(storeInfo) {
+function isPropertyAllowed(raw) {
+  const info = getPropertyStatus(raw);
+  return info.isAllowed;
+}
+
+function normalizePropertyStatus(raw) {
+  return getPropertyStatus(raw);
+}
+
+/**
+ * Vyčistenie neaktívnych nehnuteľností, ktoré nemajú povolený stav (Zrušené, Prenajaté, pomlčka "-", prázdne)
+ */
+async function cleanupInactiveListings(storeInfo) {
   if (!storeInfo || !storeInfo.store || typeof storeInfo.store.list !== "function") return 0;
   try {
     const listRes = await storeInfo.store.list();
@@ -932,16 +1057,19 @@ async function cleanupNonFreeListings(storeInfo) {
           const raw = await storeInfo.store.get(key, { type: "json" });
           item = typeof raw === "string" ? JSON.parse(raw) : raw;
         }
-        if (item && !isPropertyAvailable(item)) {
-          await storeInfo.store.delete(key);
-          deletedCount++;
-          console.log(`[CLEANUP NON-FREE] Odstránená nehnuteľnosť bez stavu 'Voľný': ${key} (${item.title || ""})`);
+        if (item) {
+          const statusInfo = getPropertyStatus(item);
+          if (!statusInfo.isAllowed) {
+            await storeInfo.store.delete(key);
+            deletedCount++;
+            console.log(`[CLEANUP INACTIVE] Odstránená nehnuteľnosť bez povoleného stavu: ${key} (${item.title || ""}), dôvod: ${statusInfo.reason}`);
+          }
         }
       } catch (_e) {}
     }
     return deletedCount;
   } catch (err) {
-    console.warn("[CLEANUP NON-FREE] Chyba pri čistení:", err.message);
+    console.warn("[CLEANUP INACTIVE] Chyba pri čistení:", err.message);
     return 0;
   }
 }
@@ -1024,15 +1152,15 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
   }
 
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
-  const statusInfo = normalizePropertyStatus(raw);
+  const statusInfo = getPropertyStatus(raw);
 
-  // Pre nehnuteľnosti: Zverejnené a aktualizované môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný".
-  // Ak sa stav zmení na akúkoľvek inú hodnotu (Predaný, Rezervovaný, Zrušený, Prenajatý, "-"),
+  // Pre nehnuteľnosti: Zverejnené a aktualizované môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný", "Rezervovaný" a "Predaný".
+  // Ak sa stav zmení na akúkoľvek inú neaktívnu hodnotu (Zrušený, Prenajatý, "-", prázdny stav) alebo príde delete požiadavka,
   // zákazka sa MUSÍ automaticky vymazať z Netlify Blobs (zmazať z webu).
   // Prepínače v záložke 'Zverejniť' (Vlastný web / portály) sa úplne ignorujú.
-  const isAvailable = isAgent || isPropertyAvailable(raw);
+  const isAllowed = isAgent || statusInfo.isAllowed;
   const isDelete =
-    !isAvailable ||
+    !isAllowed ||
     action === "delete" ||
     Number(raw.status) === 5 ||
     raw.status === "5" ||
@@ -1045,7 +1173,7 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     raw.status === "zmazane" ||
     raw.status === "zmazané";
 
-  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Dostupnosť Voľný: ${isAvailable}, Stav: ${statusInfo.status} (${statusInfo.substatus}), Akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
+  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Povolené na webe: ${isAllowed}, Stav: ${statusInfo.status} (${statusInfo.substatus}), Dôvod: ${statusInfo.reason}, Akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
 
   if (!storeInfo || !storeInfo.store) {
     console.warn(`[REALSOFT WARNING] Netlify Blobs store nie je dostupný pre ${externalId}:`, storeInfo ? storeInfo.error : "Unknown");
@@ -1066,7 +1194,7 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         if (primaryObjectId !== null && String(primaryObjectId) !== externalId) {
           try { await storeInfo.store.delete(String(primaryObjectId)); } catch (_e) {}
         }
-        console.log(`[REALSOFT DELETE SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (object_id: ${primaryObjectId}) nie je v stave 'Voľný' (stav: ${statusInfo.substatus}) -> vymazaná z Netlify Blobs.`);
+        console.log(`[REALSOFT DELETE SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (object_id: ${primaryObjectId}) nie je v povolenom stave (stav: ${statusInfo.substatus}, dôvod: ${statusInfo.reason}) -> vymazaná z Netlify Blobs.`);
         
         // Formátovanie odpovede pre Realsoft:
         // Ak Realsoft odoslal požiadavku na vymazanie (alebo status 5), vrátime code 3 / "Object deleted".
@@ -1114,13 +1242,23 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       const floorVal = extractFloor(raw);
       const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
 
-      // Spracovanie štítkov pre voľnú ponuku
+      // Spracovanie štítkov s podporou pre Voľný, Rezervovaný a Predaný (Sprostredkované)
       let safeTags = Array.isArray(raw.tags)
         ? raw.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
         : [];
-      safeTags = safeTags.filter(t => !["PREDANÉ", "PREDANE", "PRENAJATÉ", "PRENAJATE", "REZERVOVANÉ", "REZERVOVANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
-      if (safeTags.length === 0) {
-        safeTags = [dealType === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
+
+      if (statusInfo.status === "sold") {
+        safeTags = safeTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        if (!safeTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) safeTags.unshift("SPROSTREDKOVANÉ");
+        if (!safeTags.some(t => String(t).toUpperCase().includes("PREDANÉ"))) safeTags.unshift("PREDANÉ");
+      } else if (statusInfo.status === "reserved") {
+        safeTags = safeTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        if (!safeTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) safeTags.unshift("REZERVOVANÉ");
+      } else {
+        safeTags = safeTags.filter(t => !["PREDANÉ", "PREDANE", "PRENAJATÉ", "PRENAJATE", "REZERVOVANÉ", "REZERVOVANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
+        if (safeTags.length === 0) {
+          safeTags = [dealType === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
+        }
       }
 
       const propertyItem = {
@@ -1141,10 +1279,10 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         image: allImages[0],
         images: allImages,
         tags: safeTags,
-        status: "active",
-        substatus: "volny",
-        isReserved: false,
-        isSold: false,
+        status: statusInfo.status,
+        substatus: statusInfo.substatus,
+        isReserved: statusInfo.isReserved,
+        isSold: statusInfo.isSold,
         agentId: raw.agentId || raw.agent_id || null,
         agent: raw.agent || raw.broker || raw.makler || null,
         desc: raw.description || raw.desc || raw.popis || raw.text || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
@@ -1234,9 +1372,16 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ status: "ok", action: "cleanup", cleaned }), { status: 200, headers: corsHeaders });
     }
 
-    if (url && (url.searchParams.get("cleanup") === "nonfree" || url.searchParams.get("clean") === "nonfree" || url.searchParams.get("clean_nonfree") === "1")) {
-      const cleaned = await cleanupNonFreeListings(storeInfo);
-      return new Response(JSON.stringify({ status: "ok", action: "cleanup-nonfree", cleaned }), { status: 200, headers: corsHeaders });
+    if (url && (
+      url.searchParams.get("cleanup") === "inactive" ||
+      url.searchParams.get("clean") === "inactive" ||
+      url.searchParams.get("clean_inactive") === "1" ||
+      url.searchParams.get("cleanup") === "nonfree" ||
+      url.searchParams.get("clean") === "nonfree" ||
+      url.searchParams.get("clean_nonfree") === "1"
+    )) {
+      const cleaned = await cleanupInactiveListings(storeInfo);
+      return new Response(JSON.stringify({ status: "ok", action: "cleanup-inactive", cleaned }), { status: 200, headers: corsHeaders });
     }
 
     const getRes = {
