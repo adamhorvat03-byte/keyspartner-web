@@ -808,18 +808,14 @@ function getPropertyStatus(raw) {
     };
   }
 
-  // 1. Explicitná požiadavka na vymazanie / zrušenie
+  // 1. Kontrola explicitného stavu 'deleted' / 'zmazané' v atribútoch status/stav
   if (
-    raw.deleted === 1 ||
-    raw.deleted === true ||
-    raw.deleted === "1" ||
-    raw.deleted === "true" ||
-    raw.is_deleted === true ||
-    raw.action === "delete" ||
-    raw.action === "remove" ||
     raw.status === "deleted" ||
     raw.status === "zmazane" ||
-    raw.status === "zmazané"
+    raw.status === "zmazané" ||
+    raw.stav === "deleted" ||
+    raw.stav === "zmazane" ||
+    raw.stav === "zmazané"
   ) {
     return {
       isAllowed: false,
@@ -827,7 +823,7 @@ function getPropertyStatus(raw) {
       substatus: "zruseny",
       isReserved: false,
       isSold: false,
-      reason: "explicit_delete"
+      reason: "status_deleted"
     };
   }
 
@@ -1152,28 +1148,49 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
   }
 
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
-  const statusInfo = getPropertyStatus(raw);
 
-  // Pre nehnuteľnosti: Zverejnené a aktualizované môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný", "Rezervovaný" a "Predaný".
-  // Ak sa stav zmení na akúkoľvek inú neaktívnu hodnotu (Zrušený, Prenajatý, "-", prázdny stav) alebo príde delete požiadavka,
-  // zákazka sa MUSÍ automaticky vymazať z Netlify Blobs (zmazať z webu).
-  // Prepínače v záložke 'Zverejniť' (Vlastný web / portály) sa úplne ignorujú.
-  const isAllowed = isAgent || statusInfo.isAllowed;
-  const isDelete =
-    !isAllowed ||
+  // 5. OŠETRENIE EXPLICITNEJ POŽIADAVKY NA VYMAZANIE (action: delete / deleted: 1 / postAction: 3)
+  // Špecifický use-case (šetrenie limitov v platenom CRM balíku Realsoft):
+  // Pri predaných a rezervovaných nehnuteľnostiach maklér vypína prepínač "Zverejniť na vlastnom webe".
+  // Realsoft vtedy odošle požiadavku na vymazanie (action: delete / deleted: 1).
+  // TÚTO POŽIADAVKU NA VYMAZANIE Z REALSOFTU ÚPLNE ODIGNORUJEME (nesmie sa zavolať store.delete),
+  // inzerát zostáva v Netlify Blobs nedotknutý a zachovaný.
+  // Realsoftu však vrátime úspešnú odpoveď code: 3 / "Object deleted", aby si CRM myslelo, že inzerát
+  // bol úspešne stiahnutý a nevyhadzovalo chyby synchronizácie.
+  const isExplicitDeleteAction =
     action === "delete" ||
-    Number(raw.status) === 5 ||
-    raw.status === "5" ||
+    action === "remove" ||
+    postAction === 3 ||
+    postAction === "3" ||
+    raw.action === "delete" ||
+    raw.action === "remove" ||
     raw.deleted === 1 ||
     raw.deleted === true ||
     raw.deleted === "1" ||
     raw.deleted === "true" ||
-    raw.is_deleted === true ||
-    raw.status === "deleted" ||
-    raw.status === "zmazane" ||
-    raw.status === "zmazané";
+    raw.is_deleted === true;
 
-  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Povolené na webe: ${isAllowed}, Stav: ${statusInfo.status} (${statusInfo.substatus}), Dôvod: ${statusInfo.reason}, Akcia: ${isDelete ? "DELETE" : "UPSERT"}`);
+  if (isExplicitDeleteAction) {
+    console.log(`[REALSOFT IGNORE DELETE] Explicitná požiadavka na vymazanie (action: delete / deleted: 1) pre ${isAgent ? "makléra" : "zákazku"} ${externalId} (object_id: ${primaryObjectId}) bola ODIGNOROVANÁ. Inzerát zostáva v Netlify Blobs ZACHOVANÝ. Realsoftu vraciame úspešný kód 3 (${isAgent ? "Agent deleted" : "Object deleted"}).`);
+    return {
+      success: true,
+      externalId,
+      importId: returnImportId,
+      code: 3,
+      message: isAgent ? "Agent deleted" : "Object deleted",
+      action: "ignored_delete"
+    };
+  }
+
+  // Pre bežné ukladanie / aktualizáciu (upsert / edit):
+  // Zverejnené a aktualizované môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný", "Rezervovaný" a "Predaný".
+  // Fyzické zmazanie z Netlify Blobs sa odteraz deje výlučne dvoma spôsobmi:
+  // 1. Zmenou stavu nehnuteľnosti na neaktívny (napr. Zrušený, Prenajatý, prázdny stav) v čase, keď je prepínač exportu EŠTE ZAPNUTÝ.
+  // 2. Manuálnym zavolaním nášho čistiaceho endpointu ?clean=inactive.
+  const statusInfo = getPropertyStatus(raw);
+  const isAllowed = isAgent || statusInfo.isAllowed;
+
+  console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Povolené na webe: ${isAllowed}, Stav: ${statusInfo.status} (${statusInfo.substatus}), Dôvod: ${statusInfo.reason}, Akcia: ${!isAllowed ? "DELETE_INACTIVE" : "UPSERT"}`);
 
   if (!storeInfo || !storeInfo.store) {
     console.warn(`[REALSOFT WARNING] Netlify Blobs store nie je dostupný pre ${externalId}:`, storeInfo ? storeInfo.error : "Unknown");
@@ -1188,30 +1205,20 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
   }
 
   try {
-    if (isDelete) {
+    if (!isAllowed) {
       if (typeof storeInfo.store.delete === "function") {
         await storeInfo.store.delete(externalId);
         if (primaryObjectId !== null && String(primaryObjectId) !== externalId) {
           try { await storeInfo.store.delete(String(primaryObjectId)); } catch (_e) {}
         }
-        console.log(`[REALSOFT DELETE SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (object_id: ${primaryObjectId}) nie je v povolenom stave (stav: ${statusInfo.substatus}, dôvod: ${statusInfo.reason}) -> vymazaná z Netlify Blobs.`);
+        console.log(`[REALSOFT DELETE INACTIVE SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (object_id: ${primaryObjectId}) prešla do neaktívneho stavu (${statusInfo.substatus}, dôvod: ${statusInfo.reason}) pri zapnutom exporte -> fyzicky vymazaná z Netlify Blobs.`);
         
-        // Formátovanie odpovede pre Realsoft:
-        // Ak Realsoft odoslal požiadavku na vymazanie (alebo status 5), vrátime code 3 / "Object deleted".
-        // Ak Realsoft odoslal bežnú úpravu (edit), vrátime úspešnú editáciu code 2 / "Object edited"
-        // (pričom na našej strane bola položka z Netlify Blobs zmazaná, čím sa stiahla z webu).
-        const isExplicitDelete = action === "delete" || Number(raw.status) === 5 || raw.status === "5" || raw.deleted;
-        const returnCode = isExplicitDelete ? 3 : 2;
-        const returnMessage = isExplicitDelete
-          ? (isAgent ? "Agent deleted" : "Object deleted")
-          : (isAgent ? "Agent edited" : "Object edited");
-
         return {
           success: true,
           externalId,
           importId: returnImportId,
-          code: returnCode,
-          message: returnMessage,
+          code: 2,
+          message: isAgent ? "Agent edited" : "Object edited",
           action: "deleted"
         };
       }
