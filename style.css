@@ -113,6 +113,7 @@ html[data-theme="light"] {
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 80px;
 }
 
 body {
@@ -363,7 +364,8 @@ img {
     width: 100%;
 }
 
-.mobile-nav-actions {
+.mobile-nav-actions,
+.mobile-drawer {
     display: none;
 }
 
@@ -2943,14 +2945,108 @@ img {
 }
 
 @media (max-width: 768px) {
-    .header-container {
-        justify-content: space-between;
-        gap: 0;
+    html {
+        scroll-padding-top: 70px;
     }
 
-    /* Skrytie sociálnych ikon a kľúča v hornej lište (zostanú iba v mobilnom drawer menu) */
+    .header-container {
+        height: 70px;
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .logo {
+        flex-shrink: 0;
+    }
+
+    .logo-icon-container {
+        width: 36px;
+        height: 36px;
+        margin-right: 0 !important;
+    }
+
+    /* Skrytie položky 'Prečo my' na mobiloch, aby sa zmestili hlavné 3 sekcie */
+    .nav-item-benefity {
+        display: none !important;
+    }
+
+    /* Zobrazenie navigácie priamo v lište na mobile */
+    .nav-menu {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        min-width: 0;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: none !important;
+        overflow: visible !important;
+    }
+
+    .nav-menu ul {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        white-space: nowrap;
+    }
+
+    .nav-menu li {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .nav-menu a {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        padding: 6px 2px;
+        display: inline-block;
+        white-space: nowrap;
+        text-decoration: none;
+        letter-spacing: -0.01em;
+        transition: color 0.2s ease;
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a:active,
+    .nav-menu a.active {
+        color: var(--brand-yellow) !important;
+    }
+
+    .nav-menu a::after {
+        display: none !important;
+    }
+
+    /* V lište zostane z akcií iba hamburger */
+    .header-actions {
+        margin-left: 0 !important;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        flex-shrink: 0;
+    }
+
     .header-actions .header-social-links,
-    .header-actions .btn-add-listing {
+    .header-actions .btn-add-listing,
+    .header-actions .theme-toggle {
         display: none !important;
     }
 
@@ -2958,23 +3054,38 @@ img {
         display: flex !important;
         align-items: center;
         justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: var(--transition);
+        flex-shrink: 0;
     }
 
-    .nav-menu {
+    .mobile-nav-toggle:hover,
+    .mobile-nav-toggle.is-active {
+        border-color: var(--brand-yellow);
+        color: var(--brand-yellow);
+    }
+
+    /* Mobilné zásuvné menu (pre sociálne siete a nastavenia) */
+    .mobile-drawer {
+        display: block !important;
         position: fixed;
-        top: 80px;
+        top: 70px;
         left: 0;
         width: 100%;
-        height: calc(100vh - 80px);
-        background-color: var(--bg-primary);
-        z-index: 999;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding: 36px 24px 48px;
+        height: calc(100vh - 70px);
+        background-color: rgba(5, 8, 15, 0.97);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border-top: 1px solid var(--border-color);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        padding: 24px 20px 40px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         opacity: 0;
@@ -2983,48 +3094,99 @@ img {
         transform: translateY(-8px);
         transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
     }
-    
-    .nav-menu.active {
+
+    [data-theme="light"] .mobile-drawer {
+        background-color: rgba(255, 255, 255, 0.98);
+    }
+
+    .mobile-drawer.active {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
         transform: translateY(0);
     }
-    
-    .nav-menu ul {
+
+    .mobile-drawer-body {
+        display: flex;
         flex-direction: column;
-        gap: 20px;
-        align-items: center;
-        width: 100%;
-        text-align: center;
-        margin: 0;
-        padding: 0;
+        gap: 22px;
+        max-width: 380px;
+        margin: 0 auto;
     }
-    
-    .nav-menu a {
-        font-size: 1.15rem;
-        font-weight: 600;
-        padding: 6px 16px;
-        display: inline-block;
-        color: var(--text-secondary);
+
+    .mobile-drawer-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .mobile-drawer-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+    }
+
+    .drawer-setting-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 13px 16px;
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
         transition: var(--transition);
     }
 
-    .nav-menu a:hover,
-    .nav-menu a.active {
+    .drawer-setting-btn:hover {
+        border-color: var(--brand-yellow);
+    }
+
+    .drawer-setting-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .drawer-theme-icon {
+        font-size: 1.15rem;
         color: var(--brand-yellow);
     }
 
-    .mobile-nav-actions {
-        display: flex !important;
-        flex-direction: column;
+    .drawer-theme-status {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background-color: rgba(223, 186, 115, 0.15);
+        color: var(--brand-yellow);
+        border: 1px solid rgba(223, 186, 115, 0.3);
+    }
+
+    .drawer-nav-link {
+        display: flex;
         align-items: center;
-        gap: 20px;
-        width: 100%;
-        max-width: 280px;
-        margin-top: 28px;
-        padding-top: 24px;
-        border-top: 1px solid var(--border-color);
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--border-radius-md);
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.92rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .drawer-nav-link:hover {
+        border-color: var(--brand-yellow);
+        color: var(--brand-yellow);
     }
 
     .btn-mobile-cta {
@@ -3040,17 +3202,18 @@ img {
         box-shadow: 0 4px 14px rgba(181, 137, 32, 0.35);
     }
 
-    .mobile-social-links {
+    .mobile-drawer .mobile-social-links {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 14px;
+        padding-top: 4px;
     }
 
-    .mobile-social-links .social-header-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.05rem;
+    .mobile-drawer .social-header-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
     }
     
     .stats-container {
@@ -3168,56 +3331,71 @@ img {
         padding: 0 24px !important;
     }
 
-    /* Zmenšenie výšky hlavičky, loga a prvkov pre zamedzenie prekrytia */
+    html {
+        scroll-padding-top: 64px;
+    }
+
+    /* Zmenšenie výšky hlavičky, loga a prvkov pre čistý dizajn na mobiloch */
     .header-container {
         height: 64px !important;
-    }
-    
-    .logo-icon-container {
-        width: 32px !important;
-        height: 32px !important;
-        margin-right: 8px !important;
-    }
-    
-    .logo-text {
-        font-size: 1.1rem !important;
-    }
-    
-    .header-actions {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
         gap: 8px !important;
     }
     
-    .theme-toggle, 
-    .mobile-nav-toggle {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 0.95rem !important;
+    .logo-icon-container {
+        width: 34px !important;
+        height: 34px !important;
+        margin-right: 0 !important;
     }
     
-    .nav-menu {
-        top: 64px !important;
-        height: calc(100vh - 64px) !important;
-        padding: 24px 16px 36px !important;
-    }
-
     .nav-menu ul {
-        gap: 16px !important;
+        gap: 10px !important;
     }
 
     .nav-menu a {
-        font-size: 1.05rem !important;
+        font-size: 0.78rem !important;
+        padding: 4px 1px !important;
     }
-
-    .mobile-nav-actions {
-        margin-top: 18px !important;
-        padding-top: 18px !important;
-        gap: 16px !important;
-        max-width: 260px !important;
-    }
-
-    .btn-mobile-cta {
-        padding: 12px 18px !important;
+    
+    .mobile-nav-toggle {
+        width: 36px !important;
+        height: 36px !important;
         font-size: 0.95rem !important;
+    }
+
+    .mobile-drawer {
+        top: 64px !important;
+        height: calc(100vh - 64px) !important;
+        padding: 20px 16px 36px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .header-container {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        gap: 5px !important;
+    }
+
+    .logo-icon-container {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .nav-menu ul {
+        gap: 6px !important;
+    }
+
+    .nav-menu a {
+        font-size: 0.72rem !important;
+        padding: 4px 0 !important;
+    }
+
+    .mobile-nav-toggle {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 0.9rem !important;
     }
 
     .mortgage-derived-row {

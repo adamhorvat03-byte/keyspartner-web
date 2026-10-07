@@ -352,10 +352,20 @@ function initTheme() {
 
 function updateThemeToggleIcon(theme) {
     const icon = document.querySelector("#themeToggle i");
-    if (theme === "dark") {
-        icon.className = "fa-solid fa-sun";
-    } else {
-        icon.className = "fa-solid fa-moon";
+    if (icon) {
+        if (theme === "dark") {
+            icon.className = "fa-solid fa-sun";
+        } else {
+            icon.className = "fa-solid fa-moon";
+        }
+    }
+    const drawerIcon = document.getElementById("drawerThemeIcon");
+    const drawerStatus = document.getElementById("drawerThemeStatus");
+    if (drawerIcon) {
+        drawerIcon.className = theme === "dark" ? "fa-solid fa-sun drawer-theme-icon" : "fa-solid fa-moon drawer-theme-icon";
+    }
+    if (drawerStatus) {
+        drawerStatus.textContent = theme === "dark" ? "Tmavý" : "Svetlý";
     }
 }
 
@@ -1657,31 +1667,41 @@ function start3DTourSimulation(title, baseImg) {
 // ==========================================================================
 function setupEventListeners() {
     // --- Téma prepínač ---
-    const themeToggle = document.getElementById("themeToggle");
-    themeToggle.addEventListener("click", () => {
-        const currentTheme = document.documentElement.getAttribute("data-theme");
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
         const newTheme = currentTheme === "dark" ? "light" : "dark";
         
         document.documentElement.setAttribute("data-theme", newTheme);
         localStorage.setItem("theme", newTheme);
         updateThemeToggleIcon(newTheme);
-    });
+    };
 
-    // --- Mobilné menu ---
+    const themeToggle = document.getElementById("themeToggle");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", toggleTheme);
+    }
+    const drawerThemeToggle = document.getElementById("drawerThemeToggle");
+    if (drawerThemeToggle) {
+        drawerThemeToggle.addEventListener("click", toggleTheme);
+    }
+
+    // --- Mobilné menu (Drawer pre sociálne siete a nastavenia) ---
     const mobileNavToggle = document.getElementById("mobileNavToggle");
-    const navMenu = document.getElementById("navMenu");
+    const mobileDrawer = document.getElementById("mobileDrawer");
     
-    if (mobileNavToggle && navMenu) {
+    if (mobileNavToggle && mobileDrawer) {
         const toggleMobileMenu = (forceClose = false) => {
-            const shouldOpen = forceClose ? false : !navMenu.classList.contains("active");
+            const shouldOpen = forceClose ? false : !mobileDrawer.classList.contains("active");
             if (shouldOpen) {
-                navMenu.classList.add("active");
+                mobileDrawer.classList.add("active");
+                mobileDrawer.setAttribute("aria-hidden", "false");
                 mobileNavToggle.classList.add("is-active");
                 mobileNavToggle.setAttribute("aria-expanded", "true");
                 mobileNavToggle.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
                 document.body.style.overflow = "hidden";
             } else {
-                navMenu.classList.remove("active");
+                mobileDrawer.classList.remove("active");
+                mobileDrawer.setAttribute("aria-hidden", "true");
                 mobileNavToggle.classList.remove("is-active");
                 mobileNavToggle.setAttribute("aria-expanded", "false");
                 mobileNavToggle.innerHTML = `<i class="fa-solid fa-bars"></i>`;
@@ -1694,38 +1714,55 @@ function setupEventListeners() {
             toggleMobileMenu();
         });
         
-        const navLinks = navMenu.querySelectorAll("a");
-        navLinks.forEach(link => {
+        const drawerLinks = mobileDrawer.querySelectorAll("a");
+        drawerLinks.forEach(link => {
             link.addEventListener("click", () => {
                 toggleMobileMenu(true);
-                if (link.getAttribute("href")?.startsWith("#")) {
-                    navLinks.forEach(l => l.classList.remove("active"));
-                    link.classList.add("active");
-                }
             });
         });
 
-        // Close on clicking outside the menu
+        // Zatvorenie kliknutím mimo draweru
         document.addEventListener("click", (e) => {
-            if (navMenu.classList.contains("active") && !navMenu.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+            if (mobileDrawer.classList.contains("active") && !mobileDrawer.contains(e.target) && !mobileNavToggle.contains(e.target)) {
                 toggleMobileMenu(true);
             }
         });
 
-        // Close on Escape key
+        // Zatvorenie klávesou Escape
         document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && navMenu.classList.contains("active")) {
+            if (e.key === "Escape" && mobileDrawer.classList.contains("active")) {
                 toggleMobileMenu(true);
             }
         });
 
-        // Close on window resize to desktop
+        // Zatvorenie pri resize na desktop
         window.addEventListener("resize", () => {
-            if (window.innerWidth > 768 && navMenu.classList.contains("active")) {
+            if (window.innerWidth > 768 && mobileDrawer.classList.contains("active")) {
                 toggleMobileMenu(true);
             }
         });
     }
+
+    // Navigačné odkazy v lište (fungujú na desktope aj na mobile)
+    const navLinks = document.querySelectorAll(".nav-menu a");
+    navLinks.forEach(link => {
+        link.addEventListener("click", () => {
+            if (mobileDrawer && mobileDrawer.classList.contains("active")) {
+                mobileDrawer.classList.remove("active");
+                mobileDrawer.setAttribute("aria-hidden", "true");
+                if (mobileNavToggle) {
+                    mobileNavToggle.classList.remove("is-active");
+                    mobileNavToggle.setAttribute("aria-expanded", "false");
+                    mobileNavToggle.innerHTML = `<i class="fa-solid fa-bars"></i>`;
+                }
+                document.body.style.overflow = "";
+            }
+            if (link.getAttribute("href")?.startsWith("#")) {
+                navLinks.forEach(l => l.classList.remove("active"));
+                link.classList.add("active");
+            }
+        });
+    });
 
     // Kliknutie na logo v hlavičke: plynulý návrat na úplný vrch stránky
     const headerLogo = document.querySelector(".main-header .logo");
@@ -1733,10 +1770,15 @@ function setupEventListeners() {
         headerLogo.addEventListener("click", (e) => {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: "smooth" });
-            const navMenuEl = document.getElementById("navMenu");
-            if (navMenuEl && navMenuEl.classList.contains("active")) {
-                const mobToggle = document.getElementById("mobileNavToggle");
-                if (mobToggle) mobToggle.click();
+            if (mobileDrawer && mobileDrawer.classList.contains("active")) {
+                mobileDrawer.classList.remove("active");
+                mobileDrawer.setAttribute("aria-hidden", "true");
+                if (mobileNavToggle) {
+                    mobileNavToggle.classList.remove("is-active");
+                    mobileNavToggle.setAttribute("aria-expanded", "false");
+                    mobileNavToggle.innerHTML = `<i class="fa-solid fa-bars"></i>`;
+                }
+                document.body.style.overflow = "";
             }
         });
     }
