@@ -39,10 +39,27 @@
             <nav class="nav-menu" id="navMenu">
                 <ul>
                     <li><a href="#ponuka" class="active">Naša ponuka</a></li>
-                    <li class="nav-item-benefity"><a href="#benefity">Prečo my</a></li>
+                    <li><a href="#benefity">Prečo my</a></li>
                     <li><a href="#makleri">Náš tím</a></li>
                     <li><a href="#recenzie">Skúsenosti</a></li>
                 </ul>
+                <div class="mobile-nav-actions">
+                    <button class="drawer-setting-btn" id="drawerThemeToggle" type="button" aria-label="Prepnúť režim zobrazenia">
+                        <div class="drawer-setting-left">
+                            <i class="fa-solid fa-sun drawer-theme-icon" id="drawerThemeIcon"></i>
+                            <span>Režim zobrazenia</span>
+                        </div>
+                        <span class="drawer-theme-status" id="drawerThemeStatus">Tmavý</span>
+                    </button>
+                    <a href="#chcem-predat" class="btn btn-primary btn-mobile-cta">
+                        <i class="fa-solid fa-key"></i> <span>Chcem predať</span>
+                    </a>
+                    <div class="mobile-social-links">
+                        <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Facebook profil" class="social-header-icon"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Instagram profil" class="social-header-icon"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@keyspartners" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš YouTube profil" class="social-header-icon"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
+                </div>
             </nav>
             
             <div class="header-actions">
@@ -60,41 +77,6 @@
                 <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Otvoriť menu" aria-expanded="false">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-            </div>
-        </div>
-
-        <!-- Mobilné zásuvné menu (pre sociálne siete a nastavenia) -->
-        <div class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
-            <div class="mobile-drawer-body">
-                <div class="mobile-drawer-section">
-                    <span class="mobile-drawer-label">Nastavenia</span>
-                    <button class="drawer-setting-btn" id="drawerThemeToggle" type="button" aria-label="Prepnúť režim zobrazenia">
-                        <div class="drawer-setting-left">
-                            <i class="fa-solid fa-sun drawer-theme-icon" id="drawerThemeIcon"></i>
-                            <span>Režim zobrazenia</span>
-                        </div>
-                        <span class="drawer-theme-status" id="drawerThemeStatus">Tmavý</span>
-                    </button>
-                </div>
-
-                <div class="mobile-drawer-section">
-                    <span class="mobile-drawer-label">Rýchle akcie</span>
-                    <a href="#chcem-predat" class="btn btn-primary btn-mobile-cta">
-                        <i class="fa-solid fa-key"></i> <span>Chcem predať</span>
-                    </a>
-                    <a href="#benefity" class="drawer-nav-link">
-                        <i class="fa-solid fa-shield-halved text-gold"></i> <span>Prečo si vybrať nás</span>
-                    </a>
-                </div>
-
-                <div class="mobile-drawer-section">
-                    <span class="mobile-drawer-label">Sledujte nás</span>
-                    <div class="mobile-social-links">
-                        <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Facebook profil" class="social-header-icon"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Instagram profil" class="social-header-icon"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.youtube.com/@keyspartners" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš YouTube profil" class="social-header-icon"><i class="fa-brands fa-youtube"></i></a>
-                    </div>
-                </div>
             </div>
         </div>
     </header>
