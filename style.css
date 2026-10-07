@@ -266,6 +266,25 @@ img {
     box-shadow: 0 0 10px rgba(223, 186, 115, 0.1);
 }
 
+.main-header .logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.main-header .logo .logo-icon-container {
+    margin-right: 0 !important;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.main-header .logo:hover .logo-icon-container {
+    transform: scale(1.08);
+    border-color: var(--brand-yellow);
+    box-shadow: 0 0 16px rgba(223, 186, 115, 0.45);
+}
+
 .logo-icon-img {
     height: 110%; /* Zmenšené percento orezania pre nové logo */
     width: auto;

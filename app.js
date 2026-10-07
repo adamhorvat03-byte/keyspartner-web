@@ -1727,6 +1727,20 @@ function setupEventListeners() {
         });
     }
 
+    // Kliknutie na logo v hlavičke: plynulý návrat na úplný vrch stránky
+    const headerLogo = document.querySelector(".main-header .logo");
+    if (headerLogo) {
+        headerLogo.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            const navMenuEl = document.getElementById("navMenu");
+            if (navMenuEl && navMenuEl.classList.contains("active")) {
+                const mobToggle = document.getElementById("mobileNavToggle");
+                if (mobToggle) mobToggle.click();
+            }
+        });
+    }
+
     // --- Zatvorenie modálu ---
     document.getElementById("modalClose").addEventListener("click", closePropertyModal);
     document.getElementById("modalBackdrop").addEventListener("click", closePropertyModal);
