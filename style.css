@@ -2834,6 +2834,24 @@ img {
     color: var(--brand-yellow);
 }
 
+.footer-links .coverage-text,
+.coverage-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: #E2E8F0;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.footer-links .coverage-text i,
+.coverage-text i {
+    color: var(--brand-yellow);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
 .footer-bottom {
     background-color: #010204;
     padding: 24px 0;
