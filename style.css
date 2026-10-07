@@ -237,7 +237,8 @@ img {
     height: 80px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 48px;
 }
 
 .logo {
@@ -370,6 +371,7 @@ img {
     display: flex;
     align-items: center;
     gap: 16px;
+    margin-left: auto;
 }
 
 .theme-toggle {
@@ -2941,6 +2943,11 @@ img {
 }
 
 @media (max-width: 768px) {
+    .header-container {
+        justify-content: space-between;
+        gap: 0;
+    }
+
     /* Skrytie sociálnych ikon a kľúča v hornej lište (zostanú iba v mobilnom drawer menu) */
     .header-actions .header-social-links,
     .header-actions .btn-add-listing {
