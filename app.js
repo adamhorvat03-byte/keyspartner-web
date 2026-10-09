@@ -2363,14 +2363,14 @@ function initReviewsSystem() {
                 let res = await fetch("/api/submit-review", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, rating, text })
+                    body: JSON.stringify({ name, rating, text, meno_zakaznika: name, hodnotenie: rating, text_recenzie: text })
                 });
 
                 if (!res.ok && res.status === 404) {
                     res = await fetch("/.netlify/functions/submit-review", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name, rating, text })
+                        body: JSON.stringify({ name, rating, text, meno_zakaznika: name, hodnotenie: rating, text_recenzie: text })
                     });
                 }
 
@@ -2379,23 +2379,37 @@ function initReviewsSystem() {
                     throw new Error(data.error || "Nepodarilo sa odoslať recenziu.");
                 }
 
-                // Odoslanie schvaľovacieho e-mailu cez natívne Netlify Forms (žiadne externé služby, žiadne presmerovania, čistý odkaz)
+                // Odoslanie schvaľovacieho e-mailu cez natívne Netlify Forms presne podľa oficiálnej dokumentácie
                 const approvalLink = data.approvalUrl || `${window.location.origin}/api/approve-review?id=${data.id}`;
+
+                // Vyplnenie skrytých polí vo formulári
+                const approvalInput = document.getElementById("reviewApprovalLinkInput");
+                const idInput = document.getElementById("reviewIdInput");
+                if (approvalInput) approvalInput.value = approvalLink;
+                if (idInput) idInput.value = data.id;
+
                 const netlifyFormData = new URLSearchParams();
                 netlifyFormData.append("form-name", "schvalenie-recenzie");
-                netlifyFormData.append("Meno zakaznika", name);
-                netlifyFormData.append("Hodnotenie", `${rating} z 5 hviezdičiek`);
-                netlifyFormData.append("Text recenzie", text);
-                netlifyFormData.append("SCHVALIT RECENZIU NA WEBE (Kliknite na odkaz)", approvalLink);
-                netlifyFormData.append("ID recenzie", data.id);
+                netlifyFormData.append("meno_zakaznika", name);
+                netlifyFormData.append("hodnotenie", `${rating} z 5 hviezdičiek`);
+                netlifyFormData.append("text_recenzie", text);
+                netlifyFormData.append("schvalovaci_odkaz", approvalLink);
+                netlifyFormData.append("id_recenzie", data.id);
 
-                fetch("/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: netlifyFormData.toString()
-                })
-                .then(() => console.log("[KEYS PARTNERS] Netlify Forms: Schvaľovacia notifikácia úspešne odoslaná."))
-                .catch(err => console.error("[KEYS PARTNERS] Netlify Forms chyba:", err));
+                try {
+                    const nfRes = await fetch("/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: netlifyFormData.toString()
+                    });
+                    if (nfRes.ok) {
+                        console.log("[KEYS PARTNERS] Netlify Forms: Schvaľovacia notifikácia úspešne odoslaná (status " + nfRes.status + ").");
+                    } else {
+                        console.warn("[KEYS PARTNERS] Netlify Forms status:", nfRes.status);
+                    }
+                } catch (nfErr) {
+                    console.error("[KEYS PARTNERS] Netlify Forms chyba odoslania:", nfErr);
+                }
 
                 // Úspešné odoslanie
                 reviewForm.reset();

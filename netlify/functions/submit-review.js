@@ -190,9 +190,9 @@ export default async (req, context) => {
     });
   }
 
-  const name = sanitizeText(body.name);
-  const text = sanitizeText(body.text || body.comment);
-  const rating = Math.min(5, Math.max(1, parseInt(body.rating, 10) || 5));
+  const name = sanitizeText(body.name || body.meno || body.meno_zakaznika);
+  const text = sanitizeText(body.text || body.comment || body.recenzia || body.text_recenzie);
+  const rating = Math.min(5, Math.max(1, parseInt(body.rating || body.hodnotenie, 10) || 5));
 
   if (!name || name.length < 2) {
     return new Response(JSON.stringify({ success: false, error: "Prosím, zadajte vaše meno a priezvisko (aspoň 2 znaky)." }), {

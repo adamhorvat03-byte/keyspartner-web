@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="utf-8">
+    <title>Netlify Forms Blueprint - Keys Partners</title>
+</head>
+<body>
+    <!-- 
+      Statická HTML predloha pre automatickú detekciu Netlify Forms pri builde/deployi.
+      Presne podľa dokumentácie: https://docs.netlify.com/manage/forms/setup/
+    -->
+    <form name="schvalenie-recenzie" method="POST" action="/" data-netlify="true" netlify netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="schvalenie-recenzie">
+        <input type="hidden" name="bot-field">
+        <input type="text" name="meno_zakaznika">
+        <input type="text" name="hodnotenie">
+        <textarea name="text_recenzie"></textarea>
+        <input type="text" name="schvalovaci_odkaz">
+        <input type="text" name="id_recenzie">
+        <button type="submit">Odoslať</button>
+    </form>
+</body>
+</html>
