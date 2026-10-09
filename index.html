@@ -693,6 +693,17 @@
                             <p id="reviewErrorMessage">Nepodarilo sa odoslať recenziu. Skontrolujte prosím pripojenie a skúste to znova.</p>
                         </div>
                     </div>
+
+                    <!-- Natívny Netlify formulár pre schvaľovacie e-maily (Netlify Forms spracovanie bez externých služieb a bez SSL presmerovaní) -->
+                    <form name="schvalenie-recenzie" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+                        <input type="hidden" name="form-name" value="schvalenie-recenzie">
+                        <input type="hidden" name="bot-field">
+                        <input type="text" name="Meno zakaznika">
+                        <input type="text" name="Hodnotenie">
+                        <textarea name="Text recenzie"></textarea>
+                        <input type="text" name="SCHVALIT RECENZIU NA WEBE (Kliknite na odkaz)">
+                        <input type="text" name="ID recenzie">
+                    </form>
                 </div>
             </div>
             

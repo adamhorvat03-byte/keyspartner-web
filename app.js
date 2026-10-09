@@ -2379,26 +2379,23 @@ function initReviewsSystem() {
                     throw new Error(data.error || "Nepodarilo sa odoslať recenziu.");
                 }
 
-                // Odoslanie schvaľovacieho e-mailu na branislav_horvat@keyspartners.sk cez FormSubmit AJAX API (rovnaký princíp ako pri kalkulačkách)
+                // Odoslanie schvaľovacieho e-mailu cez natívne Netlify Forms (žiadne externé služby, žiadne presmerovania, čistý odkaz)
                 const approvalLink = data.approvalUrl || `${window.location.origin}/api/approve-review?id=${data.id}`;
-                fetch("https://formsubmit.co/ajax/branislav_horvat@keyspartners.sk", {
+                const netlifyFormData = new URLSearchParams();
+                netlifyFormData.append("form-name", "schvalenie-recenzie");
+                netlifyFormData.append("Meno zakaznika", name);
+                netlifyFormData.append("Hodnotenie", `${rating} z 5 hviezdičiek`);
+                netlifyFormData.append("Text recenzie", text);
+                netlifyFormData.append("SCHVALIT RECENZIU NA WEBE (Kliknite na odkaz)", approvalLink);
+                netlifyFormData.append("ID recenzie", data.id);
+
+                fetch("/", {
                     method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        _subject: `⭐ Nová zákaznícka recenzia na schválenie: ${name} (${rating}★) – Keys Partners`,
-                        "Meno zákazníka": name,
-                        "Hodnotenie": `${rating} z 5 hviezdičiek`,
-                        "Text recenzie": text,
-                        "SCHVÁLIŤ RECENZIU NA WEBE (Kliknite sem)": approvalLink,
-                        "_template": "box"
-                    })
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: netlifyFormData.toString()
                 })
-                .then(r => r.json())
-                .then(fsData => console.log("[KEYS PARTNERS] FormSubmit: Schvaľovací e-mail úspešne odoslaný Braňovi Horvátovi:", fsData))
-                .catch(fsErr => console.error("[KEYS PARTNERS] FormSubmit chyba:", fsErr));
+                .then(() => console.log("[KEYS PARTNERS] Netlify Forms: Schvaľovacia notifikácia úspešne odoslaná."))
+                .catch(err => console.error("[KEYS PARTNERS] Netlify Forms chyba:", err));
 
                 // Úspešné odoslanie
                 reviewForm.reset();

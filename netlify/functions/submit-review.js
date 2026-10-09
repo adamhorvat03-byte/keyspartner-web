@@ -379,9 +379,9 @@ export default async (req, context) => {
       console.error(`[SUBMIT-REVIEW CHYBA] Výnimka pri volaní SendGrid: ${e.message}`, e);
     }
   } else {
-    // Žiadny špeciálny API kľúč nie je nastavený - schvaľovacia notifikácia odchádza priamo cez FormSubmit rovnako ako pri kalkulačkách
-    emailProvider = "formsubmit";
-    console.log(`[SUBMIT-REVIEW INFO] Používa sa FormSubmit pre doručenie na '${approverEmail}' (rovnaký princíp ako pri hypotekárnej a cenovej kalkulačke).`);
+    // Žiadny externý API kľúč nie je nastavený - schvaľovacia notifikácia odchádza cez natívne Netlify Forms z frontendu (bezpečné, bezpečný priamy odkaz bez SSL chýb)
+    emailProvider = "netlify-forms";
+    console.log(`[SUBMIT-REVIEW INFO] Schvaľovacia notifikácia odchádza cez Netlify Forms pre adresáta '${approverEmail}'.`);
     console.info(`[SUBMIT-REVIEW INFO] Priamy schvaľovací odkaz pre makléra: ${approvalUrl}`);
   }
 
