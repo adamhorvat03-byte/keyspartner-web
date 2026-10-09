@@ -622,63 +622,85 @@
     <section class="reviews-section reveal" id="recenzie">
         <div class="container">
             <div class="section-header text-center">
-                <h2 class="section-title">Hodnotenia našich partnerov</h2>
+                <h2 class="section-title">Hodnotenie našich partnerov</h2>
                 <p class="section-subtitle">Spokojnosť našich klientov a bezpečnosť obchodov sú našou vizitkou</p>
+                <div class="reviews-action-bar">
+                    <button type="button" class="btn btn-secondary btn-open-review-form" id="btnOpenReviewForm">
+                        <i class="fa-solid fa-pen-to-square text-gold"></i> <span>Pridať hodnotenie</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulár na pridanie novej recenzie (zbalený / otvárateľný) -->
+            <div class="review-form-container" id="reviewFormContainer" style="display: none;">
+                <div class="review-form-card">
+                    <div class="review-form-top">
+                        <div class="review-form-title-group">
+                            <h3 class="review-form-title">Vaše hodnotenie spolupráce</h3>
+                            <p class="review-form-subtitle">Podeľte sa o vašu skúsenosť so službami Keys Partners. Vaša recenzia bude po overení zverejnená na webe.</p>
+                        </div>
+                        <button type="button" class="btn-close-review-form" id="btnCloseReviewForm" aria-label="Zatvoriť formulár">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <form id="reviewSubmitForm" class="review-submit-form">
+                        <div class="form-group">
+                            <label for="reviewAuthorName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
+                            <input type="text" id="reviewAuthorName" name="name" required minlength="2" maxlength="80" placeholder="Napr. Peter Kováč">
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-star"></i> Vaša spokojnosť (hodnotenie)</label>
+                            <div class="star-rating-picker" id="starRatingPicker">
+                                <div class="star-buttons" role="radiogroup" aria-label="Hodnotenie od 1 do 5 hviezdičiek">
+                                    <button type="button" class="star-btn active" data-rating="1" aria-label="1 hviezdička"><i class="fa-solid fa-star"></i></button>
+                                    <button type="button" class="star-btn active" data-rating="2" aria-label="2 hviezdičky"><i class="fa-solid fa-star"></i></button>
+                                    <button type="button" class="star-btn active" data-rating="3" aria-label="3 hviezdičky"><i class="fa-solid fa-star"></i></button>
+                                    <button type="button" class="star-btn active" data-rating="4" aria-label="4 hviezdičky"><i class="fa-solid fa-star"></i></button>
+                                    <button type="button" class="star-btn active" data-rating="5" aria-label="5 hviezdičiek"><i class="fa-solid fa-star"></i></button>
+                                </div>
+                                <span class="star-rating-text" id="starRatingText">5 / 5 (Výborná skúsenosť)</span>
+                                <input type="hidden" id="reviewRatingInput" name="rating" value="5">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reviewCommentText"><i class="fa-solid fa-comment-dots"></i> Vaša skúsenosť / Text recenzie</label>
+                            <textarea id="reviewCommentText" name="text" required minlength="5" maxlength="1500" rows="4" placeholder="Opíšte vašu skúsenosť s predajom, kúpou alebo osobným prístupom makléra..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-submit-review" id="btnSubmitReview">
+                            <i class="fa-solid fa-paper-plane"></i> <span>Odoslať recenziu na schválenie</span>
+                        </button>
+                        <p class="form-disclaimer">Recenzia bude pred zverejnením overená našim maklérom Braňom Horvátom.</p>
+                    </form>
+
+                    <!-- Správa o úspechu -->
+                    <div class="review-feedback-box success" id="reviewSuccessBox" style="display: none;">
+                        <i class="fa-solid fa-circle-check feedback-icon"></i>
+                        <div>
+                            <h4>Ďakujeme za vaše hodnotenie!</h4>
+                            <p>Vaša recenzia bola úspešne odoslaná na schválenie maklérovi. Hneď po overení sa zobrazí na našom webe.</p>
+                        </div>
+                    </div>
+
+                    <!-- Správa o chybe -->
+                    <div class="review-feedback-box error" id="reviewErrorBox" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation feedback-icon"></i>
+                        <div>
+                            <h4>Chyba pri odosielaní</h4>
+                            <p id="reviewErrorMessage">Nepodarilo sa odoslať recenziu. Skontrolujte prosím pripojenie a skúste to znova.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <div class="reviews-grid">
-                <div class="review-card">
-                    <div class="review-rating">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Rýchly predaj bytu do dvoch týždňov vrátane 3D prehliadky a bezstarostného právneho servisu. Oceňujem vysoko profesionálny prístup."</p>
-                    <div class="review-author">
-                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <h4>Ing. Zuzana M.</h4>
-                            <span>Bývalá majiteľka bytu na Sídlisku II, Prešov</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="review-card">
-                    <div class="review-rating">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Profesionálny predaj bytu s výborným právnym servisom. Celá transakcia prebehla bezpečne, transparentne a v dohodnutom termíne."</p>
-                    <div class="review-author">
-                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <h4>Katarína S.</h4>
-                            <span>Predaj bytu, Prešov</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="review-card">
-                    <div class="review-rating">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Skvelá spolupráca pri kúpe pozemku. Oceňujem detailnú znalosť územného plánu a bezchybné zrealizovanie obchodu."</p>
-                    <div class="review-author">
-                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <h4>Ing. arch. Tomáš M.</h4>
-                            <span>Investičný nákup, Fintice</span>
-                        </div>
-                    </div>
+            <!-- Dynamická mriežka pre skutočné schválené recenzie z Netlify Blobs -->
+            <div class="reviews-grid" id="reviewsGrid">
+                <div class="reviews-loading" id="reviewsLoading">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span>Načítavam overené hodnotenia...</span>
                 </div>
             </div>
         </div>

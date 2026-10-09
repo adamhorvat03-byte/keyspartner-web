@@ -2125,6 +2125,298 @@ img {
     color: var(--text-muted);
 }
 
+.reviews-action-bar {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-open-review-form {
+    font-size: 0.95rem;
+    padding: 12px 24px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-open-review-form:hover {
+    border-color: var(--brand-yellow);
+    color: var(--brand-yellow);
+}
+
+/* Formulár na pridanie novej recenzie */
+.review-form-container {
+    max-width: 680px;
+    margin: 36px auto 0;
+    animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.review-form-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 36px 32px;
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    position: relative;
+    text-align: left;
+}
+
+.review-form-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-form-title {
+    font-size: 1.35rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.review-form-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.btn-close-review-form {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.btn-close-review-form:hover {
+    color: var(--brand-yellow);
+    border-color: var(--brand-yellow);
+    background-color: var(--bg-tertiary);
+}
+
+.review-submit-form .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.review-submit-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.review-submit-form input[type="text"],
+.review-submit-form textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    box-sizing: border-box;
+}
+
+.review-submit-form input[type="text"]:focus,
+.review-submit-form textarea:focus {
+    outline: none;
+    border-color: var(--brand-yellow);
+    box-shadow: 0 0 0 3px rgba(181, 137, 32, 0.15);
+}
+
+.review-submit-form textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+}
+
+/* Interaktívny výber hviezdičiek */
+.star-rating-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background-color: var(--bg-primary);
+    padding: 12px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+
+.star-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: transform 0.15s ease, color 0.15s ease;
+    line-height: 1;
+}
+
+.star-btn:hover {
+    transform: scale(1.2);
+}
+
+.star-btn.active,
+.star-btn.hover {
+    color: var(--brand-yellow);
+}
+
+.star-rating-text {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.btn-submit-review {
+    margin-top: 10px;
+    padding: 14px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* Feedback boxy */
+.review-feedback-box {
+    margin-top: 24px;
+    padding: 18px 20px;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    animation: fadeInDown 0.3s ease;
+}
+
+.review-feedback-box.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10B981;
+}
+
+.review-feedback-box.success h4 {
+    color: #10B981;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.review-feedback-box.success p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.review-feedback-box.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #EF4444;
+}
+
+.review-feedback-box.error h4 {
+    color: #EF4444;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.review-feedback-box.error p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.review-feedback-box .feedback-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Stav načítavania a prázdny stav */
+.reviews-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    font-size: 0.95rem;
+}
+
+.reviews-loading i {
+    font-size: 2rem;
+    color: var(--brand-yellow);
+}
+
+.reviews-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 24px;
+    background-color: var(--bg-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius-lg);
+    max-width: 580px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.empty-state-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(181, 137, 32, 0.1);
+    color: var(--brand-yellow);
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+}
+
+.reviews-empty-state h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.reviews-empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
 /* ==========================================================================
    MODÁLNE OKNO (MODAL)
    ========================================================================== */

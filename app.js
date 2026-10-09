@@ -297,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initScrollReveal(); // Spustenie animácií pri skrollovaní
     setupEventListeners();
     loadPropertiesFromApi(); // Asynchrónne načítanie aktuálnych inzerátov z Netlify Blobs
+    initReviewsSystem(); // Dynamický systém zákazníckych recenzií
 });
 
 // --- Asynchrónne načítanie nehnuteľností z Netlify Blobs cez /api/properties ---
@@ -2221,4 +2222,269 @@ function animateValue(id, start, end, duration, suffix = "") {
         }
         obj.innerText = current.toLocaleString("sk-SK") + suffix;
     }, stepTime);
+}
+
+// ==========================================================================
+// DYNAMICKÝ SYSTÉM ZÁKAZNÍCKYCH RECENZIÍ (KEYS PARTNERS a.s.)
+// Automatický zber, moderácia a zobrazovanie výlučne schválených hodnotení
+// ==========================================================================
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function initReviewsSystem() {
+    const grid = document.getElementById("reviewsGrid");
+    const container = document.getElementById("reviewFormContainer");
+    const btnOpen = document.getElementById("btnOpenReviewForm");
+    const btnClose = document.getElementById("btnCloseReviewForm");
+    const reviewForm = document.getElementById("reviewSubmitForm");
+    const starPicker = document.getElementById("starRatingPicker");
+    const ratingInput = document.getElementById("reviewRatingInput");
+    const ratingText = document.getElementById("starRatingText");
+    const submitBtn = document.getElementById("btnSubmitReview");
+    const successBox = document.getElementById("reviewSuccessBox");
+    const errorBox = document.getElementById("reviewErrorBox");
+    const errorMessage = document.getElementById("reviewErrorMessage");
+
+    // 1. Prepínanie viditeľnosti formulára
+    const toggleReviewForm = (forceOpen = false) => {
+        if (!container) return;
+        const isCurrentlyOpen = container.style.display !== "none";
+        const willOpen = forceOpen ? true : !isCurrentlyOpen;
+
+        if (willOpen) {
+            container.style.display = "block";
+            // Ak bol formulár v minulosti úspešne odoslaný, obnovíme ho
+            if (reviewForm) reviewForm.style.display = "block";
+            if (successBox) successBox.style.display = "none";
+            if (errorBox) errorBox.style.display = "none";
+
+            const nameInput = document.getElementById("reviewAuthorName");
+            if (nameInput) setTimeout(() => nameInput.focus(), 150);
+            container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else {
+            container.style.display = "none";
+        }
+    };
+
+    if (btnOpen) {
+        btnOpen.addEventListener("click", () => toggleReviewForm());
+    }
+
+    if (btnClose) {
+        btnClose.addEventListener("click", () => toggleReviewForm(false));
+    }
+
+    // 2. Interaktívny výber hviezdičiek
+    const ratingDescriptions = {
+        1: "1 / 5 (Nespokojnosť)",
+        2: "2 / 5 (Priemerná skúsenosť)",
+        3: "3 / 5 (Dobrá spolupráca)",
+        4: "4 / 5 (Veľmi spokojný)",
+        5: "5 / 5 (Výborná skúsenosť)"
+    };
+
+    const updateStarsVisual = (selectedRating) => {
+        if (!starPicker || !ratingInput) return;
+        ratingInput.value = selectedRating;
+        const starBtns = starPicker.querySelectorAll(".star-btn");
+        starBtns.forEach(btn => {
+            const val = parseInt(btn.dataset.rating, 10);
+            if (val <= selectedRating) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+        if (ratingText) {
+            ratingText.textContent = ratingDescriptions[selectedRating] || `${selectedRating} / 5`;
+        }
+    };
+
+    if (starPicker) {
+        const starBtns = starPicker.querySelectorAll(".star-btn");
+        starBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const val = parseInt(btn.dataset.rating, 10) || 5;
+                updateStarsVisual(val);
+            });
+
+            btn.addEventListener("mouseenter", () => {
+                const hoverVal = parseInt(btn.dataset.rating, 10) || 5;
+                starBtns.forEach(b => {
+                    const bVal = parseInt(b.dataset.rating, 10);
+                    if (bVal <= hoverVal) {
+                        b.classList.add("hover");
+                    } else {
+                        b.classList.remove("hover");
+                    }
+                });
+            });
+        });
+
+        starPicker.addEventListener("mouseleave", () => {
+            starBtns.forEach(b => b.classList.remove("hover"));
+        });
+    }
+
+    // 3. Odoslanie formulára na backendový endpoint /api/submit-review
+    if (reviewForm) {
+        reviewForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("reviewAuthorName")?.value.trim();
+            const rating = parseInt(document.getElementById("reviewRatingInput")?.value, 10) || 5;
+            const text = document.getElementById("reviewCommentText")?.value.trim();
+
+            if (!name || name.length < 2) {
+                alert("Prosím, zadajte vaše meno a priezvisko.");
+                return;
+            }
+
+            if (!text || text.length < 5) {
+                alert("Prosím, napíšte text recenzie (aspoň 5 znakov).");
+                return;
+            }
+
+            if (errorBox) errorBox.style.display = "none";
+            if (successBox) successBox.style.display = "none";
+
+            const origBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Odosielam na schválenie...</span>`;
+
+            try {
+                let res = await fetch("/api/submit-review", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, rating, text })
+                });
+
+                if (!res.ok && res.status === 404) {
+                    res = await fetch("/.netlify/functions/submit-review", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, rating, text })
+                    });
+                }
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || "Nepodarilo sa odoslať recenziu.");
+                }
+
+                // Úspešné odoslanie
+                reviewForm.reset();
+                updateStarsVisual(5);
+                reviewForm.style.display = "none";
+                if (successBox) successBox.style.display = "flex";
+                console.log("[KEYS PARTNERS] Recenzia bola úspešne odoslaná na schválenie (ID: " + data.id + ")");
+            } catch (err) {
+                console.error("[KEYS PARTNERS] Chyba pri odosielaní recenzie:", err);
+                if (errorBox) {
+                    if (errorMessage) errorMessage.textContent = err.message || "Nepodarilo sa odoslať recenziu. Skontrolujte pripojenie a skúste to znova.";
+                    errorBox.style.display = "flex";
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origBtnHtml;
+            }
+        });
+    }
+
+    // 4. Asynchrónne načítanie skutočných schválených recenzií z Netlify Blobs
+    loadApprovedReviews();
+
+    async function loadApprovedReviews() {
+        if (!grid) return;
+
+        try {
+            let res = await fetch(`/api/get-reviews?_=${Date.now()}`, { cache: "no-store" });
+            if (!res.ok && res.status === 404) {
+                res = await fetch(`/.netlify/functions/get-reviews?_=${Date.now()}`, { cache: "no-store" });
+            }
+
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
+
+            const json = await res.json();
+            const reviews = (json && Array.isArray(json.data)) ? json.data : [];
+
+            // Striktná kontrola: Zobrazujeme VÝLUČNE recenzie so statusom "approved"
+            const approved = reviews.filter(r => r && (r.status === "approved" || !r.status));
+
+            renderReviews(approved);
+        } catch (err) {
+            console.warn("[KEYS PARTNERS] Nepodarilo sa načítať recenzie z Netlify Blobs:", err.message);
+            renderReviews([]);
+        }
+    }
+
+    function renderReviews(reviews) {
+        if (!grid) return;
+
+        if (!reviews || reviews.length === 0) {
+            grid.innerHTML = `
+                <div class="reviews-empty-state">
+                    <div class="empty-state-icon"><i class="fa-regular fa-star"></i></div>
+                    <h3>Zatiaľ žiadne verejné hodnotenia</h3>
+                    <p>Boli ste spokojní s našimi realitnými službami? Podeľte sa o vašu skúsenosť a buďte prvý, kto pridá hodnotenie.</p>
+                    <button type="button" class="btn btn-primary" id="btnEmptyAddReview">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Pridať prvé hodnotenie</span>
+                    </button>
+                </div>
+            `;
+            const emptyBtn = document.getElementById("btnEmptyAddReview");
+            if (emptyBtn) {
+                emptyBtn.addEventListener("click", () => toggleReviewForm(true));
+            }
+            return;
+        }
+
+        grid.innerHTML = reviews.map(r => {
+            const ratingNum = Math.min(5, Math.max(1, parseInt(r.rating, 10) || 5));
+            let starsHtml = "";
+            for (let i = 1; i <= 5; i++) {
+                if (i <= ratingNum) {
+                    starsHtml += `<i class="fa-solid fa-star"></i>`;
+                } else {
+                    starsHtml += `<i class="fa-regular fa-star"></i>`;
+                }
+            }
+
+            let dateLabel = "Overený klient";
+            if (r.approvedAt || r.createdAt) {
+                try {
+                    const d = new Date(r.approvedAt || r.createdAt);
+                    dateLabel = `Overený klient • ${d.toLocaleDateString("sk-SK")}`;
+                } catch (_e) {}
+            }
+
+            const safeName = escapeHtml(r.name || "Overený partner");
+            const safeText = escapeHtml(r.text || "");
+
+            return `
+                <div class="review-card">
+                    <div class="review-rating" aria-label="${ratingNum} z 5 hviezdičiek">
+                        ${starsHtml}
+                    </div>
+                    <p class="review-text">"${safeText}"</p>
+                    <div class="review-author">
+                        <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4>${safeName}</h4>
+                            <span>${dateLabel}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
 }
