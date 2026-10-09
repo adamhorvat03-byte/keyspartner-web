@@ -264,20 +264,26 @@ export default async (req, context) => {
   const approvalUrl = `${siteUrl}/api/approve-review?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
 
   // Odoslanie e-mailu schvaľovateľovi Braňovi Horvátovi
-  const approverEmail = process.env.REVIEW_APPROVER_EMAIL || "branislav_horvat@keyspartners.sk";
-  const fromEmail = process.env.REVIEW_EMAIL_FROM || "Keys Partners Web <onboarding@resend.dev>";
+  // Primárna a predvolená adresa je presne branislav_horvat@keyspartners.sk
+  const approverEmail = (process.env.REVIEW_APPROVER_EMAIL || "branislav_horvat@keyspartners.sk").trim();
+  const fromEmail = (process.env.REVIEW_EMAIL_FROM || "Keys Partners <onboarding@resend.dev>").trim();
+
+  console.log(`[SUBMIT-REVIEW] Odosielam schvaľovaciu notifikáciu pre recenziu ${id}`);
+  console.log(`[SUBMIT-REVIEW] Príjemca e-mailu (To:): ${approverEmail}`);
+  console.log(`[SUBMIT-REVIEW] Schvaľovací odkaz: ${approvalUrl}`);
 
   let emailSent = false;
   let emailProvider = null;
   let emailError = null;
 
+  // 1. Prioritný poskytovateľ: Resend (premenná RESEND_API_KEY)
   if (process.env.RESEND_API_KEY) {
     emailProvider = "resend";
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY.trim()}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -288,30 +294,70 @@ export default async (req, context) => {
           text: buildApprovalEmailText({ review: reviewData, approvalUrl })
         })
       });
+
       if (res.ok) {
         emailSent = true;
-        console.log(`[SUBMIT-REVIEW] E-mail úspešne odoslaný cez Resend na ${approverEmail}`);
+        const resData = await res.json().catch(() => ({}));
+        console.log(`[SUBMIT-REVIEW ÚSPECH] E-mail bol úspešne doručený na ${approverEmail} cez Resend (ID: ${resData.id || 'ok'}).`);
       } else {
         const errText = await res.text();
-        emailError = `Resend API chyba (${res.status}): ${errText}`;
-        console.error("[SUBMIT-REVIEW]", emailError);
+        emailError = `Resend HTTP ${res.status}: ${errText}`;
+        console.error(`[SUBMIT-REVIEW CHYBA] Odoslanie cez Resend na ${approverEmail} zlyhalo (HTTP ${res.status}): ${errText}`);
+        
+        if (res.status === 403) {
+          console.error(`[SUBMIT-REVIEW RESEND INFO] Resend chyba 403: Testovacia adresa 'onboarding@resend.dev' dovoľuje odosielať maily iba na adresu vášho Resend účtu. Na doručovanie na doménu ${approverEmail} je potrebné overiť doménu v Resend (https://resend.com/domains) a nastaviť premennú REVIEW_EMAIL_FROM (napr. recenzie@keyspartners.sk).`);
+        }
       }
     } catch (e) {
       emailError = e.message;
-      console.error("[SUBMIT-REVIEW] Výnimka pri volaní Resend:", e);
+      console.error(`[SUBMIT-REVIEW CHYBA] Neočakávaná výnimka pri odosielaní cez Resend: ${e.message}`, e);
+    }
+  } else if (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY) {
+    // 2. Poskytovateľ Brevo / Sendinblue (premenná BREVO_API_KEY)
+    emailProvider = "brevo";
+    const apiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY).trim();
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          sender: { name: "Keys Partners Web", email: process.env.BREVO_SENDER_EMAIL || "recenzie@keyspartners.sk" },
+          to: [{ email: approverEmail, name: "Branislav Horvát" }],
+          subject: `⭐ Nová recenzia od ${name} (${rating}★) na schválenie`,
+          htmlContent: buildApprovalEmailHtml({ review: reviewData, approvalUrl }),
+          textContent: buildApprovalEmailText({ review: reviewData, approvalUrl })
+        })
+      });
+
+      if (res.ok) {
+        emailSent = true;
+        console.log(`[SUBMIT-REVIEW ÚSPECH] E-mail bol úspešne odoslaný na ${approverEmail} cez Brevo.`);
+      } else {
+        const errText = await res.text();
+        emailError = `Brevo HTTP ${res.status}: ${errText}`;
+        console.error(`[SUBMIT-REVIEW CHYBA] Odoslanie cez Brevo zlyhalo: ${errText}`);
+      }
+    } catch (e) {
+      emailError = e.message;
+      console.error(`[SUBMIT-REVIEW CHYBA] Výnimka pri volaní Brevo: ${e.message}`, e);
     }
   } else if (process.env.SENDGRID_API_KEY) {
+    // 3. Poskytovateľ SendGrid (premenná SENDGRID_API_KEY)
     emailProvider = "sendgrid";
     try {
       const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.SENDGRID_API_KEY}`,
+          "Authorization": `Bearer ${process.env.SENDGRID_API_KEY.trim()}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          personalizations: [{ to: [{ email: approverEmail }] }],
-          from: { email: process.env.SENDGRID_FROM || "no-reply@keyspartners.sk", name: "Keys Partners Web" },
+          personalizations: [{ to: [{ email: approverEmail, name: "Branislav Horvát" }] }],
+          from: { email: process.env.SENDGRID_FROM || "recenzie@keyspartners.sk", name: "Keys Partners Web" },
           subject: `⭐ Nová recenzia od ${name} (${rating}★) na schválenie`,
           content: [
             { type: "text/plain", value: buildApprovalEmailText({ review: reviewData, approvalUrl }) },
@@ -319,21 +365,26 @@ export default async (req, context) => {
           ]
         })
       });
+
       if (res.ok) {
         emailSent = true;
-        console.log(`[SUBMIT-REVIEW] E-mail úspešne odoslaný cez SendGrid na ${approverEmail}`);
+        console.log(`[SUBMIT-REVIEW ÚSPECH] E-mail bol úspešne odoslaný cez SendGrid na ${approverEmail}.`);
       } else {
         const errText = await res.text();
-        emailError = `SendGrid API chyba (${res.status}): ${errText}`;
-        console.error("[SUBMIT-REVIEW]", emailError);
+        emailError = `SendGrid HTTP ${res.status}: ${errText}`;
+        console.error(`[SUBMIT-REVIEW CHYBA] Odoslanie cez SendGrid zlyhalo: ${errText}`);
       }
     } catch (e) {
       emailError = e.message;
-      console.error("[SUBMIT-REVIEW] Výnimka pri volaní SendGrid:", e);
+      console.error(`[SUBMIT-REVIEW CHYBA] Výnimka pri volaní SendGrid: ${e.message}`, e);
     }
   } else {
-    console.warn("[SUBMIT-REVIEW] UPOZORNENIE: Žiadny e-mailový kľúč (RESEND_API_KEY ani SENDGRID_API_KEY) nie je v premenných Netlify nastavený.");
-    console.info(`[SUBMIT-REVIEW] Schvaľovací odkaz pre Braňa Horváta: ${approvalUrl}`);
+    // Žiadny API kľúč nie je nastavený v Netlify Environment Variables!
+    emailError = "CHÝBA_API_KĽÚČ_V_NETLIFY";
+    console.error(`[SUBMIT-REVIEW CHYBA] E-mail sa NEODOSLAL na '${approverEmail}'!`);
+    console.error(`[SUBMIT-REVIEW CHYBA] Dôvod: V Netlify (Site configuration -> Environment variables) chýba premenná RESEND_API_KEY.`);
+    console.error(`[SUBMIT-REVIEW CHYBA] Riešenie: Otvorte Netlify, pridajte premennú 'RESEND_API_KEY' a vložte váš API kľúč z resend.com.`);
+    console.info(`[SUBMIT-REVIEW INFO] Priamy schvaľovací odkaz pre makléra: ${approvalUrl}`);
   }
 
   return new Response(JSON.stringify({
@@ -341,10 +392,11 @@ export default async (req, context) => {
     message: "Recenzia bola úspešne odoslaná na schválenie maklérovi.",
     id,
     emailSent,
+    approverEmail,
     emailProvider,
     emailError,
-    // V testovacom/vývojovom prostredí vraciame odkaz aj v odpovedi pre ľahké overenie
-    devApprovalUrl: !emailSent ? approvalUrl : undefined
+    // Vrátime odkaz aj v JSON odpovedi pre diagnostiku
+    approvalUrl
   }), {
     status: 200,
     headers: corsHeaders
