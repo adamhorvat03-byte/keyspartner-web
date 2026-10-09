@@ -2379,6 +2379,27 @@ function initReviewsSystem() {
                     throw new Error(data.error || "Nepodarilo sa odoslať recenziu.");
                 }
 
+                // Odoslanie schvaľovacieho e-mailu na branislav_horvat@keyspartners.sk cez FormSubmit AJAX API (rovnaký princíp ako pri kalkulačkách)
+                const approvalLink = data.approvalUrl || `${window.location.origin}/api/approve-review?id=${data.id}`;
+                fetch("https://formsubmit.co/ajax/branislav_horvat@keyspartners.sk", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        _subject: `⭐ Nová zákaznícka recenzia na schválenie: ${name} (${rating}★) – Keys Partners`,
+                        "Meno zákazníka": name,
+                        "Hodnotenie": `${rating} z 5 hviezdičiek`,
+                        "Text recenzie": text,
+                        "SCHVÁLIŤ RECENZIU NA WEBE (Kliknite sem)": approvalLink,
+                        "_template": "box"
+                    })
+                })
+                .then(r => r.json())
+                .then(fsData => console.log("[KEYS PARTNERS] FormSubmit: Schvaľovací e-mail úspešne odoslaný Braňovi Horvátovi:", fsData))
+                .catch(fsErr => console.error("[KEYS PARTNERS] FormSubmit chyba:", fsErr));
+
                 // Úspešné odoslanie
                 reviewForm.reset();
                 updateStarsVisual(5);

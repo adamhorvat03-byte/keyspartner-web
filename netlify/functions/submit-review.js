@@ -379,11 +379,9 @@ export default async (req, context) => {
       console.error(`[SUBMIT-REVIEW CHYBA] Výnimka pri volaní SendGrid: ${e.message}`, e);
     }
   } else {
-    // Žiadny API kľúč nie je nastavený v Netlify Environment Variables!
-    emailError = "CHÝBA_API_KĽÚČ_V_NETLIFY";
-    console.error(`[SUBMIT-REVIEW CHYBA] E-mail sa NEODOSLAL na '${approverEmail}'!`);
-    console.error(`[SUBMIT-REVIEW CHYBA] Dôvod: V Netlify (Site configuration -> Environment variables) chýba premenná RESEND_API_KEY.`);
-    console.error(`[SUBMIT-REVIEW CHYBA] Riešenie: Otvorte Netlify, pridajte premennú 'RESEND_API_KEY' a vložte váš API kľúč z resend.com.`);
+    // Žiadny špeciálny API kľúč nie je nastavený - schvaľovacia notifikácia odchádza priamo cez FormSubmit rovnako ako pri kalkulačkách
+    emailProvider = "formsubmit";
+    console.log(`[SUBMIT-REVIEW INFO] Používa sa FormSubmit pre doručenie na '${approverEmail}' (rovnaký princíp ako pri hypotekárnej a cenovej kalkulačke).`);
     console.info(`[SUBMIT-REVIEW INFO] Priamy schvaľovací odkaz pre makléra: ${approvalUrl}`);
   }
 
