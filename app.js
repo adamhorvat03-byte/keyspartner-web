@@ -253,7 +253,7 @@ const AGENTS = [
     {
         id: 2,
         name: "Ing. Branislav HORVÁT",
-        role: "Realitný maklér / Partner",
+        role: "Realitný maklér/Partner",
         phone: "+421 905 785 951",
         email: "branislav_horvat@keyspartners.sk",
         image: "brano.jpg"
@@ -261,7 +261,7 @@ const AGENTS = [
     {
         id: 1,
         name: "Peter DUDA",
-        role: "Realitný maklér / Vzťahový riaditeľ",
+        role: "Realitný maklér/Vzťahový riaditeľ",
         phone: "+421 907 441 405",
         email: "peter_duda@keyspartners.sk",
         image: "duda.jpg"
