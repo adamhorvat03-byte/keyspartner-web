@@ -273,6 +273,14 @@ const AGENTS = [
         phone: "+421 917 817 207",
         email: "peter_pella@keyspartners.sk",
         image: "pella.jpg"
+    },
+    {
+        id: 4,
+        name: "Samuel Hrivňak",
+        role: "Realitný maklér",
+        phone: "+421 949 424 377",
+        email: "samuel_hrivnak@keyspartners.sk",
+        image: null
     }
 ];
 
@@ -701,7 +709,7 @@ function createPropertyCardElement(prop) {
             <img src="${safeImg}" alt="${prop.title}" loading="lazy" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
             ${agent ? `
             <div class="card-agent-badge" title="Zodpovedný maklér: ${agent.name}">
-                <img src="${agent.image}" alt="${agent.name}" class="card-agent-img">
+                ${agent.image ? `<img src="${agent.image}" alt="${agent.name}" class="card-agent-img">` : `<div class="card-agent-img agent-avatar-placeholder" aria-label="${agent.name}"></div>`}
             </div>` : ''}
             <div class="card-price-tag">${priceFormatted}</div>
         </div>
@@ -1046,7 +1054,7 @@ function renderAgentFilterBanner(agent) {
 
     banner.innerHTML = `
         <div class="agent-filter-banner-content">
-            <img src="${agent.image}" alt="${agent.name}" class="agent-filter-banner-avatar">
+            ${agent.image ? `<img src="${agent.image}" alt="${agent.name}" class="agent-filter-banner-avatar">` : `<div class="agent-filter-banner-avatar agent-avatar-placeholder" aria-label="${agent.name}"></div>`}
             <div class="agent-filter-banner-text">
                 <span class="agent-filter-banner-label"><i class="fa-solid fa-filter text-gold"></i> Filtrované portfólio makléra:</span>
                 <h3 class="agent-filter-banner-name">${agent.name} <span class="agent-filter-banner-count">(${countStr})</span></h3>
@@ -1084,10 +1092,14 @@ function renderAgents() {
         }).length;
         const offersCountText = activeOffers === 1 ? "1 ponuka" : (activeOffers >= 2 && activeOffers <= 4 ? `${activeOffers} ponuky` : `${activeOffers} ponúk`);
 
-        card.innerHTML = `
-            <div class="agent-img-wrapper" style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}">
+        const imgWrapperHtml = agent.image
+            ? `<div class="agent-img-wrapper" style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}">
                 <img src="${agent.image}" alt="${agent.name}">
-            </div>
+            </div>`
+            : `<div class="agent-img-wrapper agent-img-placeholder" style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}" aria-label="${agent.name}"></div>`;
+
+        card.innerHTML = `
+            ${imgWrapperHtml}
             <div class="agent-info">
                 <h3 style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}">${agent.name}</h3>
                 <div class="agent-role">${agent.role}</div>
@@ -1147,6 +1159,7 @@ function getAgentForProperty(prop) {
     const duda = AGENTS.find(a => a.name.toLowerCase().includes("duda")) || AGENTS[1];
     const horvat = AGENTS.find(a => a.name.toLowerCase().includes("horv")) || AGENTS[0];
     const pella = AGENTS.find(a => a.name.toLowerCase().includes("pella")) || AGENTS[2];
+    const hrivnak = AGENTS.find(a => a.name.toLowerCase().includes("hriv")) || AGENTS[3];
 
     // 1. Zistiť meno a kontakt makléra z objektu alebo reťazca
     let rawAgent = prop.agent || prop.broker || prop.makler;
@@ -1235,6 +1248,23 @@ function getAgentForProperty(prop) {
             ...duda,
             phone: agentPhone || duda.phone,
             email: agentEmail || duda.email
+        };
+    }
+
+    // 5. Samuel Hrivňak:
+    const isHrivnak =
+        agentIdStr === "4" ||
+        agentNameLower.includes("hrivn") ||
+        agentNameLower.includes("hrivň") ||
+        descStr.includes("samuel hrivňak") ||
+        descStr.includes("samuel hrivnak") ||
+        descStr.includes("424 377");
+
+    if (isHrivnak && hrivnak) {
+        return {
+            ...hrivnak,
+            phone: agentPhone || hrivnak.phone,
+            email: agentEmail || hrivnak.email
         };
     }
 
@@ -1460,7 +1490,7 @@ function openPropertyModal(id) {
                 <div class="modal-agent-card">
                     <h4>Vzťahový manažér</h4>
                     <div class="modal-agent-info modal-agent-clickable" id="modalAgentProfileTrigger" title="Kliknutím zobrazíte všetky aktívne ponuky makléra ${agent.name}">
-                        <img src="${agent.image}" alt="${agent.name}" class="modal-agent-avatar">
+                        ${agent.image ? `<img src="${agent.image}" alt="${agent.name}" class="modal-agent-avatar">` : `<div class="modal-agent-avatar agent-avatar-placeholder" aria-label="${agent.name}"></div>`}
                         <div class="modal-agent-details">
                             <div class="modal-agent-name">
                                 ${agent.name}
