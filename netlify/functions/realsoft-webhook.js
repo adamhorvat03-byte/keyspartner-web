@@ -1290,8 +1290,9 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         substatus: statusInfo.substatus,
         isReserved: statusInfo.isReserved,
         isSold: statusInfo.isSold,
-        agentId: raw.agentId || raw.agent_id || null,
+        agentId: raw.agentId || raw.agent_id || raw.user_id || null,
         agent: raw.agent || raw.broker || raw.makler || null,
+        agentEmail: raw.agentEmail || raw.agent_email || raw.user_email || (raw.agent && raw.agent.email) || (raw.broker && raw.broker.email) || (raw.makler && raw.makler.email) || null,
         desc: raw.description || raw.desc || raw.popis || raw.text || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
         technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || {
           "Inžinierske siete": raw.utilities || "Voda, elektrina, plyn, kanalizácia",

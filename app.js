@@ -1165,15 +1165,17 @@ function getAgentForProperty(prop) {
     let rawAgent = prop.agent || prop.broker || prop.makler;
     let agentName = "";
     let agentPhone = "";
-    let agentEmail = "";
+    let agentEmail = String(prop.agentEmail || prop.agent_email || prop.user_email || "").trim();
 
     if (typeof rawAgent === "string") {
         agentName = rawAgent.trim();
     } else if (rawAgent && typeof rawAgent === "object") {
         agentName = String(rawAgent.name || rawAgent.fullName || rawAgent.full_name || rawAgent.meno || "").trim();
         agentPhone = String(rawAgent.phone || rawAgent.telefon || rawAgent.mobil || "").trim();
-        agentEmail = String(rawAgent.email || rawAgent.mail || "").trim();
+        agentEmail = String(rawAgent.email || rawAgent.mail || agentEmail || "").trim();
     }
+
+    const agentEmailLower = agentEmail.toLowerCase();
 
     const agentIdStr = String(prop.agentId || prop.agent_id || "").trim();
     const titleStr = String(prop.title || "").toLowerCase();
@@ -1197,11 +1199,12 @@ function getAgentForProperty(prop) {
     }
 
     // 2. Branislav Horvát:
-    // Realsoft ID 2739883856, interné ID 2, obec Soľník, alebo priame overené meno v objekte / popise
+    // Realsoft ID 2739883856, interné ID 2, obec Soľník, alebo priame overené meno / e-mail v objekte / popise
     const isHorvat = 
         agentIdStr === "2739883856" ||
         agentIdStr === "2" ||
         agentNameLower.includes("horv") ||
+        agentEmailLower.includes("horvat") ||
         titleStr.includes("soľník") ||
         titleStr.includes("solnik") ||
         locationStr.includes("soľník") ||
@@ -1219,11 +1222,12 @@ function getAgentForProperty(prop) {
     }
 
     // 3. JUDr. Peter Pella:
-    // Realsoft ID 2742504158, interné ID 3, alebo priame overené meno v objekte / popise
+    // Realsoft ID 2742504158, interné ID 3, alebo priame overené meno / e-mail v objekte / popise
     const isPella = 
         agentIdStr === "2742504158" ||
         agentIdStr === "3" ||
         agentNameLower.includes("pella") ||
+        agentEmailLower.includes("pella") ||
         descStr.includes("peter pella");
 
     if (isPella) {
@@ -1235,11 +1239,12 @@ function getAgentForProperty(prop) {
     }
 
     // 4. Peter Duda:
-    // Realsoft ID 1162803367, interné ID 1 (pre predvolené ponuky KP), alebo priame overené meno / kontakt
+    // Realsoft ID 1162803367, interné ID 1 (pre predvolené ponuky KP), alebo priame overené meno / kontakt / e-mail
     const isDuda = 
         agentIdStr === "1162803367" ||
         agentIdStr === "1" ||
         agentNameLower.includes("duda") ||
+        agentEmailLower.includes("duda") ||
         descStr.includes("peter duda") ||
         descStr.includes("441 405");
 
@@ -1256,6 +1261,7 @@ function getAgentForProperty(prop) {
         agentIdStr === "4" ||
         agentNameLower.includes("hrivn") ||
         agentNameLower.includes("hrivň") ||
+        agentEmailLower.includes("hrivnak") ||
         descStr.includes("samuel hrivňak") ||
         descStr.includes("samuel hrivnak") ||
         descStr.includes("424 377");
@@ -1509,14 +1515,16 @@ function openPropertyModal(id) {
                     </div>
                     
                     <form id="modalContactForm" class="modal-compact-form">
-                        <input type="hidden" name="propId" value="${prop.id}">
+                        <input type="hidden" name="propId" value="${prop.externalId || prop.id}">
+                        <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${agent.email}">
+                        <input type="hidden" id="modalAgentName" name="agentName" value="${agent.name}">
                         <div class="form-group">
                             <input type="text" id="modalClientName" placeholder="Vaše meno" required class="modal-compact-input">
                         </div>
                         <div class="form-group">
                             <input type="tel" id="modalClientPhone" placeholder="Telefón" required class="modal-compact-input">
                         </div>
-                        <button type="submit" class="btn-modal-submit">
+                        <button type="submit" id="btnModalSubmit" class="btn-modal-submit">
                             Mám záujem o ponuku
                         </button>
                     </form>
@@ -1601,14 +1609,87 @@ function openPropertyModal(id) {
         }
     }
     
-    // Udalosť odoslania kontaktného formulára (iba ak formulár existuje v DOM)
+    // Udalosť odoslania kontaktného formulára (odoslanie dopytu priamo na dynamický e-mail makléra danej nehnuteľnosti)
     const contactForm = document.getElementById("modalContactForm");
-    if (contactForm) {
-        contactForm.addEventListener("submit", (e) => {
+    if (contactForm && agent) {
+        contactForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            contactForm.style.display = "none";
-            const successEl = document.getElementById("modalFormSuccess");
-            if (successEl) successEl.style.display = "block";
+            const clientName = document.getElementById("modalClientName")?.value.trim();
+            const clientPhone = document.getElementById("modalClientPhone")?.value.trim();
+            const recipientEmail = (document.getElementById("modalAgentEmail")?.value || agent.email || "branislav_horvat@keyspartners.sk").trim();
+            const recipientName = (document.getElementById("modalAgentName")?.value || agent.name || "").trim();
+            const propertyIdVal = String(prop.externalId || prop.id || "-");
+
+            if (!clientName || !clientPhone) return;
+
+            const submitBtn = document.getElementById("btnModalSubmit");
+            const origBtnHtml = submitBtn ? submitBtn.innerHTML : "Mám záujem o ponuku";
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Odosielam...`;
+            }
+
+            const inquiryPayload = {
+                agentEmail: recipientEmail,
+                agentName: recipientName,
+                clientName,
+                clientPhone,
+                propertyId: propertyIdVal,
+                propertyTitle: prop.title,
+                propertyLocation: prop.location,
+                propertyPrice: priceFormatted
+            };
+
+            try {
+                // 1. Odoslanie cez našu Netlify funkciu /api/property-inquiry
+                let res = await fetch("/api/property-inquiry", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(inquiryPayload)
+                });
+                if (!res.ok && res.status === 404) {
+                    res = await fetch("/.netlify/functions/property-inquiry", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(inquiryPayload)
+                    });
+                }
+
+                const resData = await res.json().catch(() => ({}));
+
+                // 2. Ak server nepoužil priamy SMTP kľúč, poistíme doručenie aj priamym volaním FormSubmit AJAX z prehliadača na dynamický e-mail makléra
+                if (!resData.emailSent) {
+                    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipientEmail)}`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            _subject: `Nový záujem o ponuku (${propertyIdVal}): ${prop.title} – Keys Partners`,
+                            "Meno záujemcu": clientName,
+                            "Telefón záujemcu": clientPhone,
+                            "Nehnuteľnosť": prop.title,
+                            "ID ponuky": propertyIdVal,
+                            "Lokalita": prop.location || "-",
+                            "Cena": priceFormatted,
+                            "Zodpovedný maklér": `${recipientName} (${recipientEmail})`
+                        })
+                    });
+                }
+
+                console.log(`[KEYS PARTNERS] Dopyt na ponuku ${propertyIdVal} úspešne odoslaný maklérovi ${recipientName} (${recipientEmail}).`);
+            } catch (err) {
+                console.error("[KEYS PARTNERS] Chyba pri odosielaní dopytu na ponuku:", err);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origBtnHtml;
+                }
+                contactForm.style.display = "none";
+                const successEl = document.getElementById("modalFormSuccess");
+                if (successEl) successEl.style.display = "block";
+            }
         });
     }
 }
