@@ -137,6 +137,14 @@ function extractRooms(raw, titleText) {
     raw.dispozicia
   ];
 
+  // Ak je v nadpise explicitne uvedený počet izieb (napr. "3 izbový byt"), má prednosť pred nesprávnym číslom
+  if (titleText && typeof titleText === "string") {
+    const titleMatch = titleText.match(/(\d+)\s*[-–]?\s*izb/i);
+    if (titleMatch) {
+      return parseInt(titleMatch[1], 10);
+    }
+  }
+
   for (const c of candidates) {
     if (c === null || c === undefined || c === "" || String(c).toLowerCase() === "null") continue;
     if (typeof c === "number" && !isNaN(c) && c > 0) {
@@ -157,18 +165,26 @@ function extractRooms(raw, titleText) {
   if (raw.subcategory) {
     const sub = Number(raw.subcategory);
     if (sub >= 401 && sub <= 406) {
-      return sub === 401 ? 1 : sub - 400;
-    }
-  }
-
-  if (titleText && typeof titleText === "string") {
-    const titleMatch = titleText.match(/(\d+)[ -]?izb/i);
-    if (titleMatch) {
-      return parseInt(titleMatch[1], 10);
+      return sub === 401 ? 1 : sub - 401;
     }
   }
 
   return null;
+}
+
+function extractCategoryLabel(raw, propType, rooms) {
+  const sub = raw.subcategory ? Number(raw.subcategory) : NaN;
+  if (sub === 401) return "Garsónka";
+  if (sub === 407) return "Mezonet";
+  if (sub === 408) return "Apartmán";
+  if (sub === 409) return "Loft";
+  if (propType === "byt") {
+    const rNum = Number(rooms);
+    return (!isNaN(rNum) && rNum > 0) ? `${rNum}-izbový byt` : "Byt";
+  }
+  if (propType === "dom") return "Rodinný dom";
+  if (propType === "pozemi") return "Stavebný pozemok";
+  return "Komerčné / Investícia";
 }
 
 function extractArea(raw) {
@@ -249,7 +265,18 @@ function extractLocation(raw) {
 }
 
 function extractTitle(raw, propType, dealType, rooms, location) {
-  const explicitTitle = raw.title || raw.name || raw.nazov || raw.headline || raw.subject;
+  const explicitTitle =
+    raw.title ||
+    raw.name ||
+    raw.nazov ||
+    raw.headline ||
+    raw.subject ||
+    raw.nadpis ||
+    raw.heading ||
+    raw.inzerat_nazov ||
+    raw.advertisement_title ||
+    raw.title_sk ||
+    raw.name_sk;
   if (explicitTitle && typeof explicitTitle === "string" && explicitTitle.trim().length > 0) {
     const trimmed = explicitTitle.trim();
     if (!trimmed.startsWith("Nehnuteľnosť RS-") && !trimmed.startsWith("Property ")) {
@@ -426,8 +453,14 @@ function extractAllImages(raw) {
 
   for (const single of singleCandidates) {
     const u = extractImageUrl(single);
-    if (u && !isAgentPhoto(u) && !images.includes(u)) {
-      images.unshift(u);
+    if (u && !isAgentPhoto(u)) {
+      const existingIdx = images.indexOf(u);
+      if (existingIdx > 0) {
+        images.splice(existingIdx, 1);
+      }
+      if (!images.includes(u)) {
+        images.unshift(u);
+      }
     }
   }
 
@@ -1149,14 +1182,55 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
 
   const action = String(actionOverride || raw.action || "upsert").toLowerCase();
 
+  // Načítanie prípadného existujúceho záznamu z Netlify Blobs (aby sme pri úprave nehnuteľnosti
+  // zachovali jej zaradenie alebo existujúce atribúty a prepísali všetky zmenené polia)
+  let existingRecord = null;
+  let alreadyExists = false;
+  if (storeInfo && storeInfo.store) {
+    try {
+      if (typeof storeInfo.store.getJSON === "function") {
+        existingRecord = await storeInfo.store.getJSON(externalId);
+        if (!existingRecord && primaryObjectId !== null) {
+          existingRecord = await storeInfo.store.getJSON(String(primaryObjectId));
+        }
+      } else if (typeof storeInfo.store.get === "function") {
+        const rawExisting = await storeInfo.store.get(externalId, { type: "json" });
+        if (rawExisting) {
+          existingRecord = typeof rawExisting === "string" ? JSON.parse(rawExisting) : rawExisting;
+        } else if (primaryObjectId !== null) {
+          const rawNum = await storeInfo.store.get(String(primaryObjectId), { type: "json" });
+          if (rawNum) {
+            existingRecord = typeof rawNum === "string" ? JSON.parse(rawNum) : rawNum;
+          }
+        }
+      }
+      if (existingRecord) {
+        alreadyExists = true;
+      }
+    } catch (_e) {}
+  }
+  if (raw.extern_id) alreadyExists = true;
+
+  const hasUpdatedContent = Boolean(
+    raw.title ||
+    raw.name ||
+    raw.nazov ||
+    raw.headline ||
+    raw.nadpis ||
+    raw.heading ||
+    raw.inzerat_nazov ||
+    raw.price !== undefined ||
+    raw.cena !== undefined ||
+    raw.description ||
+    raw.popis ||
+    raw.text
+  );
+
   // 5. OŠETRENIE EXPLICITNEJ POŽIADAVKY NA VYMAZANIE (action: delete / deleted: 1 / postAction: 3)
-  // Špecifický use-case (šetrenie limitov v platenom CRM balíku Realsoft):
-  // Pri predaných a rezervovaných nehnuteľnostiach maklér vypína prepínač "Zverejniť na vlastnom webe".
-  // Realsoft vtedy odošle požiadavku na vymazanie (action: delete / deleted: 1).
-  // TÚTO POŽIADAVKU NA VYMAZANIE Z REALSOFTU ÚPLNE ODIGNORUJEME (nesmie sa zavolať store.delete),
-  // inzerát zostáva v Netlify Blobs nedotknutý a zachovaný.
-  // Realsoftu však vrátime úspešnú odpoveď code: 3 / "Object deleted", aby si CRM myslelo, že inzerát
-  // bol úspešne stiahnutý a nevyhadzovalo chyby synchronizácie.
+  // Ak Realsoft pošle iba prázdny príkaz na stiahnutie z inzercie (bez aktualizovaných polí názvu/ceny/popisu),
+  // inzerát zostáva v Netlify Blobs zachovaný a Realsoftu vrátime code: 3.
+  // Ak však požiadavka obsahuje aj aktualizované dáta nehnuteľnosti (napr. zmenený názov, cena, m2, popis, fotka),
+  // záznam v Netlify Blobs riadne prepíšeme novými údajmi!
   const isExplicitDeleteAction =
     action === "delete" ||
     action === "remove" ||
@@ -1170,8 +1244,8 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     raw.deleted === "true" ||
     raw.is_deleted === true;
 
-  if (isExplicitDeleteAction) {
-    console.log(`[REALSOFT IGNORE DELETE] Explicitná požiadavka na vymazanie (action: delete / deleted: 1) pre ${isAgent ? "makléra" : "zákazku"} ${externalId} (object_id: ${primaryObjectId}) bola ODIGNOROVANÁ. Inzerát zostáva v Netlify Blobs ZACHOVANÝ. Realsoftu vraciame úspešný kód 3 (${isAgent ? "Agent deleted" : "Object deleted"}).`);
+  if (isExplicitDeleteAction && !hasUpdatedContent) {
+    console.log(`[REALSOFT IGNORE DELETE] Explicitná požiadavka na vymazanie bez nových dát pre ${isAgent ? "makléra" : "zákazku"} ${externalId} (object_id: ${primaryObjectId}) bola ODIGNOROVANÁ. Inzerát zostáva v Netlify Blobs ZACHOVANÝ.`);
     return {
       success: true,
       externalId,
@@ -1182,12 +1256,47 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
     };
   }
 
-  // Pre bežné ukladanie / aktualizáciu (upsert / edit):
-  // Zverejnené a aktualizované môžu byť VÝLUČNE nehnuteľnosti so stavom "Voľný", "Rezervovaný" a "Predaný".
-  // Fyzické zmazanie z Netlify Blobs sa odteraz deje výlučne dvoma spôsobmi:
-  // 1. Zmenou stavu nehnuteľnosti na neaktívny (napr. Zrušený, Prenajatý, prázdny stav) v čase, keď je prepínač exportu EŠTE ZAPNUTÝ.
-  // 2. Manuálnym zavolaním nášho čistiaceho endpointu ?clean=inactive.
-  const statusInfo = getPropertyStatus(raw);
+  let statusInfo = getPropertyStatus(raw);
+
+  // Ak inzerát už v Blobs existoval (napr. v sekcii Rezervované alebo Sprostredkované) a klient v Realsofte
+  // zmenil jeho názov (napr. vymazal slovo "Rezervovaný_" z nadpisu), pričom stav nie je Zrušený (5) ani Prenajatý (6):
+  if (existingRecord && statusInfo.reason !== "code_5_cancelled" && statusInfo.reason !== "cancelled_text" && statusInfo.reason !== "title_cancelled" && statusInfo.reason !== "status_deleted" && statusInfo.reason !== "code_6_rented" && statusInfo.reason !== "rented_text" && statusInfo.reason !== "title_rented") {
+    if (!statusInfo.isAllowed) {
+      // Zachovať existujúci stav zákazky a povoliť prepis všetkých jej údajov
+      statusInfo = {
+        isAllowed: true,
+        status: existingRecord.status || "active",
+        substatus: existingRecord.substatus || (existingRecord.status === "reserved" ? "rezervovany" : existingRecord.status === "sold" ? "predane" : "volny"),
+        isReserved: Boolean(existingRecord.isReserved || existingRecord.status === "reserved"),
+        isSold: Boolean(existingRecord.isSold || existingRecord.status === "sold"),
+        reason: "preserved_existing_status_on_update"
+      };
+    } else if (statusInfo.status === "active" && (existingRecord.status === "reserved" || existingRecord.status === "sold")) {
+      // Ak bol záznam v Rezervovaných/Sprostredkovaných len na základe starého názvu a v novom exporte nie je explicitne uvedené "voľný" v dostupnosti
+      const explicitAvail = cleanTextForStatusCheck(`${raw.dostupnost || ""} ${raw.dostupnosť || ""} ${raw.availability || ""} ${raw.stav_zakazky || ""}`);
+      if (!/\b(voln|free|available)\b/i.test(explicitAvail)) {
+        statusInfo = {
+          isAllowed: true,
+          status: existingRecord.status,
+          substatus: existingRecord.substatus || (existingRecord.status === "reserved" ? "rezervovany" : "predane"),
+          isReserved: existingRecord.status === "reserved",
+          isSold: existingRecord.status === "sold",
+          reason: "preserved_reserved_or_sold_on_title_edit"
+        };
+      }
+    }
+  } else if (!statusInfo.isAllowed && statusInfo.reason === "not_in_allowed_statuses_or_dash" && hasUpdatedContent) {
+    // Ak Realsoft poslal novú platnú ponuku bez explicitného poľa status, predvolene ju zaradíme ako aktívnu (Voľný)
+    statusInfo = {
+      isAllowed: true,
+      status: "active",
+      substatus: "volny",
+      isReserved: false,
+      isSold: false,
+      reason: "default_active_with_content"
+    };
+  }
+
   const isAllowed = isAgent || statusInfo.isAllowed;
 
   console.log(`[REALSOFT ACTION] Typ: ${isAgent ? "Maklér" : "Zákazka"}, object_id: ${primaryObjectId}, Blobs key: ${externalId}, Povolené na webe: ${isAllowed}, Stav: ${statusInfo.status} (${statusInfo.substatus}), Dôvod: ${statusInfo.reason}, Akcia: ${!isAllowed ? "DELETE_INACTIVE" : "UPSERT"}`);
@@ -1223,31 +1332,50 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         };
       }
     } else {
-      // Overenie, či inzerát už v Netlify Blobs existoval (kvôli rozlíšeniu Object added vs Object edited)
-      let alreadyExists = false;
-      try {
-        if (typeof storeInfo.store.get === "function") {
-          const existingItem = await storeInfo.store.get(externalId);
-          if (existingItem) {
-            alreadyExists = true;
-          } else if (primaryObjectId !== null) {
-            const existingNum = await storeInfo.store.get(String(primaryObjectId));
-            if (existingNum) alreadyExists = true;
-          }
-        }
-      } catch (_e) {}
-      if (raw.extern_id) alreadyExists = true;
+      const extractedImages = extractAllImages(raw);
+      const hasRealNewImages = extractedImages.length > 0 && !(extractedImages.length === 1 && extractedImages[0] === NEUTRAL_PROPERTY_PLACEHOLDER);
+      const allImages = hasRealNewImages
+        ? extractedImages
+        : (existingRecord && Array.isArray(existingRecord.images) && existingRecord.images.length > 0 ? existingRecord.images : extractedImages);
 
-      const allImages = extractAllImages(raw);
-      const dealType = normalizeDeal(raw.action || raw.transaction_type || raw.deal_type || raw.deal || raw.typ_obchodu);
-      const propType = normalizePropertyType(raw.category || raw.property_type || raw.type || raw.kategoria || raw.druh);
+      const dealType = normalizeDeal(raw.action || raw.transaction_type || raw.deal_type || raw.deal || raw.typ_obchodu || (existingRecord && existingRecord.deal));
+      const propType = normalizePropertyType(raw.category || raw.property_type || raw.type || raw.kategoria || raw.druh || (existingRecord && existingRecord.type));
       const priceData = extractPrice(raw);
+      const finalPrice = (priceData.price > 0 || priceData.priceCustom === "Cena dohodou")
+        ? priceData.price
+        : (existingRecord && existingRecord.price ? existingRecord.price : priceData.price);
+      const finalPriceCustom = (priceData.price > 0)
+        ? null
+        : (priceData.priceCustom || (existingRecord ? existingRecord.priceCustom : null));
       const locationVal = extractLocation(raw);
-      const rawTitle = raw.title || raw.name || raw.nazov || raw.headline;
-      const roomsVal = extractRooms(raw, rawTitle);
-      const areaVal = extractArea(raw);
-      const floorVal = extractFloor(raw);
+      const rawTitle =
+        raw.title ||
+        raw.name ||
+        raw.nazov ||
+        raw.headline ||
+        raw.subject ||
+        raw.nadpis ||
+        raw.heading ||
+        raw.inzerat_nazov ||
+        raw.advertisement_title ||
+        (existingRecord && existingRecord.title);
+      const roomsVal = extractRooms(raw, rawTitle) ?? (existingRecord ? existingRecord.rooms : null);
+      const areaVal = extractArea(raw) || (existingRecord && existingRecord.area ? existingRecord.area : 0);
+      const floorVal = extractFloor(raw) ?? (existingRecord ? existingRecord.floor : null);
       const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
+      const categoryLabel = extractCategoryLabel(raw, propType, roomsVal);
+      const internalId =
+        raw.internal_id ||
+        raw.custom_id ||
+        raw.contract_id ||
+        raw.order_id ||
+        raw.code ||
+        raw.kod ||
+        raw.cislo_zakazky ||
+        raw.evidencne_cislo ||
+        raw.ref_id ||
+        (existingRecord && existingRecord.internalId) ||
+        null;
 
       // Spracovanie štítkov s podporou pre Voľný, Rezervovaný a Predaný (Sprostredkované)
       let safeTags = Array.isArray(raw.tags)
@@ -1271,13 +1399,16 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       const propertyItem = {
         id: externalId,
         externalId: externalId,
-        objectId: primaryObjectId !== null ? primaryObjectId : (raw.object_id || null),
+        objectId: primaryObjectId !== null ? primaryObjectId : (raw.object_id || (existingRecord && existingRecord.objectId) || null),
+        internalId: internalId,
         title: titleVal,
         shortTitle: raw.shortTitle || raw.kratky_nazov || titleVal,
         type: propType,
+        categoryLabel: categoryLabel,
+        subcategory: raw.subcategory || (existingRecord && existingRecord.subcategory) || null,
         deal: dealType,
-        price: priceData.price,
-        priceCustom: priceData.priceCustom,
+        price: finalPrice,
+        priceCustom: finalPriceCustom,
         currency: raw.currency || raw.mena || "EUR",
         area: areaVal,
         rooms: roomsVal,
@@ -1290,10 +1421,11 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         substatus: statusInfo.substatus,
         isReserved: statusInfo.isReserved,
         isSold: statusInfo.isSold,
-        agentId: raw.agentId || raw.agent_id || null,
-        agent: raw.agent || raw.broker || raw.makler || null,
-        desc: raw.description || raw.desc || raw.popis || raw.text || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
-        technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || {
+        agentId: raw.agentId || raw.agent_id || raw.user_id || (existingRecord && existingRecord.agentId) || null,
+        agent: raw.agent || raw.broker || raw.makler || (existingRecord && existingRecord.agent) || null,
+        agentEmail: raw.agentEmail || raw.agent_email || raw.user_email || (raw.agent && raw.agent.email) || (raw.broker && raw.broker.email) || (raw.makler && raw.makler.email) || (existingRecord && existingRecord.agentEmail) || null,
+        desc: raw.description || raw.desc || raw.popis || raw.text || (existingRecord && existingRecord.desc) || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
+        technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || (existingRecord && existingRecord.technicalSpecs) || {
           "Inžinierske siete": raw.utilities || "Voda, elektrina, plyn, kanalizácia",
           "Stav objektu": raw.condition || raw.stav || "Pripravené na prevod",
           "Vykurovanie": raw.heating || raw.kurenie || "Ústredné diaľkové / vlastné",
@@ -1311,10 +1443,10 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         throw new Error("Store object does not have setJSON or set method");
       }
 
-      const returnCode = alreadyExists ? 2 : 1;
-      const returnMessage = alreadyExists
-        ? (isAgent ? "Agent edited" : "Object edited")
-        : (isAgent ? "Agent added" : "Object added");
+      const returnCode = isExplicitDeleteAction ? 3 : (alreadyExists ? 2 : 1);
+      const returnMessage = isExplicitDeleteAction
+        ? (isAgent ? "Agent deleted" : "Object deleted")
+        : (alreadyExists ? (isAgent ? "Agent edited" : "Object edited") : (isAgent ? "Agent added" : "Object added"));
 
       console.log(`[REALSOFT SUCCESS] ${isAgent ? "Maklér" : "Zákazka"} ${externalId} (${propertyItem.title}) úspešne uložená v Netlify Blobs [${returnMessage}]. importId=${returnImportId}`);
       return {
@@ -1442,11 +1574,10 @@ export default async (req, context) => {
       console.log(JSON.stringify(dataToLog));
       console.log("------------------------------------------------------------------");
 
-      let postAction = parsed.action || parsed.postAction;
-      if (dataObj && dataObj.action !== undefined && postAction === undefined) {
-        postAction = dataObj.action;
-      }
-      isAgent = postAction === 2 || postAction === "2";
+      // postAction je iba vonkajšia akcia exportu (1 = zákazka, 2 = maklér, 3 = vymazanie).
+      // Vo vnútri dataObj znamená 'action' druh obchodu (1=Predaj, 2=Kúpa, 3=Prenájom, 4=Podnájom), preto sa nesmie kopírovať do postAction!
+      let postAction = parsed.postAction !== undefined ? parsed.postAction : (dataObj ? parsed.action : undefined);
+      isAgent = postAction === 2 || postAction === "2" || Boolean((dataObj || parsed).user_id && (dataObj || parsed).full_name);
 
       // V Realsofte môžu prísť dáta priamo v parametri 'data' (JSON objekt alebo pole)
       const rawList = (dataObj && (dataObj.properties || dataObj.listings || dataObj.items || (Array.isArray(dataObj) ? dataObj : null)))

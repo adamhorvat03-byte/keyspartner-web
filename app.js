@@ -327,6 +327,13 @@ async function loadPropertiesFromApi() {
                 if (Array.isArray(p.tags)) {
                     p.tags = p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT");
                 }
+                // Ak je v nadpise explicitne uvedený počet izieb (napr. "3 izbový byt"), zosúladíme rooms (oprava posunu subcategory 404 -> 3 izby)
+                if (p.title && typeof p.title === "string") {
+                    const mRooms = p.title.match(/(\d+)\s*[-–]?\s*izbov/i);
+                    if (mRooms) {
+                        p.rooms = parseInt(mRooms[1], 10);
+                    }
+                }
                 if (isPropertySoldOrCompleted(p)) {
                     p.status = "sold";
                     p.isReserved = false;
@@ -702,6 +709,20 @@ function createPropertyCardElement(prop) {
     }
 
     const safeImg = getSafePropertyImage(prop);
+    const displayId = prop.internalId || prop.customId || prop.externalId || prop.id;
+    let cardTypeLabel = prop.categoryLabel || "";
+    if (!cardTypeLabel) {
+        if (prop.type === "byt") {
+            const rNum = validRooms ? Number(prop.rooms) : NaN;
+            cardTypeLabel = (!isNaN(rNum) && rNum > 0) ? `${rNum}-izbový byt` : "Byt";
+        } else if (prop.type === "dom") {
+            cardTypeLabel = "Rodinný dom";
+        } else if (prop.type === "pozemi") {
+            cardTypeLabel = "Stavebný pozemok";
+        } else {
+            cardTypeLabel = "Komerčné / Investícia";
+        }
+    }
 
     card.innerHTML = `
         <div class="card-img-wrapper">
@@ -715,8 +736,8 @@ function createPropertyCardElement(prop) {
         </div>
         <div class="card-body">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="card-type">${prop.type === "byt" ? "Rezidenčné" : prop.type === "dom" ? "Rodinný dom" : prop.type === "pozemi" ? "Stavebný pozemok" : "Komerčné / Investícia"}</span>
-                <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">ID: ${prop.externalId || prop.id}</span>
+                <span class="card-type">${cardTypeLabel}</span>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">ID: ${displayId}</span>
             </div>
             <h3 class="card-title">${prop.title}</h3>
             <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
@@ -806,25 +827,25 @@ function renderListings() {
     container.style.display = "flex";
     if (noResults) noResults.style.display = "none";
 
-    // Rozdelenie do 3 kategórií: Novinky / Na predaj, Rezervované, Sprostredkované
+    // Rozdelenie do 3 kategórií
     const groups = [
         {
             key: "active",
-            title: "Novinky / Na predaj",
+            title: "Sprostredkovávané nehnuteľnosti pre klientov - Predaj / Prenájom / Kúpa",
             badgeClass: "badge-active",
             icon: "fa-solid fa-fire",
             items: []
         },
         {
             key: "reserved",
-            title: "Rezervované",
+            title: "Rezervované nehnuteľnosti pre potencionálnych klientov",
             badgeClass: "badge-reserved",
             icon: "fa-solid fa-bookmark",
             items: []
         },
         {
             key: "sold",
-            title: "Sprostredkované",
+            title: "Sprostredkované nehnuteľnosti klientom - Predaj / Prenájom / Kúpa",
             badgeClass: "badge-sold",
             icon: "fa-solid fa-circle-check",
             items: []
@@ -1177,7 +1198,7 @@ function getAgentForProperty(prop) {
 
     const agentEmailLower = agentEmail.toLowerCase();
 
-    const agentIdStr = String(prop.agentId || prop.agent_id || "").trim();
+    const agentIdStr = String(prop.agentId || prop.agent_id || prop.user_id || prop.userId || "").trim();
     const titleStr = String(prop.title || "").toLowerCase();
     const locationStr = String(prop.location || "").toLowerCase();
     const descStr = String(prop.desc || "").toLowerCase();
@@ -1186,14 +1207,17 @@ function getAgentForProperty(prop) {
     // Staré Realsoft ID 2869562781 zodpovedá historickým/neznámym maklérom bez overenej identity.
     // Tieto zákazky nesmú mať priradeného žiadneho makléra (odstránenie falošného fallbacku na Petra Dudu).
     if (agentIdStr === "2869562781") {
-        if (descStr.includes("branislav horvát") || descStr.includes("branislav horvat") || descStr.includes("777 001")) {
+        if (descStr.includes("branislav horvát") || descStr.includes("branislav horvat") || descStr.includes("785 951") || descStr.includes("777 001")) {
             return { ...horvat, phone: agentPhone || horvat.phone, email: agentEmail || horvat.email };
         }
-        if (descStr.includes("peter pella")) {
+        if (descStr.includes("peter pella") || descStr.includes("817 207")) {
             return { ...pella, phone: agentPhone || pella.phone, email: agentEmail || pella.email };
         }
         if (descStr.includes("peter duda") || descStr.includes("441 405")) {
             return { ...duda, phone: agentPhone || duda.phone, email: agentEmail || duda.email };
+        }
+        if ((descStr.includes("samuel hrivňak") || descStr.includes("samuel hrivnak") || descStr.includes("424 377")) && hrivnak) {
+            return { ...hrivnak, phone: agentPhone || hrivnak.phone, email: agentEmail || hrivnak.email };
         }
         return null;
     }
@@ -1211,6 +1235,7 @@ function getAgentForProperty(prop) {
         locationStr.includes("solnik") ||
         descStr.includes("branislav horvát") ||
         descStr.includes("branislav horvat") ||
+        descStr.includes("785 951") ||
         descStr.includes("777 001");
 
     if (isHorvat) {
@@ -1228,7 +1253,8 @@ function getAgentForProperty(prop) {
         agentIdStr === "3" ||
         agentNameLower.includes("pella") ||
         agentEmailLower.includes("pella") ||
-        descStr.includes("peter pella");
+        descStr.includes("peter pella") ||
+        descStr.includes("817 207");
 
     if (isPella) {
         return {
@@ -1258,6 +1284,7 @@ function getAgentForProperty(prop) {
 
     // 5. Samuel Hrivňak:
     const isHrivnak =
+        agentIdStr === "2756409051" ||
         agentIdStr === "4" ||
         agentNameLower.includes("hrivn") ||
         agentNameLower.includes("hrivň") ||
@@ -1485,55 +1512,56 @@ function openPropertyModal(id) {
         badgeClass = "badge-red";
     }
 
-    // Pravý bočný panel s maklérom a formulárom (Požiadavka 2: pri predaných/sprostredkovaných ponukách ÚPLNE SKRYŤ)
+    // Pravý bočný panel s maklérom (zobrazuje sa aj v sekcii Sprostredkované; pri predaných ponukách sa skryje iba dopytový formulár)
     let agentSidebarHtml = "";
-    if (!isSold) {
-        if (agent) {
-            const telHref = agent.phone.startsWith("+") 
-                ? agent.phone.replace(/\s/g, '') 
-                : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
-            agentSidebarHtml = `
-                <div class="modal-agent-card">
-                    <h4>Vzťahový manažér</h4>
-                    <div class="modal-agent-info modal-agent-clickable" id="modalAgentProfileTrigger" title="Kliknutím zobrazíte všetky aktívne ponuky makléra ${agent.name}">
-                        ${agent.image ? `<img src="${agent.image}" alt="${agent.name}" class="modal-agent-avatar">` : `<div class="modal-agent-avatar agent-avatar-placeholder" aria-label="${agent.name}"></div>`}
-                        <div class="modal-agent-details">
-                            <div class="modal-agent-name">
-                                ${agent.name}
-                                <i class="fa-solid fa-arrow-up-right-from-square modal-agent-ext-icon"></i>
-                            </div>
-                            <div class="modal-agent-role">${agent.role}</div>
+    if (agent) {
+        const telHref = agent.phone.startsWith("+") 
+            ? agent.phone.replace(/\s/g, '') 
+            : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
+        agentSidebarHtml = `
+            <div class="modal-agent-card">
+                <h4>Vzťahový manažér</h4>
+                <div class="modal-agent-info modal-agent-clickable" id="modalAgentProfileTrigger" title="Kliknutím zobrazíte všetky aktívne ponuky makléra ${agent.name}">
+                    ${agent.image ? `<img src="${agent.image}" alt="${agent.name}" class="modal-agent-avatar">` : `<div class="modal-agent-avatar agent-avatar-placeholder" aria-label="${agent.name}"></div>`}
+                    <div class="modal-agent-details">
+                        <div class="modal-agent-name">
+                            ${agent.name}
+                            <i class="fa-solid fa-arrow-up-right-from-square modal-agent-ext-icon"></i>
                         </div>
-                    </div>
-                    <div class="modal-agent-contact">
-                        <div class="modal-agent-contact-item">
-                            <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
-                        </div>
-                        <div class="modal-agent-contact-item">
-                            <a href="mailto:${agent.email}" class="text-gold"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
-                        </div>
-                    </div>
-                    
-                    <form id="modalContactForm" class="modal-compact-form">
-                        <input type="hidden" name="propId" value="${prop.externalId || prop.id}">
-                        <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${agent.email}">
-                        <input type="hidden" id="modalAgentName" name="agentName" value="${agent.name}">
-                        <div class="form-group">
-                            <input type="text" id="modalClientName" placeholder="Vaše meno" required class="modal-compact-input">
-                        </div>
-                        <div class="form-group">
-                            <input type="tel" id="modalClientPhone" placeholder="Telefón" required class="modal-compact-input">
-                        </div>
-                        <button type="submit" id="btnModalSubmit" class="btn-modal-submit">
-                            Mám záujem o ponuku
-                        </button>
-                    </form>
-                    <div id="modalFormSuccess" class="modal-form-success" style="display: none;">
-                        <i class="fa-solid fa-circle-check"></i> Ďakujeme! Vaša požiadavka bola odoslaná maklérovi.
+                        <div class="modal-agent-role">${agent.role}</div>
                     </div>
                 </div>
-            `;
-        }
+                <div class="modal-agent-contact">
+                    <div class="modal-agent-contact-item">
+                        <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
+                    </div>
+                    <div class="modal-agent-contact-item">
+                        <a href="mailto:${agent.email}" class="text-gold"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
+                    </div>
+                </div>
+                ${!isSold ? `
+                <form id="modalContactForm" class="modal-compact-form">
+                    <input type="hidden" name="propId" value="${prop.externalId || prop.id}">
+                    <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${agent.email}">
+                    <input type="hidden" id="modalAgentName" name="agentName" value="${agent.name}">
+                    <div class="form-group">
+                        <input type="text" id="modalClientName" placeholder="Vaše meno" required class="modal-compact-input">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="modalClientPhone" placeholder="Telefón" required class="modal-compact-input">
+                    </div>
+                    <button type="submit" id="btnModalSubmit" class="btn-modal-submit">
+                        Mám záujem o ponuku
+                    </button>
+                </form>
+                <div id="modalFormSuccess" class="modal-form-success" style="display: none;">
+                    <i class="fa-solid fa-circle-check"></i> Ďakujeme! Vaša požiadavka bola odoslaná maklérovi.
+                </div>` : `
+                <div class="modal-form-success" style="display: block; margin-top: 14px; color: #10b981;">
+                    <i class="fa-solid fa-circle-check"></i> Táto nehnuteľnosť bola úspešne sprostredkovaná.
+                </div>`}
+            </div>
+        `;
     }
 
     modalBody.innerHTML = `

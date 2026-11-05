@@ -406,9 +406,9 @@ async function fetchBlobsProperties(storeInfo) {
         if (!finalTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) finalTags.unshift("REZERVOVANÉ");
       }
 
-      const agentIdStr = String(p.agentId || p.agent_id || "").trim();
+      const agentIdStr = String(p.agentId || p.agent_id || p.user_id || "").trim();
       let cleanAgent = p.agent || p.broker || p.makler || null;
-      let cleanAgentId = p.agentId || p.agent_id || null;
+      let cleanAgentId = p.agentId || p.agent_id || p.user_id || null;
 
       // Odstránenie generického fallbacku Peter Duda pre historické/neznáme zákazky
       if (agentIdStr === "2869562781") {
@@ -416,8 +416,33 @@ async function fetchBlobsProperties(storeInfo) {
         cleanAgentId = null;
       }
 
+      // Oprava počtu izieb podľa nadpisu (napr. "3 izbový byt" -> 3 izby namiesto starého posunu subcategory 404 -> 4)
+      let fixedRooms = p.rooms;
+      if (p.title && typeof p.title === "string") {
+        const mRooms = p.title.match(/(\d+)\s*[-–]?\s*izbov/i);
+        if (mRooms) {
+          fixedRooms = parseInt(mRooms[1], 10);
+        }
+      }
+
+      let categoryLabel = p.categoryLabel || "";
+      if (!categoryLabel) {
+        if (p.type === "byt") {
+          const rNum = Number(fixedRooms);
+          categoryLabel = (!isNaN(rNum) && rNum > 0) ? `${rNum}-izbový byt` : "Byt";
+        } else if (p.type === "dom") {
+          categoryLabel = "Rodinný dom";
+        } else if (p.type === "pozemi") {
+          categoryLabel = "Stavebný pozemok";
+        } else {
+          categoryLabel = "Komerčné / Investícia";
+        }
+      }
+
       return {
         ...p,
+        rooms: fixedRooms,
+        categoryLabel: categoryLabel,
         agent: cleanAgent,
         agentId: cleanAgentId,
         tags: finalTags,
