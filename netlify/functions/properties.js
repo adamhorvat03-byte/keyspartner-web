@@ -24,6 +24,8 @@ function isAgentPhoto(url) {
     lower.includes("duda") ||
     lower.includes("brano") ||
     lower.includes("horvat") ||
+    lower.includes("samuel") ||
+    lower.includes("hrivnak") ||
     lower.includes("s.unitedclassifieds.sk") ||
     lower.includes("agent") ||
     lower.includes("broker") ||
@@ -37,7 +39,8 @@ function isAgentPhoto(url) {
     lower.includes("face") ||
     lower.endsWith("pella.jpg") ||
     lower.endsWith("duda.jpg") ||
-    lower.endsWith("brano.jpg")
+    lower.endsWith("brano.jpg") ||
+    lower.endsWith("samuel.jpg")
   );
 }
 
