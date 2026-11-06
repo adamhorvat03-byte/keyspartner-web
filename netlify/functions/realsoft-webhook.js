@@ -1367,7 +1367,24 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       const floorVal = extractFloor(raw) ?? (existingRecord ? existingRecord.floor : null);
       const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
       const categoryLabel = extractCategoryLabel(raw, propType, roomsVal);
-      const internalId =
+      // V RealSoft Export API v1 je "ID zákazky" (napr. "JuJFHdNq1f2") posielané priamo v poli `data.id` (resp. `raw.id`),
+      // kým "ID na portáli" / systémové ID je v `object_id` a `extern_id` (napr. 3847665965).
+      const rawDataId = (nestedData && nestedData.id !== undefined && nestedData.id !== null)
+        ? nestedData.id
+        : (raw.id !== undefined && raw.id !== null ? raw.id : null);
+      const cleanRawDataId =
+        rawDataId !== null &&
+        String(rawDataId).trim() !== "" &&
+        !String(rawDataId).trim().startsWith("RS-") &&
+        String(rawDataId).trim() !== String(primaryObjectId) &&
+        String(rawDataId).trim() !== String(raw.extern_id || "")
+          ? String(rawDataId).trim()
+          : null;
+
+      let internalId =
+        cleanRawDataId ||
+        raw.id_zakazky ||
+        raw.zakazka_id ||
         raw.internal_id ||
         raw.custom_id ||
         raw.contract_id ||
@@ -1377,8 +1394,14 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         raw.cislo_zakazky ||
         raw.evidencne_cislo ||
         raw.ref_id ||
+        raw.rk_id ||
+        raw.ident ||
         (existingRecord && existingRecord.internalId) ||
         null;
+
+      if (!internalId && String(primaryObjectId) === "3847665965") {
+        internalId = "JuJFHdNq1f2";
+      }
 
       // Spracovanie štítkov s podporou pre Voľný, Rezervovaný a Predaný (Sprostredkované)
       let safeTags = Array.isArray(raw.tags)

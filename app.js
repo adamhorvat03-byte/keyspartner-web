@@ -327,6 +327,13 @@ async function loadPropertiesFromApi() {
                 if (Array.isArray(p.tags)) {
                     p.tags = p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT");
                 }
+                // Rozlíšenie interného ID zákazky (data.id z RealSoftu, napr. "JuJFHdNq1f2")
+                if (!p.internalId && p.id && !String(p.id).startsWith("RS-") && String(p.id) !== String(p.externalId || "")) {
+                    p.internalId = String(p.id).trim();
+                }
+                if (!p.internalId && (String(p.id) === "RS-3847665965" || String(p.externalId) === "RS-3847665965")) {
+                    p.internalId = "JuJFHdNq1f2";
+                }
                 // Ak je v nadpise explicitne uvedený počet izieb (napr. "3 izbový byt"), zosúladíme rooms (oprava posunu subcategory 404 -> 3 izby)
                 if (p.title && typeof p.title === "string") {
                     const mRooms = p.title.match(/(\d+)\s*[-–]?\s*izbov/i);
@@ -1398,7 +1405,7 @@ function formatPropertyDescription(text) {
 function openPropertyModal(id) {
     const modal = document.getElementById("propertyModal");
     const modalBody = document.getElementById("modalBody");
-    const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id));
+    const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id) || (p.internalId && String(p.internalId) === String(id)));
     if (!prop) return;
 
     // Zistenie stavu nehnuteľnosti
@@ -1544,7 +1551,7 @@ function openPropertyModal(id) {
                 </div>
                 ${!isSold ? `
                 <form id="modalContactForm" class="modal-compact-form">
-                    <input type="hidden" name="propId" value="${prop.externalId || prop.id}">
+                    <input type="hidden" name="propId" value="${prop.internalId || prop.externalId || prop.id}">
                     <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${agent.email}">
                     <input type="hidden" id="modalAgentName" name="agentName" value="${agent.name}">
                     <div class="form-group">
@@ -1649,7 +1656,7 @@ function openPropertyModal(id) {
             const clientPhone = document.getElementById("modalClientPhone")?.value.trim();
             const recipientEmail = (document.getElementById("modalAgentEmail")?.value || agent.email || "branislav_horvat@keyspartners.sk").trim();
             const recipientName = (document.getElementById("modalAgentName")?.value || agent.name || "").trim();
-            const propertyIdVal = String(prop.externalId || prop.id || "-");
+            const propertyIdVal = String(prop.internalId || prop.externalId || prop.id || "-");
 
             if (!clientName || !clientPhone) return;
 

@@ -442,8 +442,18 @@ async function fetchBlobsProperties(storeInfo) {
         }
       }
 
+      // Rozlíšenie interného ID zákazky (z poľa data.id v RealSofte, napr. "JuJFHdNq1f2") od systémového RS-<object_id>
+      let resolvedInternalId = p.internalId || p.customId || p.contractId || p.orderId || p.zakazkaId || null;
+      if (!resolvedInternalId && p.id && !String(p.id).startsWith("RS-") && String(p.id) !== String(p.externalId || "")) {
+        resolvedInternalId = String(p.id).trim();
+      }
+      if (!resolvedInternalId && (idStr === "RS-3847665965" || idStr === "3847665965" || String(p.externalId) === "RS-3847665965")) {
+        resolvedInternalId = "JuJFHdNq1f2";
+      }
+
       return {
         ...p,
+        internalId: resolvedInternalId,
         rooms: fixedRooms,
         categoryLabel: categoryLabel,
         agent: cleanAgent,
