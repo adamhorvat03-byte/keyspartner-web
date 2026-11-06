@@ -1367,8 +1367,9 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       const floorVal = extractFloor(raw) ?? (existingRecord ? existingRecord.floor : null);
       const titleVal = extractTitle(raw, propType, dealType, roomsVal, locationVal);
       const categoryLabel = extractCategoryLabel(raw, propType, roomsVal);
-      // V RealSoft Export API v1 je "ID zákazky" (napr. "JuJFHdNq1f2") posielané priamo v poli `data.id` (resp. `raw.id`),
-      // kým "ID na portáli" / systémové ID je v `object_id` a `extern_id` (napr. 3847665965).
+      // V RealSoft Export API v1 je "Interné číslo" zákazky (napr. "09 08 77 00 10 30" alebo "999 001")
+      // posielané priamo v poli `data.id` (resp. `raw.id`) alebo v poliach pre interné číslo,
+      // kým systémové "ID na portáli" je v `object_id` a `extern_id` (napr. 3847665965).
       const rawDataId = (nestedData && nestedData.id !== undefined && nestedData.id !== null)
         ? nestedData.id
         : (raw.id !== undefined && raw.id !== null ? raw.id : null);
@@ -1381,10 +1382,10 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
           ? String(rawDataId).trim()
           : null;
 
-      let internalId =
-        cleanRawDataId ||
-        raw.id_zakazky ||
-        raw.zakazka_id ||
+      // Prioritne hľadáme explicitné "Interné číslo" zákazky (ak by ho RealSoft poslal v samostatnom poli popri systémovom ID zákazky)
+      const explicitInternalNumber =
+        raw.internal_number ||
+        raw.interne_cislo ||
         raw.internal_id ||
         raw.custom_id ||
         raw.contract_id ||
@@ -1396,11 +1397,20 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         raw.ref_id ||
         raw.rk_id ||
         raw.ident ||
-        (existingRecord && existingRecord.internalId) ||
         null;
 
-      if (!internalId && String(primaryObjectId) === "3847665965") {
-        internalId = "JuJFHdNq1f2";
+      let internalId =
+        (explicitInternalNumber !== null && String(explicitInternalNumber).trim() !== "" ? String(explicitInternalNumber).trim() : null) ||
+        cleanRawDataId ||
+        raw.id_zakazky ||
+        raw.zakazka_id ||
+        (existingRecord && existingRecord.internalId && existingRecord.internalId !== "JuJFHdNq1f2" ? existingRecord.internalId : null) ||
+        null;
+
+      // Ak pre pozemok Ľubotice (object_id: 3847665965) poslal RealSoft v poli `data.id` systémové ID zákazky "JuJFHdNq1f2"
+      // namiesto vyplneného Interného čísla, nastavíme skutočné Interné číslo "09 08 77 00 10 30"
+      if (String(primaryObjectId) === "3847665965" && (!internalId || internalId === "JuJFHdNq1f2")) {
+        internalId = "09 08 77 00 10 30";
       }
 
       // Spracovanie štítkov s podporou pre Voľný, Rezervovaný a Predaný (Sprostredkované)

@@ -327,12 +327,15 @@ async function loadPropertiesFromApi() {
                 if (Array.isArray(p.tags)) {
                     p.tags = p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT");
                 }
-                // Rozlíšenie interného ID zákazky (data.id z RealSoftu, napr. "JuJFHdNq1f2")
+                // Rozlíšenie interného čísla zákazky (data.id z RealSoftu, napr. "09 08 77 00 10 30" alebo "999 001")
                 if (!p.internalId && p.id && !String(p.id).startsWith("RS-") && String(p.id) !== String(p.externalId || "")) {
                     p.internalId = String(p.id).trim();
                 }
-                if (!p.internalId && (String(p.id) === "RS-3847665965" || String(p.externalId) === "RS-3847665965")) {
-                    p.internalId = "JuJFHdNq1f2";
+                if (
+                    (String(p.id) === "RS-3847665965" || String(p.externalId) === "RS-3847665965") &&
+                    (!p.internalId || p.internalId === "JuJFHdNq1f2")
+                ) {
+                    p.internalId = "09 08 77 00 10 30";
                 }
                 // Ak je v nadpise explicitne uvedený počet izieb (napr. "3 izbový byt"), zosúladíme rooms (oprava posunu subcategory 404 -> 3 izby)
                 if (p.title && typeof p.title === "string") {

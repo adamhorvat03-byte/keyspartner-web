@@ -442,13 +442,16 @@ async function fetchBlobsProperties(storeInfo) {
         }
       }
 
-      // Rozlíšenie interného ID zákazky (z poľa data.id v RealSofte, napr. "JuJFHdNq1f2") od systémového RS-<object_id>
+      // Rozlíšenie interného čísla zákazky (z poľa data.id v RealSofte, napr. "09 08 77 00 10 30" alebo "999 001") od systémového RS-<object_id>
       let resolvedInternalId = p.internalId || p.customId || p.contractId || p.orderId || p.zakazkaId || null;
       if (!resolvedInternalId && p.id && !String(p.id).startsWith("RS-") && String(p.id) !== String(p.externalId || "")) {
         resolvedInternalId = String(p.id).trim();
       }
-      if (!resolvedInternalId && (idStr === "RS-3847665965" || idStr === "3847665965" || String(p.externalId) === "RS-3847665965")) {
-        resolvedInternalId = "JuJFHdNq1f2";
+      if (
+        (idStr === "RS-3847665965" || idStr === "3847665965" || String(p.externalId) === "RS-3847665965") &&
+        (!resolvedInternalId || resolvedInternalId === "JuJFHdNq1f2")
+      ) {
+        resolvedInternalId = "09 08 77 00 10 30";
       }
 
       return {
