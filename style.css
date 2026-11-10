@@ -1646,7 +1646,7 @@ img {
 }
 
 /* ==========================================================================
-   HYPOTEKÁRNA KALKULAČKA
+   HYPOTEKÁRNA KALKULAČKA (ŠIROKÉ ROZLOŽENIE NA ŠÍRKU)
    ========================================================================== */
 .mortgage-section {
     padding: 100px 0;
@@ -1657,51 +1657,60 @@ img {
 }
 
 .mortgage-container {
-    display: grid;
-    grid-template-columns: 1fr 1.15fr;
-    gap: 50px;
-    align-items: stretch;
-}
-
-.mortgage-info {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    box-sizing: border-box;
+    gap: 42px;
 }
 
-.mortgage-info > .badge-premium {
-    align-self: flex-start;
-    margin-bottom: 14px !important;
+/* 1. Horná časť: Úvodné texty a zoznam služieb */
+.mortgage-top-intro {
+    display: grid;
+    grid-template-columns: 1.25fr 0.95fr;
+    gap: 48px;
+    align-items: center;
 }
 
-.mortgage-info h2 {
-    font-size: 2.25rem;
+.mortgage-intro-main .badge-premium {
+    display: inline-flex;
+    margin-bottom: 16px !important;
+}
+
+.mortgage-intro-main h2 {
+    font-size: 2.35rem;
     margin-bottom: 16px;
-    line-height: 1.25;
+    line-height: 1.22;
     color: var(--text-primary);
 }
 
-.mortgage-info > p {
+.mortgage-intro-main p {
     font-size: 1.02rem;
     color: var(--text-secondary);
-    margin-bottom: 24px;
+    margin-bottom: 0;
     line-height: 1.72;
+}
+
+.mortgage-intro-services {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 28px 32px;
+    box-shadow: var(--shadow-sm);
 }
 
 .mortgage-services-heading {
     font-size: 1.08rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .mortgage-advantages {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-bottom: 28px;
+    gap: 13px;
+    margin-bottom: 0;
 }
 
 .mortgage-advantages li {
@@ -1709,9 +1718,9 @@ img {
     align-items: flex-start;
     gap: 12px;
     font-weight: 500;
-    font-size: 1rem;
+    font-size: 0.96rem;
     color: var(--text-primary);
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 .mortgage-advantages li i {
@@ -1719,91 +1728,59 @@ img {
     flex-shrink: 0;
 }
 
-.mortgage-info-cards-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-top: auto;
-    margin-bottom: 0;
-}
-
-.mortgage-info-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    padding: 20px 24px;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-}
-
-.mortgage-card-icon {
-    font-size: 1.65rem;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.mortgage-card-text h4 {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 6px;
-}
-
-.mortgage-card-text p {
-    font-size: 0.92rem;
-    color: var(--text-secondary);
-    margin-bottom: 0;
-    line-height: 1.55;
-}
-
-.mortgage-card-text p.mortgage-card-highlight {
-    font-size: 0.96rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.5;
-}
-
+/* 2. Stredná časť: Karta kalkulačky na celú šírku */
 .mortgage-tool-container {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-md);
-    padding: 36px 38px;
+    padding: 40px 44px;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    height: 100%;
+    width: 100%;
     box-sizing: border-box;
 }
 
 .mortgage-tool-header {
-    margin-bottom: 22px;
+    margin-bottom: 30px;
 }
 
 .mortgage-tool-header h3 {
-    font-size: 1.45rem;
+    font-size: 1.55rem;
     border-left: 4px solid var(--brand-yellow);
-    padding-left: 12px;
+    padding-left: 14px;
     color: var(--text-primary);
     margin-bottom: 6px;
 }
 
 .mortgage-tool-header p {
-    font-size: 0.9rem;
+    font-size: 0.94rem;
     color: var(--text-secondary);
     margin: 0;
 }
 
+.mortgage-calc-wide-grid {
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 40px;
+    align-items: stretch;
+}
+
 .mortgage-inputs {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.mortgage-primary-inputs,
+.mortgage-secondary-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
 }
 
 .mortgage-input-block {
-    margin-bottom: 18px;
+    margin-bottom: 0;
 }
 
 .mortgage-input-header {
@@ -1811,6 +1788,7 @@ img {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    gap: 8px;
 }
 
 .mortgage-input-header label {
@@ -1933,8 +1911,8 @@ img {
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
-    padding: 11px 18px;
-    margin-bottom: 18px;
+    padding: 14px 22px;
+    margin: 0;
 }
 
 .derived-item {
@@ -1944,13 +1922,13 @@ img {
 }
 
 .derived-label {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--text-secondary);
 }
 
 .derived-value {
     font-family: var(--font-heading);
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
 }
@@ -1980,25 +1958,19 @@ img {
     color: #05080F;
 }
 
-.quick-rate-note {
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
-
 .mortgage-result-banner {
-    background: linear-gradient(135deg, rgba(181, 137, 32, 0.12) 0%, rgba(5, 8, 15, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(181, 137, 32, 0.14) 0%, rgba(5, 8, 15, 0.45) 100%);
     border: 2px solid var(--brand-yellow);
     border-radius: var(--border-radius-lg);
-    padding: 20px 22px;
-    margin: 18px 0 22px 0;
+    padding: 32px 28px;
+    margin: 0;
     text-align: center;
     box-shadow: 0 8px 24px rgba(181, 137, 32, 0.15);
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .mortgage-result-tag {
@@ -2008,7 +1980,7 @@ img {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--brand-yellow);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .mortgage-result-main {
@@ -2016,12 +1988,12 @@ img {
     align-items: baseline;
     justify-content: center;
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 22px;
 }
 
 .mortgage-payment-number {
     font-family: var(--font-heading);
-    font-size: 3.2rem;
+    font-size: 3.5rem;
     font-weight: 800;
     line-height: 1;
     color: var(--text-primary);
@@ -2029,7 +2001,7 @@ img {
 }
 
 .mortgage-payment-currency {
-    font-size: 1.4rem;
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--brand-yellow);
 }
@@ -2044,55 +2016,150 @@ img {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(181, 137, 32, 0.2);
+    padding-top: 18px;
+    border-top: 1px solid rgba(181, 137, 32, 0.25);
 }
 
 .subdetail-item {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     font-size: 0.82rem;
     color: var(--text-secondary);
 }
 
 .subdetail-item strong {
-    font-size: 0.98rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.mortgage-consult-form {
-    margin-top: auto;
-    padding-top: 22px;
-    border-top: 1px solid var(--border-color);
+/* 3. Spodná časť: 3 Info boxy v mriežke vedľa seba */
+.mortgage-info-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: stretch;
 }
 
-.consult-form-heading {
-    margin-bottom: 14px;
+.mortgage-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 24px 26px;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
-.consult-form-heading h4 {
-    font-size: 1.08rem;
+.mortgage-info-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(200, 155, 60, 0.45);
+}
+
+.mortgage-card-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.mortgage-card-text h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 6px;
     line-height: 1.35;
 }
 
+.mortgage-card-text p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    line-height: 1.55;
+}
+
+.mortgage-card-text p.mortgage-card-highlight {
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.55;
+}
+
+/* 4. Spodná časť: Široký kontaktný formulár */
+.mortgage-consult-wide-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 36px 44px;
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mortgage-consult-form {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.consult-form-heading {
+    margin-bottom: 24px;
+    text-align: center;
+    max-width: 780px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.consult-form-heading h4 {
+    font-size: 1.35rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
 .consult-form-heading p {
-    font-size: 0.86rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.6;
+}
+
+.mortgage-consult-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.mortgage-consult-fields-grid .form-group {
+    margin-bottom: 0;
+}
+
+.mortgage-consult-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 8px;
 }
 
 .btn-mortgage-submit {
-    padding: 14px 24px;
-    font-size: 1.02rem;
-    margin-top: 12px;
+    padding: 15px 36px;
+    font-size: 1.05rem;
+    min-width: 340px;
+    max-width: 100%;
     white-space: normal;
     text-align: center;
     line-height: 1.35;
+}
+
+.mortgage-consult-footer .form-disclaimer {
+    margin-top: 14px;
+    max-width: 680px;
 }
 
 .mortgage-success-box {
@@ -3316,10 +3383,16 @@ img {
     .search-submit-btn {
         grid-column: span 2;
     }
-    .submit-container,
-    .mortgage-container {
+    .submit-container {
         grid-template-columns: 1fr;
         gap: 40px;
+    }
+    .mortgage-top-intro,
+    .mortgage-calc-wide-grid,
+    .mortgage-info-cards-grid,
+    .mortgage-consult-fields-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
     }
     .results-grid {
         grid-template-columns: repeat(2, minmax(240px, 1fr));
@@ -3633,12 +3706,23 @@ img {
 
     /* Hypotekárna kalkulačka responzivita */
     .mortgage-container {
-        grid-template-columns: 1fr !important;
-        gap: 36px !important;
+        gap: 32px !important;
     }
 
-    .mortgage-tool-container {
-        padding: 24px 16px !important;
+    .mortgage-top-intro,
+    .mortgage-calc-wide-grid,
+    .mortgage-primary-inputs,
+    .mortgage-secondary-inputs,
+    .mortgage-info-cards-grid,
+    .mortgage-consult-fields-grid {
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+    }
+
+    .mortgage-intro-services,
+    .mortgage-tool-container,
+    .mortgage-consult-wide-card {
+        padding: 24px 18px !important;
     }
 
     .mortgage-result-subdetails {
@@ -3655,8 +3739,9 @@ img {
         font-size: 2.6rem !important;
     }
 
-    .mortgage-secondary-inputs {
-        grid-template-columns: 1fr !important;
+    .btn-mortgage-submit {
+        min-width: 100% !important;
+        width: 100% !important;
     }
 }
 
