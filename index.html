@@ -407,7 +407,7 @@
     <!-- Hypotekárna kalkulačka s prepojením na konzultáciu (Reveal) -->
     <section class="mortgage-section reveal" id="hypoteka">
         <div class="container mortgage-container">
-            <!-- Ľavá strana: Text, info boxy a kontaktný formulár -->
+            <!-- Ľavá strana: Text a info boxy -->
             <div class="mortgage-info">
                 <div class="badge-premium" style="margin-bottom: 16px;">
                     <i class="fa-solid fa-calculator text-gold"></i> Financovanie bývania / Komplexné finančné služby
@@ -453,55 +453,9 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Kontaktný formulár pre nezáväznú konzultáciu (presunutý pod bod 4 vľavo) -->
-                <div class="mortgage-consult-card">
-                    <form id="mortgageConsultForm" class="mortgage-consult-form">
-                        <div class="consult-form-heading">
-                            <h4>Máte záujem o nezáväznú konzultáciu s naším špecialistom?</h4>
-                            <p>Vypíšte nám náš kontaktný formulár. Náš špecialista v oblasti finančného sektora Vás bude priamo kontaktovať v lehote do 96 hodín odo dňa zaslania Vášho záujmu / dopytu.</p>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="mortgageClientName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
-                                <input type="text" id="mortgageClientName" required placeholder="Meno a priezvisko">
-                            </div>
-                            <div class="form-group">
-                                <label for="mortgageClientPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
-                                <input type="tel" id="mortgageClientPhone" required placeholder="+421 900 000 000">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="mortgageClientEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
-                            <input type="email" id="mortgageClientEmail" required placeholder="meno.priezvisko@menopriezvisko.sk">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block btn-mortgage-submit" id="btnMortgageSubmit">
-                            <i class="fa-solid fa-paper-plane"></i> Odoslať požiadavku k nezáväznej konzultácii.
-                        </button>
-                        <p class="form-disclaimer">Vypísaním údajov súhlasíte so spracovaním Vašich osobných údajov v určenom rozsahu pre kontaktovanie špecialistom vo finančnom sektore.</p>
-                    </form>
-
-                    <!-- Úspešné odoslanie (Success message) -->
-                    <div class="mortgage-success-box" id="mortgageSuccessBox" style="display: none;">
-                        <i class="fa-solid fa-circle-check success-icon"></i>
-                        <h3>Ďakujeme. Váš prepočet sme prijali a náš špecialista Vás bude kontaktovať.</h3>
-                        <p>Prešli sme si Vaše požiadavky a pripravíme Vám komplexné porovnanie finančných možností s najvýhodnejšími podmienkami.</p>
-                        <div class="mortgage-success-details">
-                            <div class="succ-row"><span>Cena nehnuteľnosti:</span> <strong id="succPrice">150 000 €</strong></div>
-                            <div class="succ-row"><span>Výška úveru:</span> <strong id="succLoan">120 000 €</strong></div>
-                            <div class="succ-row"><span>Odhadovaná splátka:</span> <strong id="succPayment">593 € / mesiac</strong></div>
-                        </div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="btnMortgageRecalc" style="margin-top: 20px;">
-                            <i class="fa-solid fa-rotate-left"></i> Upraviť parametre
-                        </button>
-                    </div>
-                </div>
             </div>
 
-            <!-- Pravá strana: Interaktívny nástroj kalkulačky -->
+            <!-- Pravá strana: Interaktívny nástroj kalkulačky + kontaktný formulár -->
             <div class="mortgage-tool-container">
                 <div class="mortgage-tool-header">
                     <h3>Kalkulačka - Vypočítajte si svoju mesačnú splátku.</h3>
@@ -626,6 +580,50 @@
                             <strong id="subInterestAmount">93 540 €</strong>
                         </div>
                     </div>
+                </div>
+
+                <!-- Kontaktný formulár pre nezáväznú konzultáciu -->
+                <form id="mortgageConsultForm" class="mortgage-consult-form">
+                    <div class="consult-form-heading">
+                        <h4>Máte záujem o nezáväznú konzultáciu s naším špecialistom?</h4>
+                        <p>Vypíšte nám náš kontaktný formulár. Náš špecialista v oblasti finančného sektora Vás bude priamo kontaktovať v lehote do 96 hodín odo dňa zaslania Vášho záujmu / dopytu.</p>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mortgageClientName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
+                            <input type="text" id="mortgageClientName" required placeholder="Meno a priezvisko">
+                        </div>
+                        <div class="form-group">
+                            <label for="mortgageClientPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
+                            <input type="tel" id="mortgageClientPhone" required placeholder="+421 900 000 000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mortgageClientEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
+                        <input type="email" id="mortgageClientEmail" required placeholder="meno.priezvisko@menopriezvisko.sk">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-mortgage-submit" id="btnMortgageSubmit">
+                        <i class="fa-solid fa-paper-plane"></i> Odoslať požiadavku k nezáväznej konzultácii.
+                    </button>
+                    <p class="form-disclaimer">Vypísaním údajov súhlasíte so spracovaním Vašich osobných údajov v určenom rozsahu pre kontaktovanie špecialistom vo finančnom sektore.</p>
+                </form>
+
+                <!-- Úspešné odoslanie (Success message) -->
+                <div class="mortgage-success-box" id="mortgageSuccessBox" style="display: none;">
+                    <i class="fa-solid fa-circle-check success-icon"></i>
+                    <h3>Ďakujeme. Váš prepočet sme prijali a náš špecialista Vás bude kontaktovať.</h3>
+                    <p>Prešli sme si Vaše požiadavky a pripravíme Vám komplexné porovnanie finančných možností s najvýhodnejšími podmienkami.</p>
+                    <div class="mortgage-success-details">
+                        <div class="succ-row"><span>Cena nehnuteľnosti:</span> <strong id="succPrice">150 000 €</strong></div>
+                        <div class="succ-row"><span>Výška úveru:</span> <strong id="succLoan">120 000 €</strong></div>
+                        <div class="succ-row"><span>Odhadovaná splátka:</span> <strong id="succPayment">593 € / mesiac</strong></div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnMortgageRecalc" style="margin-top: 20px;">
+                        <i class="fa-solid fa-rotate-left"></i> Upraviť parametre
+                    </button>
                 </div>
             </div>
         </div>
