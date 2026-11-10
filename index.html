@@ -670,12 +670,26 @@
     <!-- Klientske recenzie (Reveal) -->
     <section class="reviews-section reveal" id="recenzie">
         <div class="container">
-            <div class="section-header text-center">
-                <h2 class="section-title">Hodnotenie našich partnerov</h2>
-                <p class="section-subtitle">Spokojnosť našich klientov a bezpečnosť obchodov sú našou vizitkou</p>
-                <div class="reviews-action-bar">
+            <div class="section-header reviews-header">
+                <div class="reviews-header-left">
+                    <h2 class="section-title">Čo o nás povedali naši klienti / partneri</h2>
+                </div>
+                <div class="reviews-header-right">
+                    <div class="reviews-avg-badge" aria-label="Priemerné hodnotenie 4.8 z 5">
+                        <div class="reviews-avg-score-row">
+                            <span class="reviews-avg-number" id="reviewsAverageValue">4.8 / 5</span>
+                            <div class="reviews-avg-stars" aria-hidden="true">
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+                        </div>
+                        <span class="reviews-avg-label">Priemerné hodnotenie</span>
+                    </div>
                     <button type="button" class="btn btn-secondary btn-open-review-form" id="btnOpenReviewForm">
-                        <i class="fa-solid fa-pen-to-square text-gold"></i> <span>Pridať hodnotenie</span>
+                        <i class="fa-solid fa-pen-to-square text-gold"></i> <span>Napísať recenziu</span>
                     </button>
                 </div>
             </div>
@@ -789,13 +803,13 @@
     <footer class="main-footer">
         <div class="container footer-grid">
             <div class="footer-brand">
-                <a href="#" class="logo">
+                <a href="#" class="logo footer-logo-stack">
                     <div class="logo-icon-container">
-                        <img src="logo-raw.png" class="logo-icon-img" alt="KEYS PARTNERS">
+                        <img src="logo-raw.png" class="logo-icon-img" alt="Keys Partners">
                     </div>
-                    <span class="logo-text">KEYS PARTNERS</span>
+                    <span class="logo-text">Keys Partners</span>
                 </a>
-                <p>Rokom 2016 sa začala písať nová história našej spoločnosti. Sme pripravení stať sa kľúčom k vášmu úspešnému realitnému obchodu.</p>
+                <p>V roku 2016 sa začala písať história našej spoločnosti. Následne v roku 2021 zmenila spoločnosť svojich akcionárov, ktorí svojím pôsobením a rozhodnutím priviedli nové možnosti k realitnej činnosti. Spoločnosť Keys Partners Vás prevedie od sprostredkovania predaja, prenájmu a kúpy nehnuteľností, cez vybavenie stavebného povolenia vrátane komplexného inžinieringu až po výstavbu Vašej nehnuteľnosti, taktiež aj správu nájomných nehnuteľností vrátane správy bytových a nebytových domov. Sme pre Vás Partnerom, ktorý vie vyriešiť všetky otázky spojené s Vašou nehnuteľnosťou.</p>
                 <div class="social-links">
                     <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Facebook profil"><i class="fa-brands fa-facebook-f"></i></a>
                     <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Instagram profil"><i class="fa-brands fa-instagram"></i></a>
@@ -806,23 +820,29 @@
             <div class="footer-links">
                 <h4>Centrála spoločnosti</h4>
                 <ul>
-                    <li><i class="fa-solid fa-location-dot"></i> Werferova 6, 040 11 Košice-Juh</li>
+                    <li><i class="fa-solid fa-location-dot"></i> Werferova 3782/6, 040 11 Košice 11</li>
                     <li><i class="fa-solid fa-phone"></i> <a href="tel:+421905785951">+421 905 785 951</a></li>
-                    <li><i class="fa-solid fa-envelope"></i> <a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a></li>
-                    <li><i class="fa-solid fa-business-time"></i> Po - Pia: 8:30 - 16:30</li>
+                    <li><i class="fa-solid fa-envelope"></i> <a href="mailto:dbre_obchod@keyspartners.sk">dbre_obchod@keyspartners.sk</a></li>
                 </ul>
             </div>
             
             <div class="footer-links">
                 <h4>Naša pôsobnosť</h4>
-                <ul>
-                    <li class="coverage-text"><i class="fa-solid fa-map-location-dot"></i> Prešovský a Košický kraj</li>
+                <ul class="footer-regions-list">
+                    <li>Bratislavský kraj</li>
+                    <li>Trnavský kraj</li>
+                    <li>Trenčiansky kraj</li>
+                    <li>Nitriansky kraj</li>
+                    <li>Žilinský kraj</li>
+                    <li>Banskobystrický kraj</li>
+                    <li>Prešovský kraj</li>
+                    <li>Košický kraj</li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
             <div class="container footer-bottom-container">
-                <p>&copy; 2026 KEYS PARTNERS a.s. Všetky práva vyhradené. Realitné služby a sprostredkovanie nehnuteľností.</p>
+                <p>&copy; Since 2021, Keys Partners, Všetky práva vyhradené. Realitné služby, Inžiniering, Developerská činnosť, Správcovská činnosť.</p>
                 <div class="footer-bottom-links">
                     <a href="#">Spracovanie osobných údajov</a>
                     <a href="#">Zmluvné podmienky</a>

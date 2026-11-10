@@ -2643,15 +2643,7 @@ function initReviewsSystem() {
                 }
             }
 
-            let dateLabel = "Overený klient";
-            if (r.approvedAt || r.createdAt) {
-                try {
-                    const d = new Date(r.approvedAt || r.createdAt);
-                    dateLabel = `Overený klient • ${d.toLocaleDateString("sk-SK")}`;
-                } catch (_e) {}
-            }
-
-            const safeName = escapeHtml(r.name || "Overený partner");
+            const safeName = escapeHtml(r.name || "Klient");
             const safeText = escapeHtml(r.text || "");
 
             return `
@@ -2664,7 +2656,6 @@ function initReviewsSystem() {
                         <div class="author-avatar"><i class="fa-solid fa-user"></i></div>
                         <div>
                             <h4>${safeName}</h4>
-                            <span>${dateLabel}</span>
                         </div>
                     </div>
                 </div>
