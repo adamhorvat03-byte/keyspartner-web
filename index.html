@@ -407,36 +407,105 @@
     <!-- Hypotekárna kalkulačka s prepojením na konzultáciu (Reveal) -->
     <section class="mortgage-section reveal" id="hypoteka">
         <div class="container mortgage-container">
-            <!-- Ľavá strana: Text a vysvetlenie (na mobile hore) -->
+            <!-- Ľavá strana: Text, info boxy a kontaktný formulár -->
             <div class="mortgage-info">
                 <div class="badge-premium" style="margin-bottom: 16px;">
-                    <i class="fa-solid fa-calculator text-gold"></i> Financovanie bývania
+                    <i class="fa-solid fa-calculator text-gold"></i> Financovanie bývania / Komplexné finančné služby
                 </div>
-                <h2>Hypotekárna kalkulačka</h2>
-                <p>Plánujete kúpu vysnívaného bývania? Zistite, aká bude vaša orientačná mesačná splátka. Naša kalkulačka vám pomôže získať rýchly prehľad o možnostiach financovania. Ak máte záujem o porovnanie ponúk z bánk, dohodnite si nezáväznú konzultáciu s našim maklérom, ktorý sa postará o to, aby ste získali tie najlepšie podmienky na trhu.</p>
+                <h2>Hypotéka, Poistenie, Investície</h2>
+                <p>Každá kúpa nehnuteľnosti je o zodpovednom rozhodnutí kupujúceho vzhľadom k jeho finančným možnostiam. Rozdiel medzi úspešnou kúpou a neúspešnou kúpou je len v jednej veci. Viete v akej? Mať v správnom čase tie správne informácie pre dobré rozhodnutie. Toto je podľa nás základný rozdiel v splnení si svojho sna o bývaní. Spoločnosť Keys Partners pri riešení bývania má svojich partnerov aj pre túto oblasť. Vedieť, že máte pre seba toho správneho partnera, ktorý Vám pomôže prejsť celým náročným a komplikovaným procesom pri vyriešení svojej potreby, je pre dnešnú rýchlu dobu nevyhnutnosť. Ako spoločnosť Keys Partners Vám GARANTUJEME odbornosť, profesionalitu a diskrétnosť.</p>
                 
+                <div class="mortgage-services-heading"><strong>Aké služby Vám vieme poskytnúť:</strong></div>
                 <ul class="mortgage-advantages">
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Nezávislé porovnanie hypoték naprieč všetkými bankami na trhu</li>
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Vyjednanie najvýhodnejšieho úroku a podmienok</li>
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Kompletný servis od finančnej analýzy klienta až po čerpanie úveru</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Dôsledná analýza Vašich skutočných možností</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Návrh stratégie ako vyriešiť Vašu potrebu/požiadavku</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Zabezpečiť celý proces pre Vás vrátane usmernenia</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Vyjednať pre Vás tie najlepšie možnosti na finančnom trhu</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> Sprostredkovanie Úveru / Poistenia / Investícií</li>
                 </ul>
 
-                <div class="mortgage-info-card">
-                    <div class="mortgage-card-icon">
-                        <i class="fa-solid fa-shield-halved text-gold"></i>
+                <div class="mortgage-info-cards-stack">
+                    <div class="mortgage-info-card">
+                        <div class="mortgage-card-icon">
+                            <i class="fa-solid fa-shield-halved text-gold"></i>
+                        </div>
+                        <div class="mortgage-card-text">
+                            <h4>Garantujeme Vám bezplatnú konzultáciu.</h4>
+                            <p>Naši odborníci v oblasti finančného sektora sú Vám k dispozícii bezplatne. Prečo? Finančné inštitúcie platia priamo našich finančných sprostredkovateľov.</p>
+                        </div>
                     </div>
-                    <div class="mortgage-card-text">
-                        <h4>100% bezplatná a nezáväzná služba</h4>
-                        <p>Naše hypotekárne poradenstvo je pre vás úplne bezplatné. Odmenu hypotekárnemu špecialistovi vypláca priamo banka.</p>
+
+                    <div class="mortgage-info-card">
+                        <div class="mortgage-card-icon">
+                            <i class="fa-solid fa-building-columns text-gold"></i>
+                        </div>
+                        <div class="mortgage-card-text">
+                            <p class="mortgage-card-highlight">Rozmýšľate nad financovaním cez Štátny fond rozvoja bývania (ŠFRB)? Informujte sa u nás.</p>
+                        </div>
+                    </div>
+
+                    <div class="mortgage-info-card">
+                        <div class="mortgage-card-icon">
+                            <i class="fa-solid fa-handshake-angle text-gold"></i>
+                        </div>
+                        <div class="mortgage-card-text">
+                            <p class="mortgage-card-highlight">Keys Partners je pre Vás Partner, ktorý stojí pri Vás od samotného začiatku až k určenému cieľu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontaktný formulár pre nezáväznú konzultáciu (presunutý pod bod 4 vľavo) -->
+                <div class="mortgage-consult-card">
+                    <form id="mortgageConsultForm" class="mortgage-consult-form">
+                        <div class="consult-form-heading">
+                            <h4>Máte záujem o nezáväznú konzultáciu s naším špecialistom?</h4>
+                            <p>Vypíšte nám náš kontaktný formulár. Náš špecialista v oblasti finančného sektora Vás bude priamo kontaktovať v lehote do 96 hodín odo dňa zaslania Vášho záujmu / dopytu.</p>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="mortgageClientName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
+                                <input type="text" id="mortgageClientName" required placeholder="Meno a priezvisko">
+                            </div>
+                            <div class="form-group">
+                                <label for="mortgageClientPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
+                                <input type="tel" id="mortgageClientPhone" required placeholder="+421 900 000 000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mortgageClientEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
+                            <input type="email" id="mortgageClientEmail" required placeholder="meno.priezvisko@menopriezvisko.sk">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-mortgage-submit" id="btnMortgageSubmit">
+                            <i class="fa-solid fa-paper-plane"></i> Odoslať požiadavku k nezáväznej konzultácii.
+                        </button>
+                        <p class="form-disclaimer">Vypísaním údajov súhlasíte so spracovaním Vašich osobných údajov v určenom rozsahu pre kontaktovanie špecialistom vo finančnom sektore.</p>
+                    </form>
+
+                    <!-- Úspešné odoslanie (Success message) -->
+                    <div class="mortgage-success-box" id="mortgageSuccessBox" style="display: none;">
+                        <i class="fa-solid fa-circle-check success-icon"></i>
+                        <h3>Ďakujeme. Váš prepočet sme prijali a náš špecialista Vás bude kontaktovať.</h3>
+                        <p>Prešli sme si Vaše požiadavky a pripravíme Vám komplexné porovnanie finančných možností s najvýhodnejšími podmienkami.</p>
+                        <div class="mortgage-success-details">
+                            <div class="succ-row"><span>Cena nehnuteľnosti:</span> <strong id="succPrice">150 000 €</strong></div>
+                            <div class="succ-row"><span>Výška úveru:</span> <strong id="succLoan">120 000 €</strong></div>
+                            <div class="succ-row"><span>Odhadovaná splátka:</span> <strong id="succPayment">593 € / mesiac</strong></div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnMortgageRecalc" style="margin-top: 20px;">
+                            <i class="fa-solid fa-rotate-left"></i> Upraviť parametre
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Pravá strana: Interaktívny nástroj kalkulačky s formulárom (na mobile dole) -->
+            <!-- Pravá strana: Interaktívny nástroj kalkulačky -->
             <div class="mortgage-tool-container">
                 <div class="mortgage-tool-header">
-                    <h3>Výpočet mesačnej splátky</h3>
-                    <p>Nastavte parametre úveru a okamžite zistite odhadovanú výšku vašej mesačnej splátky.</p>
+                    <h3>Kalkulačka - Vypočítajte si svoju mesačnú splátku.</h3>
+                    <p>Nastavte si parametre. Kalkulačka automaticky prepočíta výsledok. Prepočet je len informatívny.</p>
                 </div>
 
                 <div class="mortgage-inputs">
@@ -557,50 +626,6 @@
                             <strong id="subInterestAmount">93 540 €</strong>
                         </div>
                     </div>
-                </div>
-
-                <!-- Kontaktný formulár pre nezáväznú konzultáciu -->
-                <form id="mortgageConsultForm" class="mortgage-consult-form">
-                    <div class="consult-form-heading">
-                        <h4>Máte záujem o nezáväznú konzultáciu k hypotéke?</h4>
-                        <p>Zanechajte nám kontakt a náš maklér pre vás bezplatne pripraví porovnanie a vybaví najlepšie podmienky.</p>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="mortgageClientName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
-                            <input type="text" id="mortgageClientName" required placeholder="Napr. Peter Kováč">
-                        </div>
-                        <div class="form-group">
-                            <label for="mortgageClientPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
-                            <input type="tel" id="mortgageClientPhone" required placeholder="+421 900 000 000">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mortgageClientEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
-                        <input type="email" id="mortgageClientEmail" required placeholder="peter.kovac@email.sk">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block btn-mortgage-submit" id="btnMortgageSubmit">
-                        <i class="fa-solid fa-paper-plane"></i> Nezáväzná konzultácia s našim maklérom k hypotéke
-                    </button>
-                    <p class="form-disclaimer">Odoslaním údajov súhlasíte s bezplatným spracovaním a kontaktovaním.</p>
-                </form>
-
-                <!-- Úspešné odoslanie (Success message) -->
-                <div class="mortgage-success-box" id="mortgageSuccessBox" style="display: none;">
-                    <i class="fa-solid fa-circle-check success-icon"></i>
-                    <h3>Ďakujeme. Váš prepočet sme prijali a náš maklér vás bude čoskoro kontaktovať.</h3>
-                    <p>Prešli sme si vaše požiadavky a pripravíme vám komplexné porovnanie hypotekárnych možností s najvýhodnejším úrokom.</p>
-                    <div class="mortgage-success-details">
-                        <div class="succ-row"><span>Cena nehnuteľnosti:</span> <strong id="succPrice">150 000 €</strong></div>
-                        <div class="succ-row"><span>Výška úveru:</span> <strong id="succLoan">120 000 €</strong></div>
-                        <div class="succ-row"><span>Odhadovaná splátka:</span> <strong id="succPayment">593 € / mesiac</strong></div>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnMortgageRecalc" style="margin-top: 20px;">
-                        <i class="fa-solid fa-rotate-left"></i> Upraviť parametre
-                    </button>
                 </div>
             </div>
         </div>
