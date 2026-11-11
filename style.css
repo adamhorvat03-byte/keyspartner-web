@@ -3723,7 +3723,7 @@ img {
 .footer-bottom {
     background-color: #010204;
     padding: 24px 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     color: #94A3B8; /* Vždy stlmený svetlý text pre copyright */
 }
@@ -3732,7 +3732,7 @@ img {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 16px 24px;
 }
 
@@ -3758,6 +3758,12 @@ img {
 .footer-bottom-links a:hover {
     color: #FFFFFF;
     text-decoration: underline;
+}
+
+@media (max-width: 1180px) {
+    .footer-bottom-container {
+        flex-wrap: wrap;
+    }
 }
 
 /* ==========================================================================
@@ -4080,7 +4086,13 @@ img {
     .footer-bottom-container {
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
+        gap: 14px;
+    }
+
+    .footer-bottom-links {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
     }
 
     .reviews-header {
