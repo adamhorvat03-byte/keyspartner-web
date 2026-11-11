@@ -3582,7 +3582,7 @@ img {
 }
 
 .footer-brand .logo {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .footer-brand .footer-logo-stack {
@@ -3606,9 +3606,13 @@ img {
     line-height: 1.2;
 }
 
+.footer-brand .social-links {
+    margin-bottom: 20px;
+}
+
 .footer-brand p {
     font-size: 0.93rem;
-    margin-bottom: 24px;
+    margin-bottom: 0;
     max-width: 520px;
     line-height: 1.7;
     color: #94A3B8; /* Stlmený svetlý text */
