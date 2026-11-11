@@ -1480,9 +1480,9 @@ img {
 /* Modálne okno pre sekciu O nás (About Modal) */
 .about-modal-content {
     max-width: 780px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    background-color: #0b1020;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
 }
 
 .about-modal-body {
@@ -1495,7 +1495,7 @@ img {
     gap: 18px;
     margin-bottom: 28px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     padding-right: 36px;
 }
 
@@ -1503,8 +1503,8 @@ img {
     width: 56px;
     height: 56px;
     border-radius: var(--border-radius-md);
-    background-color: var(--brand-yellow-light);
-    color: var(--brand-yellow);
+    background-color: rgba(223, 186, 115, 0.15);
+    color: #DFBA73;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1523,14 +1523,14 @@ img {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--brand-yellow);
+    color: #DFBA73;
 }
 
 .about-modal-title {
     font-family: var(--font-heading);
     font-size: clamp(1.4rem, 2.5vw, 1.85rem);
     font-weight: 800;
-    color: var(--text-primary);
+    color: #FFFFFF !important;
     line-height: 1.25;
     margin: 0;
 }
@@ -1538,34 +1538,53 @@ img {
 .about-modal-text {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    color: var(--text-secondary);
-    font-size: 1rem;
-    line-height: 1.75;
+    gap: 14px;
+    font-size: 0.98rem;
+    line-height: 1.72;
 }
 
-.about-modal-text p {
-    margin: 0;
-}
-
-.about-modal-subheading {
-    font-family: var(--font-heading);
-    font-size: 1.12rem;
-    font-weight: 700;
-    color: var(--brand-yellow);
-    margin-top: 8px;
-    margin-bottom: 2px;
-}
-
-.about-modal-quote {
-    margin-top: 8px;
+.about-white-block {
+    background-color: #FFFFFF;
+    color: #1E293B;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
     padding: 18px 22px;
-    background-color: var(--bg-primary);
-    border-left: 3px solid var(--brand-yellow);
-    border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
-    font-style: italic;
-    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.about-white-block p {
+    margin: 0;
+    color: #1E293B;
+    line-height: 1.72;
+}
+
+.about-white-block strong {
+    color: #0F172A;
+    font-weight: 800;
+}
+
+.about-block-heading {
+    font-family: var(--font-heading);
+    font-size: 1.06rem;
+    font-weight: 800;
+    color: #0F172A;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+    border-left: 3px solid #B58920;
+    border-bottom: 1px solid #E2E8F0;
+    line-height: 1.35;
+}
+
+.about-white-quote {
+    border-left: 4px solid #B58920;
+    background-color: #FFFDF7;
+}
+
+.about-white-quote p {
+    color: #0F172A;
     font-weight: 600;
+    font-style: italic;
 }
 
 .about-desatoro-list {
@@ -1581,21 +1600,22 @@ img {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 16px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    color: var(--text-primary);
-    font-weight: 500;
+    padding: 14px 18px;
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    color: #0F172A;
+    font-weight: 600;
     line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .about-desatoro-num {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background-color: var(--brand-yellow-light);
-    color: var(--brand-yellow);
+    background-color: rgba(181, 137, 32, 0.15);
+    color: #B58920;
     font-family: var(--font-heading);
     font-weight: 800;
     font-size: 0.9rem;
@@ -1603,23 +1623,6 @@ img {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}
-
-.about-kodex-block {
-    padding: 16px 20px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    line-height: 1.7;
-}
-
-.about-kodex-block strong {
-    color: var(--brand-yellow);
-    font-family: var(--font-heading);
-    font-weight: 700;
-    display: block;
-    margin-bottom: 4px;
-    font-size: 1.02rem;
 }
 
 /* ==========================================================================
