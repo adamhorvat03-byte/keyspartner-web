@@ -300,6 +300,7 @@ let activeFilters = {
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
+    initHeroSlider(); // Automatický background slider v hero sekcii (každé 4s)
     renderListings();
     renderAgents();
     initScrollReveal(); // Spustenie animácií pri skrollovaní
@@ -307,6 +308,31 @@ document.addEventListener("DOMContentLoaded", () => {
     loadPropertiesFromApi(); // Asynchrónne načítanie aktuálnych inzerátov z Netlify Blobs
     initReviewsSystem(); // Dynamický systém zákazníckych recenzií
 });
+
+// --- Automatický background slider v hero sekcii (cyklické striedanie každé 4 sekundy) ---
+function initHeroSlider() {
+    const slider = document.getElementById("heroBgSlider");
+    if (!slider) return;
+
+    const slides = Array.from(slider.querySelectorAll(".hero-slide")).filter(img => {
+        const src = img.getAttribute("src");
+        return src && src.trim() !== "";
+    });
+
+    if (slides.length <= 1) return;
+
+    let currentIndex = slides.findIndex(s => s.classList.contains("active"));
+    if (currentIndex === -1) {
+        currentIndex = 0;
+        slides[0].classList.add("active");
+    }
+
+    setInterval(() => {
+        slides[currentIndex].classList.remove("active");
+        currentIndex = (currentIndex + 1) % slides.length;
+        slides[currentIndex].classList.add("active");
+    }, 4000);
+}
 
 // --- Asynchrónne načítanie nehnuteľností z Netlify Blobs cez /api/properties ---
 async function loadPropertiesFromApi() {
