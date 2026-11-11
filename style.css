@@ -3582,19 +3582,20 @@ img {
 }
 
 .footer-brand .logo {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .footer-brand .footer-logo-stack {
     display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
     text-decoration: none;
 }
 
 .footer-brand .footer-logo-stack .logo-icon-container {
     margin-right: 0;
+    flex-shrink: 0;
 }
 
 .footer-brand .footer-logo-stack .logo-text {
@@ -3723,7 +3724,7 @@ img {
     background-color: #010204;
     padding: 24px 0;
     font-size: 0.85rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     color: #94A3B8; /* Vždy stlmený svetlý text pre copyright */
 }
 
@@ -3732,20 +3733,31 @@ img {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 16px 24px;
+}
+
+.footer-bottom-container p {
+    margin: 0;
+    line-height: 1.6;
 }
 
 .footer-bottom-links {
     display: flex;
-    gap: 24px;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
 }
 
 .footer-bottom-links a {
     color: #94A3B8; /* Vždy svetlé copyright linky */
+    text-decoration: none;
+    transition: color 0.2s ease;
+    white-space: nowrap;
 }
 
 .footer-bottom-links a:hover {
-    color: white;
+    color: #FFFFFF;
+    text-decoration: underline;
 }
 
 /* ==========================================================================
@@ -4063,6 +4075,12 @@ img {
 
     .footer-brand p {
         max-width: 100%;
+    }
+
+    .footer-bottom-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 
     .reviews-header {
