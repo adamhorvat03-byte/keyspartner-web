@@ -1370,20 +1370,24 @@ img {
 }
 
 /* ==========================================================================
-   BENEFITY / PREČO MY
+   BENEFITY / O NÁS, KTO SME, NAŠE DESATORO, ETICKÝ KÓDEX
    ========================================================================== */
 .benefits-section {
-    padding: 100px 0;
+    padding: 80px 0 100px;
     background-color: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
 }
 
+.benefits-section .section-header {
+    margin-bottom: 40px;
+}
+
 .benefits-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 32px;
-    margin-top: 56px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+    margin-top: 0;
 }
 
 .benefit-card {
@@ -1391,6 +1395,10 @@ img {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     padding: 32px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    cursor: pointer;
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
                 box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
                 border-color 0.4s ease;
@@ -1403,16 +1411,17 @@ img {
 }
 
 .benefit-icon {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: var(--border-radius-md);
     background-color: var(--brand-yellow-light);
     color: var(--brand-yellow);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    margin-bottom: 24px;
+    font-size: 1.45rem;
+    margin-bottom: 22px;
+    flex-shrink: 0;
 }
 
 .benefit-card h3 {
@@ -1421,9 +1430,196 @@ img {
     color: var(--text-primary);
 }
 
-.benefit-card p {
+.benefit-card p,
+.benefit-teaser {
     color: var(--text-secondary);
     font-size: 0.95rem;
+    line-height: 1.65;
+    flex-grow: 1;
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.benefit-card-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.benefit-read-more {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--brand-yellow);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.benefit-read-more i {
+    font-size: 0.8rem;
+    transition: transform 0.25s ease;
+}
+
+.benefit-card:hover .benefit-read-more i,
+.benefit-read-more:hover i {
+    transform: translateX(4px);
+}
+
+/* Modálne okno pre sekciu O nás (About Modal) */
+.about-modal-content {
+    max-width: 780px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.about-modal-body {
+    padding: 40px 36px;
+}
+
+.about-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-right: 36px;
+}
+
+.about-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--border-radius-md);
+    background-color: var(--brand-yellow-light);
+    color: var(--brand-yellow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.about-modal-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.about-modal-badge {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--brand-yellow);
+}
+
+.about-modal-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin: 0;
+}
+
+.about-modal-text {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+.about-modal-text p {
+    margin: 0;
+}
+
+.about-modal-subheading {
+    font-family: var(--font-heading);
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: var(--brand-yellow);
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+.about-modal-quote {
+    margin-top: 8px;
+    padding: 18px 22px;
+    background-color: var(--bg-primary);
+    border-left: 3px solid var(--brand-yellow);
+    border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+    font-style: italic;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.about-desatoro-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.about-desatoro-list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.about-desatoro-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--brand-yellow-light);
+    color: var(--brand-yellow);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.about-kodex-block {
+    padding: 16px 20px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    line-height: 1.7;
+}
+
+.about-kodex-block strong {
+    color: var(--brand-yellow);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 1.02rem;
 }
 
 /* ==========================================================================
@@ -3570,6 +3766,9 @@ img {
 @media (max-width: 1024px) {
     .hero-content h1 {
         white-space: normal;
+    }
+    .benefits-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .search-form {
         grid-template-columns: 1fr 1fr;

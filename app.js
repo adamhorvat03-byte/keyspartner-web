@@ -301,6 +301,7 @@ let activeFilters = {
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
     initHeroSlider(); // Automatický background slider v hero sekcii (každé 4s)
+    initAboutModal(); // Modálne okná pre sekciu O nás / Kto sme / Desatoro / Etický kódex
     renderListings();
     renderAgents();
     initScrollReveal(); // Spustenie animácií pri skrollovaní
@@ -308,6 +309,152 @@ document.addEventListener("DOMContentLoaded", () => {
     loadPropertiesFromApi(); // Asynchrónne načítanie aktuálnych inzerátov z Netlify Blobs
     initReviewsSystem(); // Dynamický systém zákazníckych recenzií
 });
+
+// --- Údaje a logika pre modálne okno sekcie "O nás, kto sme, naše desatoro, etický kódex…" ---
+const ABOUT_MODAL_DATA = {
+    "myslienka": {
+        title: "O nás / Myšlienka",
+        icon: "fa-solid fa-lightbulb",
+        contentHtml: `
+            <p>Celá myšlienka vybudovať spoločnosť s etikou profesionality a so základným pilierom, ktorý je orientovaný na vzťah vznikla v človeku, ktorý je dnes v Predstavenstve spoločnosti. Prvá časť histórie sa začína písať od roku 2016. Kedy 3 obchodní PARTNERI sa zhodli na spoločnej myšlienke - vybudovať Realitnú kanceláriu. A v tom momente začala vznikať nová Divízia Reality spoločnosti. Vývoj spoločnosti sprevádzalo nespočetne množstvo strávených spoločných hodín premýšľania a tvorby. Boli to rôzne úspechy ale aj neúspechy. Hodnota spoločnosti ako aj jej etika sa buduje niekoľko dní, týždňov, mesiacov a rokov. Po všetkých tých časoch prišiel rok 2020. Rok 2020 zmenil veci od základu veľa podnikateľom, ľuďom. COVID-19 ukázal a ukazuje čo dokáže. V tomto období prišiel návrh, aby celé riadenie prevzal jeden z bývalých štatutárov. Ten návrh prijal aktuálny Predseda predstavenstva spoločnosti. Je rok 2021. Spoločnosť prešla komplexným brandingom, taktiež aj zmenou názvu spoločnosti s jasným odkazom.</p>
+            <div class="about-modal-subheading">Pár úvodných myšlienok Predsedu predstavenstva spoločnosti:</div>
+            <p>Každý z nás sa ocitne v rôznych situáciách v živote. Niektoré sú ľahšie a iné zas náročne a ťažšie. Základom podľa môjho presvedčenia je to, ako sa s tým všetkým dokážete vysporiadať, poučiť a kým sa dokážete stať. V ťažkých chvíľach skutočne spoznáte, že kto sú Tí Vaši priatelia, ktorí s Vami budú v dobrom a zlom. Umelých priateľstiev je dnes veľa. Sám si niekedy kladiem otázku, že o čo tým ľuďom ide. Úprimných, kedy niekomu záleží na Vás a berú Vás takého aký ste, kde popri tom sa Vám snažia pomôcť je menej. A práve tých si podľa mňa potrebujeme VÁŽIŤ, CENIŤ a to najpodstatnejšie OPÄTOVAŤ IM TO. Lebo nie je nič horšie v živote ako zistenie faktu, že venujete čas tým nesprávnym ľuďom okolo Vás, ktorí si nezaslúžia čo i len jednu Vašu myšlienku, Vaše pocity.</p>
+            <p>Peniaze majú jednu krásnu a užasnú vlastnosť. Viete akú? S istotou ste počuli, že peniaze ničia ľudí a menia ich charakter. Viete čo si o tom myslím ja? Peniaze nemenia charakter a povahu ľudí. Oni len odhaľujú to, aký charakter osobnosti človeka v sebe ste...</p>
+            <div class="about-modal-quote">Jeden múdry muž raz vyslovil myšlienku: “Jeden muž nemusí zmeniť vôbec nič, no ak sa rozhodne môže zmeniť veľa". Rokom 2021 sa začína písať nová HISTÓRIA spoločnosti Keys Partners, a.s..</div>
+        `
+    },
+    "kto-sme": {
+        title: "Kto sme",
+        icon: "fa-solid fa-people-group",
+        contentHtml: `
+            <p>Sme tím ľudí, ktorí veria, že poctivý obchodný styk založený na korektnosti a vzájomnom pochopení sa bez ohľadu na rozličný názor a pohľad na vec nám dáva právo uspieť v oblasti, v ktorej sa naša spoločnosť angažuje. Služby ponúkame na profesionálnej úrovni s profesionálnym tímom. Vieme čo robíme, vieme ako to robíme a vieme akú hodnotu ponúkame našim klientom.</p>
+            <p>Koncept je založený na troch Divíziách - <strong>BROKERAGE REAL ESTATE</strong> (Realitná činnosť), <strong>DEVELOPMENT PROJECTS</strong> (Stavebné povolenia, Inžiniering, Projekčná činnosť, Výkup nehnuteľnosti, Výstavba nehnuteľnosti) a <strong>PROPERTY MANAGEMENT</strong> (Správa nájomných nehnuteľností, správa podľa osobitného zákona). Komplexné riešenie spojené s Nehnuteľnosťou.</p>
+        `
+    },
+    "desatoro": {
+        title: "Naše desatoro",
+        icon: "fa-solid fa-list-ol",
+        contentHtml: `
+            <ul class="about-desatoro-list">
+                <li><span class="about-desatoro-num">1</span> <span>Vzťah k človeku je základným kameňom nášho úspechu;</span></li>
+                <li><span class="about-desatoro-num">2</span> <span>Hovor vždy pravdu;</span></li>
+                <li><span class="about-desatoro-num">3</span> <span>Byť čestný je cesta pre priamu komunikáciu;</span></li>
+                <li><span class="about-desatoro-num">4</span> <span>Mysli na to, že dôvera človeka je krehká vec;</span></li>
+                <li><span class="about-desatoro-num">5</span> <span>Keď niečo nevieš, alebo nie si si istý, jednoducho povedz, že to zistíš;</span></li>
+                <li><span class="about-desatoro-num">6</span> <span>Skutky sú dôkazom hodnoty dodržaného slova;</span></li>
+                <li><span class="about-desatoro-num">7</span> <span>Ak spravíš chybu, priznaj si ju;</span></li>
+                <li><span class="about-desatoro-num">8</span> <span>Domnienky ničia všetko správne pochopené;</span></li>
+                <li><span class="about-desatoro-num">9</span> <span>Jedine fakty Ti dávajú právo si byť istý tým, čo hovoríš;</span></li>
+                <li><span class="about-desatoro-num">10</span> <span>Konkurenciu plne akceptujeme, nekritizujeme a neničíme jej meno.</span></li>
+            </ul>
+        `
+    },
+    "pravne-sluzby": {
+        title: "Právne služby",
+        icon: "fa-solid fa-scale-balanced",
+        contentHtml: `
+            <p>Právne služby pre našich klientov sú súčasťou nášho Právneho oddelenia, ktoré zastupuje tím profesionálov. Základom je zameranie na zákonné a legislatívne postupy pri riešení potrieb našich klientov. Neodmysliteľnou súčasťou je aj elektronické podávanie na príslušný Okresný úrad, odbor kataster. Riadime sa pravidlom - <strong>Jasné zmluvy tvoria čisté vzťahy.</strong></p>
+        `
+    },
+    "marketing": {
+        title: "Marketing / Rýchlosť predaja",
+        icon: "fa-solid fa-gauge-high",
+        contentHtml: `
+            <p>Vieme, a skúsenosti za nás hovoria, že správnym zanalyzovaním trhu, premysleným strategickým marketingovým plánom a zodpovedným nastavením predajnej ceny dokážeme zvýšiť rýchlosť predaja pre tých, ktorí majú záujem svoju nehnuteľnosť <strong>PREDAŤ</strong>, nie <strong>PREDÁVAŤ</strong>.</p>
+        `
+    },
+    "eticky-kodex": {
+        title: "Etický kódex",
+        icon: "fa-solid fa-shield-heart",
+        contentHtml: `
+            <div class="about-kodex-block">
+                <strong>Preambula:</strong>
+                Našou víziou je vybudovať dlhodobo stabilizovanú pozíciu spoločnosti na trhu a vytvoriť čo najlepšie pracovné podmienky. Medzi naše poslanie radíme osobnú zodpovednosť za každú požiadavku našich klientov, porozumenie ich potrebám a neustále zlepšovanie našich služieb. Medzi hodnoty spoločnosti patrí záväznosť, lojalita, uznanie kvality, rešpekt k výkonu, zhoda medzi slovami a skutkami, poctivosť a nepodkupnosť.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Základné etické princípy:</strong>
+                Dodržiavanie pravidiel a smerníc platných pre spoločnosť, robenie vecí s jasným rozhodnutím a orientáciou na klienta, určenie vlastných chýb, práca na sebe, vzdelávanie sa a posúvanie sa vpred. Spoločným úsilím chceme viesť spoločnosť k jej rastu.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Vzťah k akcionárom:</strong>
+                Každý obchodný zástupca je reprezentantom našej spoločnosti. Osobne vplýva na obhajovanie hodnôt spoločnosti. Každý manažér a riaditeľ preberá zodpovednosť za svojich obchodných zástupcov pri realizácii stratégie.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Vzťah ku klientom:</strong>
+                Obchodný zástupca, manažér a riaditeľ dbá o priania a požiadavky klientov, vychádza im v ústrety kvalitou služieb a pravdivo ich informuje o ponúkaných produktoch. Neuchýli sa k praktikám nečestnej súťaže ani k podplácaniu.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Vzťah k širšiemu spoločenskému okoliu:</strong>
+                Usilujeme sa o budovanie goodwillu spoločnosti, vytvorenie priateľských partnerských vzťahov a rešpektujeme, že styk s médiami zabezpečujú len štatutári spoločnosti.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Hodnotová orientácia:</strong>
+                Manažér a riaditeľ sa usiluje o uplatnenie autority v prospech dosiahnutia cieľov. Svoju mocenskú pozíciu nezneužíva, ale prirodzene udržiava a rozvíja priateľské a kolegiálne vzťahy.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Vzťah k svojmu tímu:</strong>
+                Vhodné poverovanie zodpovednosti a právomocí. Správne stanovenie cieľov a motivácia všetkých členov k ich dosiahnutiu.
+            </div>
+            <div class="about-kodex-block">
+                <strong>Všeobecné ustanovenia:</strong>
+                Každý zmluvný partner musí pri plnení povinností dodržiavať všeobecne záväzné predpisy a etické zásady správania formulované v tomto Etickom kódexe podnikania.
+            </div>
+        `
+    }
+};
+
+function initAboutModal() {
+    const modal = document.getElementById("aboutModal");
+    const backdrop = document.getElementById("aboutModalBackdrop");
+    const closeBtn = document.getElementById("aboutModalClose");
+    const modalBody = document.getElementById("aboutModalBody");
+
+    if (!modal || !modalBody) return;
+
+    const openAboutModal = (key) => {
+        const data = ABOUT_MODAL_DATA[key];
+        if (!data) return;
+
+        modalBody.innerHTML = `
+            <div class="about-modal-header">
+                <div class="about-modal-icon">
+                    <i class="${data.icon}"></i>
+                </div>
+                <div class="about-modal-title-wrap">
+                    <span class="about-modal-badge">Keys Partners</span>
+                    <h2 class="about-modal-title" id="aboutModalTitle">${data.title}</h2>
+                </div>
+            </div>
+            <div class="about-modal-text">
+                ${data.contentHtml}
+            </div>
+        `;
+
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+    };
+
+    const closeAboutModal = () => {
+        modal.classList.remove("active");
+        document.body.style.overflow = "";
+    };
+
+    document.querySelectorAll(".benefit-card[data-about-key], .benefit-read-more[data-about-key]").forEach(el => {
+        el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const key = el.getAttribute("data-about-key");
+            if (key) openAboutModal(key);
+        });
+    });
+
+    if (closeBtn) closeBtn.addEventListener("click", closeAboutModal);
+    if (backdrop) backdrop.addEventListener("click", closeAboutModal);
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.classList.contains("active")) {
+            closeAboutModal();
+        }
+    });
+}
 
 // --- Automatický background slider v hero sekcii (cyklické striedanie každé 4 sekundy) ---
 function initHeroSlider() {
