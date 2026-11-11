@@ -1893,7 +1893,11 @@ function setupEventListeners() {
         
         const navLinks = navMenu.querySelectorAll("a");
         navLinks.forEach(link => {
-            link.addEventListener("click", () => {
+            link.addEventListener("click", (e) => {
+                if (link.classList.contains("nav-link-disabled")) {
+                    e.preventDefault();
+                    return;
+                }
                 toggleMobileMenu(true);
                 if (link.getAttribute("href")?.startsWith("#")) {
                     navLinks.forEach(l => l.classList.remove("active"));

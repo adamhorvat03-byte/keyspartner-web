@@ -40,7 +40,7 @@
     --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.08);
     --shadow-glow: 0 0 25px rgba(181, 137, 32, 0.08);
     
-    --hero-overlay: linear-gradient(to right, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.78) 45%, rgba(248, 250, 252, 0.25) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.72) 26%, rgba(248, 250, 252, 0.16) 55%, rgba(248, 250, 252, 0.65) 100%);
     --card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
     
     --brand-yellow: #B58920; 
@@ -67,7 +67,7 @@ html[data-theme="dark"] {
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 0 25px rgba(223, 186, 115, 0.15);
     
-    --hero-overlay: linear-gradient(to right, rgba(5, 8, 15, 0.9) 0%, rgba(5, 8, 15, 0.75) 45%, rgba(5, 8, 15, 0.2) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(5, 8, 15, 0.90) 0%, rgba(5, 8, 15, 0.70) 26%, rgba(5, 8, 15, 0.18) 55%, rgba(5, 8, 15, 0.65) 100%);
     --card-gradient: linear-gradient(180deg, rgba(22, 31, 52, 0) 0%, rgba(11, 16, 32, 0.5) 100%);
     
     --brand-yellow: #DFBA73; 
@@ -94,7 +94,7 @@ html[data-theme="light"] {
     --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.08);
     --shadow-glow: 0 0 25px rgba(181, 137, 32, 0.08);
     
-    --hero-overlay: linear-gradient(to right, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.78) 45%, rgba(248, 250, 252, 0.25) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.72) 26%, rgba(248, 250, 252, 0.16) 55%, rgba(248, 250, 252, 0.65) 100%);
     --card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
     
     --brand-yellow: #B58920; 
@@ -336,12 +336,15 @@ img {
 
 .nav-menu ul {
     display: flex;
-    gap: 24px;
+    gap: clamp(14px, 1.8vw, 24px);
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .nav-menu a {
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    white-space: nowrap;
     color: var(--text-secondary);
     position: relative;
     padding: 8px 0;
@@ -366,6 +369,18 @@ img {
 .nav-menu a:hover::after,
 .nav-menu a.active::after {
     width: 100%;
+}
+
+.nav-menu a.nav-link-disabled {
+    cursor: default;
+}
+
+.nav-menu a.nav-link-disabled:hover {
+    color: var(--text-secondary);
+}
+
+.nav-menu a.nav-link-disabled:hover::after {
+    width: 0;
 }
 
 .mobile-nav-actions {
@@ -418,13 +433,13 @@ img {
    HERO SEKCIA
    ========================================================================== */
 .hero-section {
-    padding: 160px 0 100px;
+    padding: 112px 0 24px;
     position: relative;
     overflow: hidden;
     background-color: var(--bg-primary);
-    min-height: 80vh;
+    min-height: 88vh;
     display: flex;
-    align-items: center;
+    align-items: stretch;
 }
 
 .hero-bg-slider {
@@ -470,13 +485,18 @@ img {
     position: relative;
     z-index: 2;
     width: 100%;
+    min-height: calc(88vh - 136px);
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 48px;
 }
 
 .hero-content {
-    max-width: 680px;
+    max-width: 100%;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
 }
 
 .badge-premium {
@@ -496,19 +516,27 @@ img {
 }
 
 .hero-content h1 {
-    font-size: clamp(2.5rem, 5vw, 3.8rem);
-    line-height: 1.15;
-    margin-bottom: 20px;
+    font-size: clamp(1.15rem, 2vw, 1.8rem);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 12px;
     color: var(--text-primary);
+    white-space: nowrap;
 }
 
-.hero-content p {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
+.hero-motto {
+    font-family: var(--font-heading);
+    font-size: clamp(1.4rem, 2.5vw, 2.3rem);
+    font-weight: 800;
+    line-height: 1.25;
+    color: var(--brand-yellow);
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* Vyhľadávací a filtračný panel (Glassmorphic) */
 .search-panel {
+    margin-top: auto;
     background-color: var(--bg-glass);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
@@ -551,9 +579,9 @@ img {
 
 .search-form {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
     gap: 16px;
-    align-items: flex-end;
+    align-items: end;
 }
 
 .form-group {
@@ -585,6 +613,19 @@ img {
     transition: var(--transition);
 }
 
+.search-form .form-group {
+    margin: 0;
+}
+
+.search-form .form-group input,
+.search-form .form-group select {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
 .form-group select option {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
@@ -599,6 +640,14 @@ img {
 
 .search-submit-btn {
     height: 48px;
+    padding: 0 28px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 /* ==========================================================================
@@ -3506,6 +3555,9 @@ img {
    RESPONZIVITA (MEDIA QUERIES)
    ========================================================================== */
 @media (max-width: 1024px) {
+    .hero-content h1 {
+        white-space: normal;
+    }
     .search-form {
         grid-template-columns: 1fr 1fr;
     }
@@ -3839,11 +3891,14 @@ img {
     }
     
     .hero-content h1 {
-        font-size: 2.2rem !important;
+        font-size: 1.3rem !important;
+        line-height: 1.35 !important;
+        white-space: normal !important;
     }
     
-    .hero-content p {
-        font-size: 1.05rem !important;
+    .hero-motto {
+        font-size: 1.55rem !important;
+        line-height: 1.3 !important;
     }
     
     .calc-summary ul {
@@ -3968,12 +4023,18 @@ img {
 
     /* Zmenšenie veľkosti a riadkovania hlavného nadpisu */
     .hero-content h1 {
-        font-size: 1.7rem !important;
-        line-height: 1.3 !important;
+        font-size: 1.15rem !important;
+        line-height: 1.35 !important;
         letter-spacing: -0.01em !important;
+        white-space: normal !important;
     }
 
-    /* Optimalizácia tlačidiel filtra 'Všetko / Na predaj / Na prenájom' bez zalomenia */
+    .hero-motto {
+        font-size: 1.35rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Optimalizácia tlačidiel filtra 'Všetko / Na predaj / Na prenájom / Kúpa' bez zalomenia */
     .search-tabs {
         flex-wrap: nowrap !important;
         justify-content: space-between !important;
@@ -3984,7 +4045,7 @@ img {
         flex: 1 !important;
         text-align: center !important;
         padding: 8px 4px !important;
-        font-size: 0.8rem !important;
+        font-size: 0.78rem !important;
         white-space: nowrap !important;
     }
 
@@ -4045,7 +4106,13 @@ img {
 
     /* Vzdušnejšie a menšie paddingy sekcií na mobile */
     .hero-section {
-        padding: 100px 0 40px !important;
+        padding: 84px 0 20px !important;
+        min-height: 82vh !important;
+    }
+
+    .hero-container {
+        min-height: calc(82vh - 104px) !important;
+        gap: 32px !important;
     }
 
     .stats-section,
@@ -4060,7 +4127,7 @@ img {
 
     .search-panel {
         padding: 20px 16px !important;
-        margin-top: -30px !important;
+        margin-top: auto !important;
     }
 
     /* Modálne zobrazenie pre najmenšie displeje */
@@ -4111,8 +4178,12 @@ img {
    ========================================================================== */
 @media (max-width: 768px) {
     .hero-section {
-        padding: 120px 0 60px;
-        min-height: auto;
+        padding: 96px 0 24px;
+        min-height: 82vh;
+    }
+
+    .hero-container {
+        min-height: calc(82vh - 120px);
     }
     
     .stats-section,

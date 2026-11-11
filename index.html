@@ -38,10 +38,13 @@
             
             <nav class="nav-menu" id="navMenu">
                 <ul>
+                    <li><a href="#benefity">O nás</a></li>
                     <li><a href="#ponuka" class="active">Naša ponuka</a></li>
-                    <li><a href="#benefity">Prečo my</a></li>
+                    <li><a href="#chcem-predat">Cena mojej nehnuteľnosti</a></li>
+                    <li><a href="#hypoteka">Financovanie bývania</a></li>
+                    <li><a href="#" class="nav-link-disabled" aria-disabled="true">Blog</a></li>
                     <li><a href="#makleri">Náš tím</a></li>
-                    <li><a href="#recenzie">Skúsenosti</a></li>
+                    <li><a href="#recenzie">Recenzie</a></li>
                 </ul>
                 <div class="mobile-nav-actions">
                     <button class="drawer-setting-btn" id="drawerThemeToggle" type="button" aria-label="Prepnúť režim zobrazenia">
@@ -51,9 +54,6 @@
                         </div>
                         <span class="drawer-theme-status" id="drawerThemeStatus">Tmavý</span>
                     </button>
-                    <a href="#chcem-predat" class="btn btn-primary btn-mobile-cta">
-                        <i class="fa-solid fa-key"></i> <span>Chcem predať</span>
-                    </a>
                     <div class="mobile-social-links">
                         <a href="https://www.facebook.com/keyspartners/?locale=sk_SK" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Facebook profil" class="social-header-icon"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/keyspartners/" target="_blank" rel="noopener noreferrer" aria-label="Navštíviť náš Instagram profil" class="social-header-icon"><i class="fa-brands fa-instagram"></i></a>
@@ -71,9 +71,6 @@
                 <button class="theme-toggle" id="themeToggle" aria-label="Prepnúť tému">
                     <i class="fa-solid fa-sun"></i>
                 </button>
-                <a href="#chcem-predat" class="btn btn-primary btn-add-listing">
-                    <i class="fa-solid fa-key"></i> <span>Chcem predať</span>
-                </a>
                 <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Otvoriť menu" aria-expanded="false">
                     <i class="fa-solid fa-bars"></i>
                 </button>
@@ -94,11 +91,10 @@
         <div class="hero-bg-overlay"></div>
         <div class="container hero-container">
             <div class="hero-content animate-fade-in-up">
-                <div class="badge-premium">
-                    <i class="fa-solid fa-star text-gold"></i> “Vy viete o čo máte záujem, My vieme ako to dosiahnúť.”
+                <h1>Predaj svoju nehnuteľnosť s premyslenou stratégiou a jasným cieľom.</h1>
+                <div class="hero-motto">
+                    Naše motto: "Vy viete o čo máte záujem, My vieme ako to dosiahnuť"
                 </div>
-                <h1>Predajte svoju nehnuteľnosť bezpečne a za maximálnu cenu</h1>
-                <p>Sme lokálni experti, ktorí sa postarajú o celý proces od profesionálneho nafotenia až po odovzdanie kľúčov.</p>
             </div>
             
             <!-- Vyhľadávací a filtračný panel (Glassmorphic) -->
@@ -107,15 +103,16 @@
                     <button class="search-tab-btn active" data-deal="vsetko">Všetko</button>
                     <button class="search-tab-btn" data-deal="predaj">Na predaj</button>
                     <button class="search-tab-btn" data-deal="prenajom">Na prenájom</button>
+                    <button class="search-tab-btn" data-deal="kupa">Kúpa</button>
                 </div>
                 <div class="search-form">
                     <div class="form-group search-input-group">
-                        <label for="searchQuery"><i class="fa-solid fa-location-dot"></i> Lokalita / Ulica</label>
+                        <label for="searchQuery"><i class="fa-solid fa-location-dot"></i> Lokalita / Mesto / Obec / Ulica</label>
                         <input type="text" id="searchQuery" placeholder="Napr. Ľubotice, Sigord, Fintice, Košice...">
                     </div>
                     
                     <div class="form-group">
-                        <label for="propertyType"><i class="fa-solid fa-house"></i> Typ</label>
+                        <label for="propertyType"><i class="fa-solid fa-house"></i> Typ nehnuteľnosti</label>
                         <select id="propertyType">
                             <option value="vsetky">Všetky typy</option>
                             <option value="byt">Byty</option>
@@ -126,7 +123,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="maxPrice"><i class="fa-solid fa-euro-sign"></i> Max. cena</label>
+                        <label for="maxPrice"><i class="fa-solid fa-euro-sign"></i> Maximálna cena</label>
                         <input type="number" id="maxPrice" placeholder="Napr. 100 000">
                     </div>
                     
