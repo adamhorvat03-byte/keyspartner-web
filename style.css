@@ -3581,8 +3581,16 @@ img {
     padding-bottom: 60px;
 }
 
+.footer-brand-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 28px;
+    margin-bottom: 20px;
+}
+
 .footer-brand .logo {
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 .footer-brand .footer-logo-stack {
@@ -3607,7 +3615,7 @@ img {
 }
 
 .footer-brand .social-links {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .footer-brand p {
