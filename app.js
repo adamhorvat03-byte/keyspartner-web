@@ -646,6 +646,11 @@ function matchesPropertyTypeFilter(item, filterVal) {
     if (filterVal === "byt") return isFlatProperty(item);
     if (filterVal === "pozemi") return isLandProperty(item);
     if (filterVal === "komercne") return isCommercialProperty(item);
+    if (filterVal === "kupa") {
+        if (item.deal === "kupa" || item.type === "kupa") return true;
+        const text = cleanTextForStatusCheck(`${item.title || ""} ${Array.isArray(item.tags) ? item.tags.join(" ") : ""}`);
+        return /\b(kupa|kupim|dopyt)\b/i.test(text);
+    }
     return item.type === filterVal;
 }
 

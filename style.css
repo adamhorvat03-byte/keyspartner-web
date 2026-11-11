@@ -827,7 +827,7 @@ img {
    SEKCIA S PONUKOU NEHNUTEĽNOSTÍ
    ========================================================================== */
 .listings-section {
-    padding: 100px 0;
+    padding: 36px 0 80px;
 }
 
 .section-header {
@@ -837,6 +837,16 @@ img {
     margin-bottom: 48px;
     flex-wrap: wrap;
     gap: 24px;
+}
+
+.listings-header {
+    align-items: center;
+    margin-bottom: 32px;
+    gap: 16px;
+}
+
+.listings-header .section-title {
+    margin-bottom: 0;
 }
 
 .section-title {
@@ -852,6 +862,8 @@ img {
 
 .filter-controls {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -4116,8 +4128,11 @@ img {
         gap: 32px !important;
     }
 
+    .listings-section {
+        padding: 24px 0 40px !important;
+    }
+
     .stats-section,
-    .listings-section,
     .benefits-section,
     .agents-section,
     .submit-section,
@@ -4187,8 +4202,11 @@ img {
         min-height: calc(82vh - 120px);
     }
     
+    .listings-section {
+        padding: 28px 0 56px;
+    }
+
     .stats-section,
-    .listings-section,
     .benefits-section,
     .agents-section,
     .submit-section,
