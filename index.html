@@ -334,23 +334,24 @@
         <div class="submit-bg"></div>
         <div class="container submit-container">
             <div class="submit-info">
-                <h2>Zistite reálnu trhovú hodnotu vašej nehnuteľnosti zdarma.</h2>
-                <p>Plánujete predať byt, rodinný dom či pozemok? Zanechajte nám kontakt a naši vzťahoví manažéri pre vás vypracujú odborný trhový odhad.</p>
+                <h2>Zaujíma Vás aká je reálna trhová cena Vašej Nehnuteľnosti?</h2>
+                <p>Plánujete predať alebo prenajať svoju nehnuteľnosť (Byt, Rodinný dom, Polyfunkčný objekt, Pozemok) a predtým by ste chceli vedieť kde v dnešnej dobe je reálna trhová hodnota? Pre takýto prípad máme pre Vás pripravené nasledovné služby:</p>
                 
                 <ul class="submit-advantages">
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Profesionálne spracovanie marketingu nehnuteľnosti</li>
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Zmluvná a finančná bezpečnosť garantovaná advokátmi</li>
-                    <li><i class="fa-solid fa-circle-check text-gold"></i> Prístup k internej databáze aktívnych investorov</li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>Rýchly prepočet s okamžitým výstupom pre Váš základný odhad</span></li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>Fyzická obhliadka Vašej nehnuteľnosti pre podrobný výstup</span></li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>Spracovanie detailnej analýzy s výpovednou hodnotou pre Vás</span></li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>Porovnanie trhu s nehnuteľnosťami</span></li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>Hodnota Vašej nehnuteľnosti podložená faktami.</span></li>
+                    <li><i class="fa-solid fa-circle-check text-gold"></i> <span>V prípade informatívneho záujmu o sprostredkovanie predaja / prenájmu Vašej nehnuteľnosti - dopracovanie marketingovej stratégie vrátane stratégie nastavenia ceny.</span></li>
                 </ul>
             </div>
             
             <div class="submit-form-container">
-                <!-- Formulár kalkulačky -->
+                <!-- Krok 1: Formulár kalkulačky (bez zberu kontaktov) -->
                 <form class="submit-form" id="sellForm">
-                    <h3>Kalkulačka trhovej ceny</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;">
-                        Vyplňte údaje o nehnuteľnosti a získajte okamžitý orientačný odhad ceny na základe aktuálnych predajných dát.
-                    </p>
+                    <h3>Kalkulačka - výpočet trhovej ceny</h3>
+                    <p class="calc-form-subtitle">Nastavte si parametre. Kalkulačka automaticky prepočíta výsledok. Prepočet je len informatívny.</p>
                     
                     <div class="form-row">
                         <div class="form-group">
@@ -376,7 +377,7 @@
                     </div>
                     
                     <!-- Textové pole pre vlastnú lokalitu (zobrazí sa dynamicky) -->
-                    <div class="form-group" id="ownerPropLocTextGroup" style="display: none; margin-bottom: 16px;">
+                    <div class="form-group" id="ownerPropLocTextGroup" style="display: none;">
                         <label for="ownerPropLocText">Ulica alebo obec</label>
                         <input type="text" id="ownerPropLocText" placeholder="Napr. Sabinovská ulica, Prešov">
                     </div>
@@ -397,36 +398,21 @@
                         </div>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="ownerName">Meno</label>
-                            <input type="text" id="ownerName" required placeholder="Napr. Peter Kováč">
-                        </div>
-                        <div class="form-group">
-                            <label for="ownerEmail">E-mailová adresa</label>
-                            <input type="email" id="ownerEmail" required placeholder="meno@domena.sk">
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
-                        <i class="fa-solid fa-calculator"></i> Získať bezplatný odhad
+                    <button type="submit" class="btn btn-primary btn-block calc-submit-btn">
+                        <i class="fa-solid fa-calculator"></i> Získať okamžitý bezplatný odhad Vašej nehnuteľnosti
                     </button>
-                    <p class="form-disclaimer">Odoslaním údajov súhlasíte s bezplatným spracovaním a kontaktovaním.</p>
                 </form>
                 
-                <!-- Výsledok kalkulačky -->
+                <!-- Krok 2: Výsledok kalkulačky -->
                 <div class="calc-result" id="calculatorResult" style="display: none;">
                     <div class="calc-result-header">
-                        <i class="fa-solid fa-circle-check success-icon"></i>
-                        <h3>Bezplatný odhad úspešne vygenerovaný!</h3>
-                        <p>Trhový odhad sme odoslali aj našim maklérom, ktorí pre vás overia presnosť trhových koeficientov.</p>
+                        <h3>Bezplatný odhad úspešne vygenerovaný pre Vás!</h3>
+                        <p>Trhový odhad je informatívny, bez právneho základu. Naša kalkulačka využíva výpočet priemerného trhového koeficientu v danom regióne.</p>
                     </div>
                     
                     <div class="calc-price-card">
-                        <div class="calc-price-label">Odhadovaná trhová hodnota</div>
-                        <div class="calc-price-range">
-                            <span id="calcPriceMin">0</span> € – <span id="calcPriceMax">0</span> €
-                        </div>
+                        <div class="calc-price-label">Hodnota Vašej nehnuteľnosti podľa zadaných parametrov</div>
+                        <div class="calc-price-range" id="calcPriceRange">0 € – 0 €</div>
                         <div class="calc-progress-wrapper">
                             <div class="calc-progress-bar">
                                 <div class="calc-progress-fill" id="calcProgressFill" style="width: 0%;"></div>
@@ -450,16 +436,40 @@
                     </div>
                     
                     <div class="calc-cta-box">
-                        <h4>Chcete získať oficiálny odhad a predať za maximum?</h4>
-                        <p>Kalkulačka využíva výpočet priemerného trhového koeficientu v regióne. Pre presné nacenenie s ohľadom na špecifiká vašej nehnuteľnosti (balkón, orientácia, poschodie) je potrebná rýchla osobná obhliadka.</p>
-                        <div class="calc-cta-buttons">
-                            <button class="btn btn-primary" id="btnRequestInspection">
-                                <i class="fa-solid fa-calendar-check"></i> Dohodnúť bezplatnú obhliadku
+                        <h4>Zaujíma Vás bezplatná a detailne spracovaná analýza?</h4>
+                        <p>Predmetná služba je bezplatná. Je spracovaná s detailnou precíznosťou tak, aby ste Vy ako klient mali hmatateľný výstup s čo najpresnejším usmernením. Cieľom je Vám poskytnúť také informácie, ktoré Vám pomôžu v ďalšom rozhodnutí pri nakladaní s Vašou nehnuteľnosťou. Mať informácie pre správne rozhodnutie je základ úspechu.</p>
+                        
+                        <!-- Zberný kontaktný formulár (lead) -->
+                        <form id="calcLeadForm" class="calc-lead-form">
+                            <div class="calc-lead-grid">
+                                <div class="form-group">
+                                    <label for="calcLeadName"><i class="fa-solid fa-user"></i> Meno a priezvisko</label>
+                                    <input type="text" id="calcLeadName" required placeholder="Meno a priezvisko">
+                                </div>
+                                <div class="form-group">
+                                    <label for="calcLeadPhone"><i class="fa-solid fa-phone"></i> Telefón</label>
+                                    <input type="tel" id="calcLeadPhone" required placeholder="+421 900 000 000">
+                                </div>
+                                <div class="form-group calc-lead-full">
+                                    <label for="calcLeadEmail"><i class="fa-solid fa-envelope"></i> E-mail</label>
+                                    <input type="email" id="calcLeadEmail" required placeholder="meno.priezvisko@menopriezvisko.sk">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block" id="btnCalcLeadSubmit">
+                                <i class="fa-solid fa-paper-plane"></i> Odoslať požiadavku na detailnú analýzu
                             </button>
-                            <button class="btn btn-secondary" id="btnResetCalc" style="width: 100%; margin-top: 10px;">
-                                <i class="fa-solid fa-rotate-left"></i> Vypočítať znova
-                            </button>
+                            <p class="form-disclaimer">Vypísaním údajov súhlasíte so spracovaním Vašich osobných údajov v určenom rozsahu pre kontaktovanie našim špecialistom.</p>
+                        </form>
+                        
+                        <div class="calc-lead-success" id="calcLeadSuccess" style="display: none;">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <h4>Ďakujeme, Vaša požiadavka bola odoslaná.</h4>
+                            <p>Náš špecialista Vás bude kontaktovať s ponukou detailnej analýzy Vašej nehnuteľnosti.</p>
                         </div>
+                        
+                        <button type="button" class="btn btn-secondary" id="btnResetCalc" style="width: 100%; margin-top: 14px;">
+                            <i class="fa-solid fa-rotate-left"></i> Vypočítať znova
+                        </button>
                     </div>
                 </div>
             </div>

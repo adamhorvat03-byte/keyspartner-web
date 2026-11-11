@@ -2214,6 +2214,7 @@ function setupEventListeners() {
     // --- Kalkulačka trhovej ceny nehnuteľnosti ---
     const sellForm = document.getElementById("sellForm");
     const calcResult = document.getElementById("calculatorResult");
+    let lastEstimate = null;
     
     if (sellForm && calcResult) {
         sellForm.addEventListener("submit", (e) => {
@@ -2269,68 +2270,90 @@ function setupEventListeners() {
             calcResult.style.display = "block";
             calcResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
             
-            // Spustenie animovaného počítadla
-            animateValue("calcPriceMin", 0, priceMin, 1500, " €");
-            animateValue("calcPriceMax", 0, priceMax, 1500, " €");
-            
+            // Zobrazenie výsledku a skrytie formulára (v kroku 1 sa neodosiela žiadny e-mail)
+            sellForm.style.display = "none";
+            calcResult.style.display = "block";
+            calcResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+            // Uloženie výsledku pre následný lead formulár
+            lastEstimate = { typeText, locText, areaVal, condText, priceMin, priceMax };
+
+            // Animované počítadlo v jednom riadku: "237 000 € – 278 000 €"
+            const rangeEl = document.getElementById("calcPriceRange");
+            const startTs = performance.now();
+            const dur = 1500;
+            const tick = (now) => {
+                const p = Math.min(1, (now - startTs) / dur);
+                const k = 1 - Math.pow(1 - p, 3);
+                rangeEl.textContent = Math.round(priceMin * k).toLocaleString("sk-SK") + " € – " + Math.round(priceMax * k).toLocaleString("sk-SK") + " €";
+                if (p < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+
             // Vyplnenie progres baru (optimálna cena, zvyčajne 75% šírky)
             setTimeout(() => {
                 const fill = document.getElementById("calcProgressFill");
                 if (fill) fill.style.width = "75%";
             }, 100);
-
-            // Odoslanie údajov na email cez FormSubmit AJAX API
-            const nameVal = document.getElementById("ownerName").value;
-            const emailVal = document.getElementById("ownerEmail").value;
-            
-            fetch("https://formsubmit.co/ajax/branislav_horvat@keyspartners.sk", {
-                method: "POST",
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    _subject: "Nový odhad ceny nehnuteľnosti – Keys Partners",
-                    "Meno klienta": nameVal,
-                    "E-mail": emailVal,
-                    "Typ nehnuteľnosti": typeText,
-                    "Lokalita / Ulica": locText,
-                    "Rozloha (m²)": areaVal,
-                    "Stav nehnuteľnosti": condText,
-                    "Odhadovaná cena (Min)": priceMin.toLocaleString("sk-SK") + " €",
-                    "Odhadovaná cena (Max)": priceMax.toLocaleString("sk-SK") + " €"
-                })
-            })
-            .then(response => response.json())
-            .then(data => console.log("FormSubmit.co: E-mail bol úspešne odoslaný na spracovanie.", data))
-            .catch(error => console.error("FormSubmit.co: Chyba pri odosielaní e-mailu.", error));
         });
-        
+
+        // Odoslanie zberného kontaktného formulára (lead) na e-mail
+        const leadForm = document.getElementById("calcLeadForm");
+        const leadSuccess = document.getElementById("calcLeadSuccess");
+        if (leadForm) {
+            leadForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const btn = document.getElementById("btnCalcLeadSubmit");
+                const origHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Odosielam požiadavku...`;
+                const est = lastEstimate || {};
+                const fmt = (n) => (typeof n === "number" ? n.toLocaleString("sk-SK") + " €" : "-");
+
+                fetch("https://formsubmit.co/ajax/dbre_obchod@keyspartners.sk", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify({
+                        _subject: "Nový dopyt: Detailná analýza trhovej ceny nehnuteľnosti – Keys Partners",
+                        "Meno a priezvisko": document.getElementById("calcLeadName").value.trim(),
+                        "Telefón": document.getElementById("calcLeadPhone").value.trim(),
+                        "E-mail": document.getElementById("calcLeadEmail").value.trim(),
+                        "Typ nehnuteľnosti": est.typeText,
+                        "Lokalita / Ulica": est.locText,
+                        "Rozloha (m²)": est.areaVal,
+                        "Stav nehnuteľnosti": est.condText,
+                        "Odhadovaná cena": fmt(est.priceMin) + " – " + fmt(est.priceMax)
+                    })
+                })
+                .then(res => res.json())
+                .then(data => console.log("[KEYS PARTNERS] Lead z kalkulačky odoslaný:", data))
+                .catch(err => console.error("[KEYS PARTNERS] Chyba pri odosielaní leadu:", err))
+                .finally(() => {
+                    leadForm.style.display = "none";
+                    if (leadSuccess) leadSuccess.style.display = "block";
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                });
+            });
+        }
+
         // Resetovanie kalkulačky
         document.getElementById("btnResetCalc").addEventListener("click", () => {
             sellForm.reset();
+            if (leadForm) {
+                leadForm.reset();
+                leadForm.style.display = "block";
+            }
+            if (leadSuccess) leadSuccess.style.display = "none";
             locTextGroup.style.display = "none";
             locTextInput.removeAttribute("required");
-            
+
             const fill = document.getElementById("calcProgressFill");
             if (fill) fill.style.width = "0%";
-            
+
             sellForm.style.display = "block";
             calcResult.style.display = "none";
         });
-        
-        // Žiadosť o obhliadku
-        document.getElementById("btnRequestInspection").addEventListener("click", () => {
-            const ctaBox = document.querySelector(".calc-cta-box");
-            ctaBox.innerHTML = `
-                <div class="form-success" style="padding: 10px 0; animation: fadeInUp 0.4s ease forwards; text-align: center;">
-                    <i class="fa-solid fa-circle-check success-icon" style="font-size: 2.5rem; margin-bottom: 12px; color: var(--success);"></i>
-                    <h4 style="color: var(--success); font-size: 1.15rem; margin-bottom: 8px;">Požiadavka na obhliadku odoslaná!</h4>
-                    <p style="font-size: 0.9rem; line-height: 1.5; margin-bottom: 0; color: var(--text-secondary);">Náš vzťahový riaditeľ Peter Duda alebo Ing. Branislav Horvát vás bude kontaktovať najneskôr do 24 hodín pre dohodnutie termínu bezplatnej obhliadky.</p>
-                </div>
-            `;
-        });
-        
         // Inicializácia hypotekárnej kalkulačky
         initMortgageCalculator();
     }
