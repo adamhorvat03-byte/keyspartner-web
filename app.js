@@ -278,7 +278,7 @@ const AGENTS = [
     {
         id: 5,
         name: "Adam Horvát",
-        role: "Marketing, Fin. sprostredkovateľ",
+        role: "Marketing / Fin. sprostredkovateľ",
         phone: "+421 915 865 664",
         email: "dbre_obchod@keyspartners.sk",
         image: "adam.webp",
