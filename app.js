@@ -2382,55 +2382,55 @@ function setupEventListeners() {
     // Sadzby v €/m² sú kalibrované na základe trhových dát NBS a Realitnej únie SR pre rok 2026
     const SLOVAKIA_LOCATION_PRICING = {
         // Bratislavský kraj
-        "ba_stare_mesto": { byt: 4200, dom: 3000, pozemi: 400, komercny: 2800 },
-        "ba_ruzinov_petrzalka": { byt: 3600, dom: 2600, pozemi: 320, komercny: 2400 },
-        "ba_okolie": { byt: 2700, dom: 2100, pozemi: 200, komercny: 1700 },
+        "ba_stare_mesto": { byt: 4200, dom: 3000, pozemi: 400, chata: 2200, pozemok_iny: 90 },
+        "ba_ruzinov_petrzalka": { byt: 3600, dom: 2600, pozemi: 320, chata: 1900, pozemok_iny: 65 },
+        "ba_okolie": { byt: 2700, dom: 2100, pozemi: 200, chata: 1650, pozemok_iny: 40 },
 
         // Trnavský kraj
-        "trnava": { byt: 2450, dom: 1850, pozemi: 180, komercny: 1550 },
-        "piestany": { byt: 2250, dom: 1750, pozemi: 160, komercny: 1450 },
-        "skalica_senica": { byt: 1950, dom: 1500, pozemi: 120, komercny: 1250 },
-        "ds_galanta": { byt: 1900, dom: 1550, pozemi: 130, komercny: 1200 },
+        "trnava": { byt: 2450, dom: 1850, pozemi: 180, chata: 1350, pozemok_iny: 35 },
+        "piestany": { byt: 2250, dom: 1750, pozemi: 160, chata: 1300, pozemok_iny: 30 },
+        "skalica_senica": { byt: 1950, dom: 1500, pozemi: 120, chata: 1150, pozemok_iny: 25 },
+        "ds_galanta": { byt: 1900, dom: 1550, pozemi: 130, chata: 1150, pozemok_iny: 25 },
 
         // Trenčiansky kraj
-        "trencin": { byt: 2250, dom: 1650, pozemi: 150, komercny: 1400 },
-        "povazska_dubnica": { byt: 1900, dom: 1450, pozemi: 120, komercny: 1200 },
-        "prievidza_partizanske": { byt: 1500, dom: 1250, pozemi: 85, komercny: 1000 },
+        "trencin": { byt: 2250, dom: 1650, pozemi: 150, chata: 1250, pozemok_iny: 30 },
+        "povazska_dubnica": { byt: 1900, dom: 1450, pozemi: 120, chata: 1100, pozemok_iny: 22 },
+        "prievidza_partizanske": { byt: 1500, dom: 1250, pozemi: 85, chata: 950, pozemok_iny: 18 },
 
         // Nitriansky kraj
-        "nitra": { byt: 2300, dom: 1700, pozemi: 160, komercny: 1450 },
-        "nove_zamky_komarno": { byt: 1750, dom: 1350, pozemi: 100, komercny: 1150 },
-        "levice_topolcany": { byt: 1650, dom: 1300, pozemi: 90, komercny: 1050 },
+        "nitra": { byt: 2300, dom: 1700, pozemi: 160, chata: 1250, pozemok_iny: 32 },
+        "nove_zamky_komarno": { byt: 1750, dom: 1350, pozemi: 100, chata: 1000, pozemok_iny: 20 },
+        "levice_topolcany": { byt: 1650, dom: 1300, pozemi: 90, chata: 950, pozemok_iny: 18 },
 
         // Žilinský kraj
-        "zilina": { byt: 2550, dom: 1850, pozemi: 170, komercny: 1600 },
-        "martin_vrutky": { byt: 2100, dom: 1550, pozemi: 130, komercny: 1300 },
-        "liptov": { byt: 2350, dom: 1700, pozemi: 160, komercny: 1450 },
-        "kysuce_orava": { byt: 1850, dom: 1400, pozemi: 110, komercny: 1150 },
+        "zilina": { byt: 2550, dom: 1850, pozemi: 170, chata: 1450, pozemok_iny: 35 },
+        "martin_vrutky": { byt: 2100, dom: 1550, pozemi: 130, chata: 1200, pozemok_iny: 25 },
+        "liptov": { byt: 2350, dom: 1700, pozemi: 160, chata: 1650, pozemok_iny: 35 },
+        "kysuce_orava": { byt: 1850, dom: 1400, pozemi: 110, chata: 1200, pozemok_iny: 22 },
 
         // Banskobystrický kraj
-        "banska_bystrica": { byt: 2350, dom: 1750, pozemi: 150, komercny: 1500 },
-        "zvolen": { byt: 1950, dom: 1500, pozemi: 120, komercny: 1250 },
-        "ziar_stiavnica": { byt: 1750, dom: 1450, pozemi: 115, komercny: 1150 },
-        "lucenec_rimavska": { byt: 1350, dom: 1100, pozemi: 65, komercny: 850 },
+        "banska_bystrica": { byt: 2350, dom: 1750, pozemi: 150, chata: 1350, pozemok_iny: 30 },
+        "zvolen": { byt: 1950, dom: 1500, pozemi: 120, chata: 1150, pozemok_iny: 24 },
+        "ziar_stiavnica": { byt: 1750, dom: 1450, pozemi: 115, chata: 1350, pozemok_iny: 24 },
+        "lucenec_rimavska": { byt: 1350, dom: 1100, pozemi: 65, chata: 800, pozemok_iny: 14 },
 
         // Prešovský kraj
-        "presov_sekcov": { byt: 2200, dom: 1700, pozemi: 130, komercny: 1400 },
-        "presov_centrum": { byt: 2450, dom: 1850, pozemi: 160, komercny: 1600 },
-        "lubotice": { byt: 1950, dom: 1550, pozemi: 120, komercny: 1250 },
-        "poprad_tatry": { byt: 2600, dom: 1950, pozemi: 190, komercny: 1700 },
-        "bardejov_humenne": { byt: 1650, dom: 1300, pozemi: 85, komercny: 1050 },
-        "sigord": { byt: 1650, dom: 1400, pozemi: 95, komercny: 950 },
+        "presov_sekcov": { byt: 2200, dom: 1700, pozemi: 130, chata: 1250, pozemok_iny: 25 },
+        "presov_centrum": { byt: 2450, dom: 1850, pozemi: 160, chata: 1350, pozemok_iny: 30 },
+        "lubotice": { byt: 1950, dom: 1550, pozemi: 120, chata: 1200, pozemok_iny: 24 },
+        "poprad_tatry": { byt: 2600, dom: 1950, pozemi: 190, chata: 1800, pozemok_iny: 40 },
+        "bardejov_humenne": { byt: 1650, dom: 1300, pozemi: 85, chata: 950, pozemok_iny: 16 },
+        "sigord": { byt: 1650, dom: 1400, pozemi: 95, chata: 1250, pozemok_iny: 20 },
 
         // Košický kraj
-        "kosice_centrum": { byt: 2850, dom: 2100, pozemi: 210, komercny: 1850 },
-        "kosice_sidliska": { byt: 2500, dom: 1850, pozemi: 160, komercny: 1550 },
-        "kosice_okolie": { byt: 2100, dom: 1700, pozemi: 140, komercny: 1300 },
-        "michalovce_trebisov": { byt: 1550, dom: 1250, pozemi: 75, komercny: 950 },
-        "spisska_roznava": { byt: 1600, dom: 1300, pozemi: 80, komercny: 1000 },
+        "kosice_centrum": { byt: 2850, dom: 2100, pozemi: 210, chata: 1550, pozemok_iny: 45 },
+        "kosice_sidliska": { byt: 2500, dom: 1850, pozemi: 160, chata: 1400, pozemok_iny: 35 },
+        "kosice_okolie": { byt: 2100, dom: 1700, pozemi: 140, chata: 1350, pozemok_iny: 28 },
+        "michalovce_trebisov": { byt: 1550, dom: 1250, pozemi: 75, chata: 1050, pozemok_iny: 15 },
+        "spisska_roznava": { byt: 1600, dom: 1300, pozemi: 80, chata: 1100, pozemok_iny: 16 },
 
         // Iná lokalita (priemer SR)
-        "ina": { byt: 2000, dom: 1500, pozemi: 110, komercny: 1250 }
+        "ina": { byt: 2000, dom: 1500, pozemi: 110, chata: 1150, pozemok_iny: 22 }
     };
 
     // --- Kalkulačka trhovej ceny nehnuteľnosti ---
@@ -2450,7 +2450,8 @@ function setupEventListeners() {
             
             // Získanie cenového základu (€/m²) podľa vybranej lokality a typu nehnuteľnosti
             const locData = SLOVAKIA_LOCATION_PRICING[locVal] || SLOVAKIA_LOCATION_PRICING["ina"];
-            const basePrice = locData[propType] || (propType === "byt" ? 2000 : propType === "dom" ? 1500 : propType === "pozemi" ? 110 : 1250);
+            const fallbackPrices = { byt: 2000, dom: 1500, pozemi: 110, chata: 1150, pozemok_iny: 22 };
+            const basePrice = locData[propType] || fallbackPrices[propType] || 1500;
             
             // Koeficient stavu nehnuteľnosti
             let condCoeff = 1.00; // Čiastočná rekonštrukcia (neutrálna báza)
@@ -2466,7 +2467,11 @@ function setupEventListeners() {
             const priceMax = Math.round((calculatedPrice * 1.08) / 1000) * 1000;
             
             // Naplnenie textov v sumári parametrov
-            const typeText = propType === "byt" ? "Byt" : propType === "dom" ? "Rodinný dom" : propType === "pozemi" ? "Stavebný pozemok" : "Komerčný priestor";
+            const typeText = propType === "byt" ? "Byt" : 
+                             propType === "dom" ? "Rodinný dom" : 
+                             propType === "pozemi" ? "Stavebný pozemok" : 
+                             propType === "chata" ? "Chata / Chalupa" : 
+                             propType === "pozemok_iny" ? "Iný typ pozemku" : "Nehnuteľnosť";
             
             let locText = locSelect.options[locSelect.selectedIndex].text;
             if (locVal === "ina") {
