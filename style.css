@@ -538,7 +538,7 @@ img {
 /* Vyhľadávací a filtračný panel (Glassmorphic) */
 .search-panel {
     margin-top: auto;
-    margin-bottom: -32px;
+    margin-bottom: 0;
     position: relative;
     z-index: 5;
     background-color: var(--bg-glass);
@@ -839,7 +839,7 @@ img {
    SEKCIA S PONUKOU NEHNUTEĽNOSTÍ
    ========================================================================== */
 .listings-section {
-    padding: 64px 0 80px;
+    padding: 80px 0;
 }
 
 .section-header {
@@ -4412,7 +4412,7 @@ img {
     }
 
     .listings-section {
-        padding: 48px 0 40px !important;
+        padding: 56px 0 40px !important;
     }
 
     .stats-section,
@@ -4427,7 +4427,7 @@ img {
     .search-panel {
         padding: 20px 16px !important;
         margin-top: auto !important;
-        margin-bottom: -24px !important;
+        margin-bottom: 0 !important;
     }
 
     /* Modálne zobrazenie pre najmenšie displeje */
@@ -4487,7 +4487,7 @@ img {
     }
     
     .listings-section {
-        padding: 56px 0 56px;
+        padding: 64px 0 56px;
     }
 
     .stats-section,
