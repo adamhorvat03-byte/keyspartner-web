@@ -422,6 +422,172 @@ const ABOUT_MODAL_DATA = {
                 <p>Každý zmluvný partner musí pri plnení povinností dodržiavať všeobecne záväzné predpisy a etické zásady správania formulované v tomto Etickom kódexe podnikania.</p>
             </div>
         `
+    },
+    "gdpr": {
+        title: "Zásady ochrany osobných údajov (GDPR)",
+        icon: "fa-solid fa-user-shield",
+        contentHtml: `
+            <div class="about-white-block about-legal-meta">
+                <p><strong>Účinnosť od:</strong> 24. 11. 2026</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">1. Identifikačné a kontaktné údaje prevádzkovateľa</h3>
+                <dl class="about-info-list">
+                    <div><dt>Obchodné meno:</dt><dd>Keys Partners, a.s.</dd></div>
+                    <div><dt>Sídlo:</dt><dd>Werferova 3782/6, 040 11 Košice - mestská časť Juh</dd></div>
+                    <div><dt>IČO:</dt><dd>44 235 658</dd></div>
+                    <div><dt>DIČ / IČ DPH:</dt><dd>2022634999 / SK2022634999</dd></div>
+                    <div><dt>Registrácia:</dt><dd>Obchodný register Mestského súdu Košice, oddiel: Sa, vložka č.: 1763/V</dd></div>
+                    <div><dt>Štatutárny orgán:</dt><dd>František Kušnír, predseda predstavenstva</dd></div>
+                    <div><dt>E-mail pre otázky GDPR:</dt><dd><a href="mailto:gdpr@keyspartners.sk">gdpr@keyspartners.sk</a></dd></div>
+                </dl>
+                <p>Prevádzkovateľ nemá určenú zodpovednú osobu (DPO). So všetkými otázkami sa môžete obrátiť priamo na Prevádzkovateľa.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">2. Právny rámec a účel tohto dokumentu</h3>
+                <p>Tento dokument upravuje pravidlá spracúvania osobných údajov návštevníkov webovej stránky v súlade s Nariadením (EÚ) 2016/679 (GDPR) a zákonom č. 18/2018 Z. z. Prostredníctvom tejto webovej stránky Prevádzkovateľ aktívne nezhromažďuje žiadne osobné údaje prostredníctvom kontaktných, dopytových ani registračných formulárov.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">3. Rozsah, účel, právny základ a doba uchovávania údajov</h3>
+                <p><strong>A. Technická prevádzka (Serverové logy):</strong> Prehliadač odosiela základné technické údaje (IP adresa, čas prístupu). Účelom je bezpečnosť. Právny základ: Oprávnený záujem. Doba uchovávania: spravidla najviac 30 dní.</p>
+                <p style="margin-top: 12px;"><strong>B. Priama komunikácia na podnet návštevníka:</strong> Ak návštevník kontaktuje Prevádzkovateľa, spracúvajú sa dobrovoľne poskytnuté údaje. Právny základ: Opatrenia pred uzatvorením zmluvy alebo oprávnený záujem. Doba uchovávania: najviac 6 mesiacov od poslednej komunikácie.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">4. Súbory Cookies a sledovacie technológie</h3>
+                <p>Webová stránka www.keyspartners.sk nepoužíva žiadne analytické, marketingové, reklamné ani profilovacie súbory cookies (ako napr. Google Analytics, Meta Pixel) a nevyžaduje udelenie súhlasu prostredníctvom cookie lišty.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">5. Príjemcovia osobných údajov a prenos do tretích krajín</h3>
+                <p>Technickú správu zabezpečuje Prevádzkovateľ. K technickým logom môžu mať prístup poskytovatelia webhostingu. Údaje sa neprenášajú do tretích krajín a nedochádza k automatizovanému rozhodovaniu.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">6. Odkazy na externé webové stránky</h3>
+                <p>Web môže obsahovať odkazy na externé portály. Prevádzkovateľ nezodpovedá za pravidlá ochrany údajov týchto stránok.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">7. Práva dotknutej osoby</h3>
+                <p>Podľa GDPR máte právo na:</p>
+                <ul class="about-bullet-list">
+                    <li>prístup k údajom,</li>
+                    <li>opravu,</li>
+                    <li>vymazanie ("na zabudnutie"),</li>
+                    <li>obmedzenie spracúvania,</li>
+                    <li>prenosnosť údajov,</li>
+                    <li>právo namietať.</li>
+                </ul>
+                <p>Taktiež máte právo podať sťažnosť dozornému orgánu: <strong>Úrad na ochranu osobných údajov SR</strong>, Hraničná 12, 820 07 Bratislava (<a href="https://www.dataprotection.gov.sk" target="_blank" rel="noopener noreferrer">www.dataprotection.gov.sk</a>).</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">8. Záverečné ustanovenia</h3>
+                <p>Zásady sa vzťahujú výlučne na web www.keyspartners.sk. Podrobné informácie poskytuje Prevádzkovateľ osobitne pred uzatvorením zmluvy. Aktuálne znenie je zverejnené na webovej stránke.</p>
+            </div>
+        `
+    },
+    "reklamacny-poriadok": {
+        title: "Reklamačný poriadok",
+        icon: "fa-solid fa-file-signature",
+        contentHtml: `
+            <div class="about-white-block about-legal-meta">
+                <p><strong>Účinnosť od:</strong> 24. 11. 2026</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">1. Úvodné ustanovenia a identifikácia realitnej kancelárie</h3>
+                <p>Tento Reklamačný poriadok upravuje postup pri uplatňovaní a vybavovaní reklamácií služieb poskytovaných obchodnou spoločnosťou Keys Partners, a.s. v oblasti realitného sprostredkovania v súlade s Občianskym zákonníkom a zákonom o ochrane spotrebiteľa.</p>
+                <dl class="about-info-list">
+                    <div><dt>Obchodné meno:</dt><dd>Keys Partners, a.s.</dd></div>
+                    <div><dt>Sídlo:</dt><dd>Werferova 3782/6, 040 11 Košice - mestská časť Juh</dd></div>
+                    <div><dt>IČO / DIČ / IČ DPH:</dt><dd>44 235 658 / 2022634999 / SK2022634999</dd></div>
+                    <div><dt>Registrácia:</dt><dd>Obchodný register Mestského súdu Košice, oddiel: Sa, vložka č.: 1763/V</dd></div>
+                    <div><dt>Štatutárny orgán:</dt><dd>František Kušnír, predseda predstavenstva</dd></div>
+                    <div><dt>Webové sídlo:</dt><dd>www.keyspartners.sk</dd></div>
+                    <div><dt>E-mail na uplatnenie reklamácie:</dt><dd><a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a></dd></div>
+                </dl>
+                <p>Klientom sa na účely tohto Reklamačného poriadku rozumie každá osoba, ktorej Realitná kancelária poskytuje služby na základe písomnej zmluvy.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">2. Rozsah zodpovednosti za vady služieb</h3>
+                <p>Realitná kancelária zodpovedá za to, že poskytované služby majú dohodnutú kvalitu a rozsah. Za vadu služby sa považuje najmä nesplnenie zmluvne dohodnutého rozsahu činností. Za vadu sa nepovažuje skutočnosť, ak nedôjde k uzatvoreniu zmluvy z dôvodov na strane Klienta, tretej osoby alebo situácie na trhu.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">3. Spôsob a miesto uplatnenia reklamácie</h3>
+                <p>Klient je oprávnený uplatniť reklamáciu bez zbytočného odkladu:</p>
+                <ul class="about-bullet-list">
+                    <li>písomne poštou na adrese sídla: Keys Partners, a.s., Werferova 3782/6, 040 11 Košice - mestská časť Juh,</li>
+                    <li>elektronicky e-mailom na adresu: <a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a>,</li>
+                    <li>osobne v sídle počas pracovných hodín.</li>
+                </ul>
+                <p>V reklamácii Klient uvedie svoje identifikačné údaje, označenie zmluvy, presný popis vady a aké právo uplatňuje.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">4. Potvrdenie o uplatnení reklamácie a lehota na vybavenie</h3>
+                <p>Realitná kancelária je povinná pri uplatnení vydať Klientovi písomné potvrdenie. Lehota na odstránenie vady a vybavenie nesmie byť dlhšia ako 30 dní, ak dlhšia lehota nie je odôvodnená objektívnym dôvodom. O výsledku informuje Realitná kancelária Klienta písomne najneskôr v posledný deň lehoty.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">5. Nároky z oprávnenej reklamácie</h3>
+                <p>Ak je reklamácia uznaná, Klient má právo na bezplatné odstránenie vady, primeranú zľavu z odmeny, alebo odstúpenie od zmluvy pri neodstrániteľnej vade. Ak kancelária reklamáciu odmietne, musí to písomne odôvodniť.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">6. Alternatívne riešenie sporov a orgán dozoru</h3>
+                <p>Ak Klient spotrebiteľ nie je spokojný s vybavením reklamácie, má právo požiadať o nápravu a následne podať návrh na začatie alternatívneho riešenia sporu podľa zákona č. 391/2015 Z. z.</p>
+                <p style="margin-top: 12px;"><strong>Orgán dozoru:</strong> Slovenská obchodná inšpekcia (SOI), Inšpektorát SOI pre Košický kraj, Vrátna 3, P. O. BOX A-35, 040 65 Košice 1 (<a href="https://www.soi.sk" target="_blank" rel="noopener noreferrer">www.soi.sk</a>).</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">7. Záverečné ustanovenia</h3>
+                <p>Tento Reklamačný poriadok nadobúda platnosť a účinnosť dňom 24. 11. 2026.</p>
+            </div>
+        `
+    },
+    "asr": {
+        title: "Informácia o alternatívnom riešení sporov (ARS)",
+        icon: "fa-solid fa-scale-balanced",
+        contentHtml: `
+            <div class="about-white-block about-legal-meta">
+                <p><strong>Účinnosť od:</strong> 24. 11. 2026</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">1. Účel dokumentu a identifikácia obchodníka</h3>
+                <p>Obchodná spoločnosť Keys Partners, a.s. týmto v súlade s § 10a ods. 1 písm. k) zákona č. 108/2024 Z. z. o ochrane spotrebiteľa a o zmene a doplnení niektorých zákonov a v súlade so zákonom č. 391/2015 Z. z. o alternatívnom riešení spotrebiteľských sporov a o zmene a doplnení niektorých zákonov informuje spotrebiteľov o možnosti a podmienkach riešenia spotrebiteľských sporov prostredníctvom systému alternatívneho riešenia sporov.</p>
+                <dl class="about-info-list">
+                    <div><dt>Obchodné meno:</dt><dd>Keys Partners, a.s.</dd></div>
+                    <div><dt>Sídlo:</dt><dd>Werferova 3782/6, 040 11 Košice - mestská časť Juh</dd></div>
+                    <div><dt>IČO:</dt><dd>44 235 658</dd></div>
+                    <div><dt>DIČ / IČ DPH:</dt><dd>2022634999 / SK2022634999</dd></div>
+                    <div><dt>Registrácia:</dt><dd>Obchodný register Mestského súdu Košice, oddiel: Sa, vložka č.: 1763/V</dd></div>
+                    <div><dt>Webové sídlo:</dt><dd>www.keyspartners.sk</dd></div>
+                    <div><dt>Kontaktný e-mail:</dt><dd><a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a></dd></div>
+                </dl>
+                <p>(ďalej len ako "Obchodník")</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">2. Právo spotrebiteľa obrátiť sa na Obchodníka so žiadosťou o nápravu</h3>
+                <p>Spotrebiteľ má právo obrátiť sa na Obchodníka so žiadosťou o nápravu (e-mailom na adresu <a href="mailto:info@keyspartners.sk">info@keyspartners.sk</a> alebo písomne na adresu sídla Obchodníka), ak nie je spokojný so spôsobom, ktorým Obchodník vybavil jeho reklamáciu, alebo ak sa domnieva, že Obchodník porušil jeho práva.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">3. Podmienky podania návrhu na alternatívne riešenie sporu</h3>
+                <p>Ak Obchodník na žiadosť o nápravu odpovie zamietavo alebo na ňu neodpovie do 30 dní odo dňa jej odoslania, spotrebiteľ má právo podať návrh na začatie alternatívneho riešenia sporu subjektu alternatívneho riešenia sporov (ďalej len "subjekt ARS"). Možnosť obrátiť sa na súd tým nie je dotknutá.</p>
+                <ul class="about-bullet-list">
+                    <li>Alternatívne riešenie sporu sa vzťahuje len na spor medzi spotrebiteľom a Obchodníkom vyplývajúci zo spotrebiteľskej zmluvy alebo súvisiaci so spotrebiteľskou zmluvou.</li>
+                    <li>Subjekt ARS môže návrh odmietnuť, ak vyčísliteľná hodnota sporu nepresahuje sumu 20 eur.</li>
+                    <li>Alternatívne riešenie sporu orgánmi alternatívneho riešenia sporov je bezodplatné. Oprávnená právnická osoba zapísaná v zozname subjektov ARS môže vo svojich pravidlách alternatívneho riešenia sporov stanoviť poplatok najviac vo výške 5 eur vrátane dane z pridanej hodnoty.</li>
+                </ul>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">4. Príslušné subjekty alternatívneho riešenia sporov</h3>
+                <p>Príslušným orgánom alternatívneho riešenia sporov v oblasti služieb poskytovaných Obchodníkom je najmä:</p>
+                <div class="about-contact-card">
+                    <strong>Slovenská obchodná inšpekcia (SOI)</strong>
+                    <span>Ústredný inšpektorát Slovenskej obchodnej inšpekcie, Odbor pre medzinárodné vzťahy a alternatívne riešenie spotrebiteľských sporov</span>
+                    <span>Bajkalská 21/A, P. O. BOX 29, 827 99 Bratislava 27</span>
+                    <span>Web: <a href="https://www.soi.sk" target="_blank" rel="noopener noreferrer">www.soi.sk</a></span>
+                    <span>E-mail: <a href="mailto:ars@soi.sk">ars@soi.sk</a>, <a href="mailto:adr@soi.sk">adr@soi.sk</a></span>
+                </div>
+                <p>Spotrebiteľ má právo voľby, na ktorý z príslušných subjektov alternatívneho riešenia sporov sa obráti. Aktuálny a úplný zoznam vedie Ministerstvo hospodárstva SR na webovom sídle <a href="https://www.mhsr.sk" target="_blank" rel="noopener noreferrer">www.mhsr.sk</a>.</p>
+            </div>
+            <div class="about-white-block">
+                <h3 class="about-block-heading">5. Záverečné ustanovenia</h3>
+                <p>Táto Informácia o alternatívnom riešení sporov nadobúda platnosť a účinnosť dňom 24. 11. 2026 a je trvalo zverejnená na webovom sídle Obchodníka www.keyspartners.sk.</p>
+            </div>
+        `
     }
 };
 
@@ -461,8 +627,9 @@ function initAboutModal() {
         document.body.style.overflow = "";
     };
 
-    document.querySelectorAll(".benefit-card[data-about-key], .benefit-read-more[data-about-key]").forEach(el => {
+    document.querySelectorAll(".benefit-card[data-about-key], .benefit-read-more[data-about-key], .footer-legal-link[data-about-key]").forEach(el => {
         el.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             const key = el.getAttribute("data-about-key");
             if (key) openAboutModal(key);
