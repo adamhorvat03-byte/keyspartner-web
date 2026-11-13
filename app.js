@@ -269,7 +269,7 @@ const AGENTS = [
     },
     {
         id: 4,
-        name: "Samuel Hrivňak",
+        name: "Samuel HRIVŇAK",
         role: "Realitný maklér",
         phone: "+421 949 424 377",
         email: "samuel_hrivnak@keyspartners.sk",
@@ -277,7 +277,7 @@ const AGENTS = [
     },
     {
         id: 5,
-        name: "Adam Horvát",
+        name: "Bc. Adam HORVÁT",
         role: "Marketing / Fin. sprostredkovateľ",
         phone: "+421 915 865 664",
         email: "dbre_obchod@keyspartners.sk",
