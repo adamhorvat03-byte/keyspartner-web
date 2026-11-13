@@ -254,7 +254,7 @@ const AGENTS = [
     {
         id: 2,
         name: "Ing. Branislav HORVÁT",
-        role: "Realitný maklér/Partner/Fin. sprostred.",
+        role: "Realitný maklér / Fin. sprostredkovateľ / Partner",
         phone: "+421 905 785 951",
         email: "branislav_horvat@keyspartners.sk",
         image: "brano.jpg"
@@ -1505,11 +1505,15 @@ function renderAgents() {
             </div>`
             : `<div class="agent-img-wrapper agent-img-placeholder" aria-label="${agent.name}"></div>`;
 
+        const roleHtml = agent.role.includes("Fin. sprostredkovateľ")
+            ? `<span class="role-full">${agent.role}</span><span class="role-short">${agent.role.replace("Fin. sprostredkovateľ", "Fin. sprostred.")}</span>`
+            : agent.role;
+
         card.innerHTML = `
             ${imgWrapperHtml}
             <div class="agent-info">
                 <h3>${agent.name}</h3>
-                <div class="agent-role">${agent.role}</div>
+                <div class="agent-role">${roleHtml}</div>
                 <div class="agent-contact">
                     <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
                     <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
@@ -1897,7 +1901,7 @@ function openPropertyModal(id) {
                             ${agent.name}
                             <i class="fa-solid fa-arrow-up-right-from-square modal-agent-ext-icon"></i>
                         </div>
-                        <div class="modal-agent-role">${agent.role}</div>
+                        <div class="modal-agent-role">${agent.role.includes("Fin. sprostredkovateľ") ? `<span class="role-full">${agent.role}</span><span class="role-short">${agent.role.replace("Fin. sprostredkovateľ", "Fin. sprostred.")}</span>` : agent.role}</div>
                     </div>
                 </div>
                 <div class="modal-agent-contact">

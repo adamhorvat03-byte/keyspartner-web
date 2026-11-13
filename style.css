@@ -433,9 +433,10 @@ img {
    HERO SEKCIA
    ========================================================================== */
 .hero-section {
-    padding: 112px 0 24px;
+    padding: 112px 0 0;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    z-index: 10;
     background-color: var(--bg-primary);
     min-height: 88vh;
     display: flex;
@@ -485,7 +486,7 @@ img {
     position: relative;
     z-index: 2;
     width: 100%;
-    min-height: calc(88vh - 136px);
+    min-height: calc(88vh - 112px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -537,6 +538,9 @@ img {
 /* Vyhľadávací a filtračný panel (Glassmorphic) */
 .search-panel {
     margin-top: auto;
+    margin-bottom: -32px;
+    position: relative;
+    z-index: 5;
     background-color: var(--bg-glass);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
@@ -835,7 +839,7 @@ img {
    SEKCIA S PONUKOU NEHNUTEĽNOSTÍ
    ========================================================================== */
 .listings-section {
-    padding: 36px 0 80px;
+    padding: 64px 0 80px;
 }
 
 .section-header {
@@ -1779,6 +1783,10 @@ img {
     text-overflow: ellipsis;
 }
 
+.role-short {
+    display: none;
+}
+
 /* Elegantná štylizácia kontaktov vo forme vizitky */
 .agent-contact {
     display: flex;
@@ -1836,6 +1844,14 @@ img {
 
     .agents-grid > .agent-card {
         flex: 0 0 min(360px, calc((100% - 28px) / 2));
+    }
+
+    .role-full {
+        display: none;
+    }
+
+    .role-short {
+        display: inline;
     }
 }
 
@@ -4386,17 +4402,17 @@ img {
 
     /* Vzdušnejšie a menšie paddingy sekcií na mobile */
     .hero-section {
-        padding: 84px 0 20px !important;
+        padding: 84px 0 0 !important;
         min-height: 82vh !important;
     }
 
     .hero-container {
-        min-height: calc(82vh - 104px) !important;
+        min-height: calc(82vh - 84px) !important;
         gap: 32px !important;
     }
 
     .listings-section {
-        padding: 24px 0 40px !important;
+        padding: 48px 0 40px !important;
     }
 
     .stats-section,
@@ -4411,6 +4427,7 @@ img {
     .search-panel {
         padding: 20px 16px !important;
         margin-top: auto !important;
+        margin-bottom: -24px !important;
     }
 
     /* Modálne zobrazenie pre najmenšie displeje */
@@ -4461,16 +4478,16 @@ img {
    ========================================================================== */
 @media (max-width: 768px) {
     .hero-section {
-        padding: 96px 0 24px;
+        padding: 96px 0 0;
         min-height: 82vh;
     }
 
     .hero-container {
-        min-height: calc(82vh - 120px);
+        min-height: calc(82vh - 96px);
     }
     
     .listings-section {
-        padding: 28px 0 56px;
+        padding: 56px 0 56px;
     }
 
     .stats-section,
