@@ -249,11 +249,12 @@ let PROPERTIES = [
 ];
 
 // --- Reálni makléri a manažéri KEYS PARTNERS a.s. ---
+// Poradie kartičiek: najprv realitní makléri (01-03), potom ostatní členovia tímu (04-05)
 const AGENTS = [
     {
         id: 2,
         name: "Ing. Branislav HORVÁT",
-        role: "Realitný maklér/Partner",
+        role: "Realitný maklér/Partner/Fin. sprostred.",
         phone: "+421 905 785 951",
         email: "branislav_horvat@keyspartners.sk",
         image: "brano.jpg"
@@ -267,20 +268,29 @@ const AGENTS = [
         image: "duda.jpg"
     },
     {
-        id: 3,
-        name: "JUDr. Peter PELLA",
-        role: "Realitný maklér",
-        phone: "+421 917 817 207",
-        email: "peter_pella@keyspartners.sk",
-        image: "pella.jpg"
-    },
-    {
         id: 4,
         name: "Samuel Hrivňak",
         role: "Realitný maklér",
         phone: "+421 949 424 377",
         email: "samuel_hrivnak@keyspartners.sk",
         image: "samuel.jpg"
+    },
+    {
+        id: 5,
+        name: "Adam Horvát",
+        role: "Marketing, Fin. sprostredkovateľ",
+        phone: "+421 915 865 664",
+        email: "dbre_obchod@keyspartners.sk",
+        image: "adam.webp",
+        imagePosition: "center 0%"
+    },
+    {
+        id: 3,
+        name: "JUDr. Peter PELLA",
+        role: "Inžiniering",
+        phone: "+421 917 817 207",
+        email: "peter_pella@keyspartners.sk",
+        image: "pella.jpg"
     }
 ];
 
@@ -788,7 +798,8 @@ function isAgentPhoto(url) {
         lower.endsWith("pella.jpg") ||
         lower.endsWith("duda.jpg") ||
         lower.endsWith("brano.jpg") ||
-        lower.endsWith("samuel.jpg")
+        lower.endsWith("samuel.jpg") ||
+        lower.endsWith("adam.webp")
     );
 }
 
@@ -1487,46 +1498,24 @@ function renderAgents() {
             ? agent.phone.replace(/\s/g, '') 
             : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
         
-        const activeOffers = PROPERTIES.filter(p => {
-            const a = getAgentForProperty(p);
-            return a && String(a.id) === String(agent.id) && getPropertyStatusGroup(p) === "active";
-        }).length;
-        const offersCountText = activeOffers === 1 ? "1 ponuka" : (activeOffers >= 2 && activeOffers <= 4 ? `${activeOffers} ponuky` : `${activeOffers} ponúk`);
-
+        const imgStyle = agent.imagePosition ? ` style="object-position: ${agent.imagePosition};"` : "";
         const imgWrapperHtml = agent.image
-            ? `<div class="agent-img-wrapper" style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}">
-                <img src="${agent.image}" alt="${agent.name}">
+            ? `<div class="agent-img-wrapper">
+                <img src="${agent.image}" alt="${agent.name}"${imgStyle}>
             </div>`
-            : `<div class="agent-img-wrapper agent-img-placeholder" style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}" aria-label="${agent.name}"></div>`;
+            : `<div class="agent-img-wrapper agent-img-placeholder" aria-label="${agent.name}"></div>`;
 
         card.innerHTML = `
             ${imgWrapperHtml}
             <div class="agent-info">
-                <h3 style="cursor: pointer;" title="Zobraziť ponuky makléra ${agent.name}">${agent.name}</h3>
+                <h3>${agent.name}</h3>
                 <div class="agent-role">${agent.role}</div>
                 <div class="agent-contact">
                     <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
                     <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
                 </div>
-                <button type="button" class="btn-agent-filter-trigger" style="margin-top: 14px; width: 100%; padding: 8px 12px; background: rgba(212,175,55,0.12); border: 1px solid var(--brand-yellow); color: var(--brand-yellow); border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);">
-                    <i class="fa-solid fa-list-check"></i> Aktívne ponuky (${offersCountText})
-                </button>
             </div>
         `;
-
-        const triggerBtn = card.querySelector(".btn-agent-filter-trigger");
-        if (triggerBtn) {
-            triggerBtn.addEventListener("click", () => filterByAgent(agent));
-        }
-        const imgWrap = card.querySelector(".agent-img-wrapper");
-        if (imgWrap) {
-            imgWrap.addEventListener("click", () => filterByAgent(agent));
-        }
-        const nameH3 = card.querySelector(".agent-info h3");
-        if (nameH3) {
-            nameH3.addEventListener("click", () => filterByAgent(agent));
-        }
-        
         grid.appendChild(card);
     });
 }
@@ -1557,10 +1546,10 @@ function initScrollReveal() {
 function getAgentForProperty(prop) {
     if (!prop) return null;
 
-    const duda = AGENTS.find(a => a.name.toLowerCase().includes("duda")) || AGENTS[1];
-    const horvat = AGENTS.find(a => a.name.toLowerCase().includes("horv")) || AGENTS[0];
-    const pella = AGENTS.find(a => a.name.toLowerCase().includes("pella")) || AGENTS[2];
-    const hrivnak = AGENTS.find(a => a.name.toLowerCase().includes("hriv")) || AGENTS[3];
+    const duda = AGENTS.find(a => a.id === 1);
+    const horvat = AGENTS.find(a => a.id === 2);
+    const pella = AGENTS.find(a => a.id === 3);
+    const hrivnak = AGENTS.find(a => a.id === 4);
 
     // 1. Zistiť meno a kontakt makléra z objektu alebo reťazca
     let rawAgent = prop.agent || prop.broker || prop.makler;
