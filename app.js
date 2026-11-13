@@ -257,7 +257,7 @@ const AGENTS = [
         role: "Realitný maklér / Fin. sprostredkovateľ / Partner",
         phone: "+421 905 785 951",
         email: "branislav_horvat@keyspartners.sk",
-        image: "brano.jpg"
+        image: "brano.webp"
     },
     {
         id: 1,
@@ -798,6 +798,7 @@ function isAgentPhoto(url) {
         lower.endsWith("pella.jpg") ||
         lower.endsWith("duda.jpg") ||
         lower.endsWith("brano.jpg") ||
+        lower.endsWith("brano.webp") ||
         lower.endsWith("samuel.jpg") ||
         lower.endsWith("adam.webp")
     );
