@@ -2378,6 +2378,61 @@ function setupEventListeners() {
         });
     }
 
+    // --- Cenová matica pre kalkulačku trhovej ceny nehnuteľností pre celé Slovensko ---
+    // Sadzby v €/m² sú kalibrované na základe trhových dát NBS a Realitnej únie SR pre rok 2026
+    const SLOVAKIA_LOCATION_PRICING = {
+        // Bratislavský kraj
+        "ba_stare_mesto": { byt: 4200, dom: 3000, pozemi: 400, komercny: 2800 },
+        "ba_ruzinov_petrzalka": { byt: 3600, dom: 2600, pozemi: 320, komercny: 2400 },
+        "ba_okolie": { byt: 2700, dom: 2100, pozemi: 200, komercny: 1700 },
+
+        // Trnavský kraj
+        "trnava": { byt: 2450, dom: 1850, pozemi: 180, komercny: 1550 },
+        "piestany": { byt: 2250, dom: 1750, pozemi: 160, komercny: 1450 },
+        "skalica_senica": { byt: 1950, dom: 1500, pozemi: 120, komercny: 1250 },
+        "ds_galanta": { byt: 1900, dom: 1550, pozemi: 130, komercny: 1200 },
+
+        // Trenčiansky kraj
+        "trencin": { byt: 2250, dom: 1650, pozemi: 150, komercny: 1400 },
+        "povazska_dubnica": { byt: 1900, dom: 1450, pozemi: 120, komercny: 1200 },
+        "prievidza_partizanske": { byt: 1500, dom: 1250, pozemi: 85, komercny: 1000 },
+
+        // Nitriansky kraj
+        "nitra": { byt: 2300, dom: 1700, pozemi: 160, komercny: 1450 },
+        "nove_zamky_komarno": { byt: 1750, dom: 1350, pozemi: 100, komercny: 1150 },
+        "levice_topolcany": { byt: 1650, dom: 1300, pozemi: 90, komercny: 1050 },
+
+        // Žilinský kraj
+        "zilina": { byt: 2550, dom: 1850, pozemi: 170, komercny: 1600 },
+        "martin_vrutky": { byt: 2100, dom: 1550, pozemi: 130, komercny: 1300 },
+        "liptov": { byt: 2350, dom: 1700, pozemi: 160, komercny: 1450 },
+        "kysuce_orava": { byt: 1850, dom: 1400, pozemi: 110, komercny: 1150 },
+
+        // Banskobystrický kraj
+        "banska_bystrica": { byt: 2350, dom: 1750, pozemi: 150, komercny: 1500 },
+        "zvolen": { byt: 1950, dom: 1500, pozemi: 120, komercny: 1250 },
+        "ziar_stiavnica": { byt: 1750, dom: 1450, pozemi: 115, komercny: 1150 },
+        "lucenec_rimavska": { byt: 1350, dom: 1100, pozemi: 65, komercny: 850 },
+
+        // Prešovský kraj
+        "presov_sekcov": { byt: 2200, dom: 1700, pozemi: 130, komercny: 1400 },
+        "presov_centrum": { byt: 2450, dom: 1850, pozemi: 160, komercny: 1600 },
+        "lubotice": { byt: 1950, dom: 1550, pozemi: 120, komercny: 1250 },
+        "poprad_tatry": { byt: 2600, dom: 1950, pozemi: 190, komercny: 1700 },
+        "bardejov_humenne": { byt: 1650, dom: 1300, pozemi: 85, komercny: 1050 },
+        "sigord": { byt: 1650, dom: 1400, pozemi: 95, komercny: 950 },
+
+        // Košický kraj
+        "kosice_centrum": { byt: 2850, dom: 2100, pozemi: 210, komercny: 1850 },
+        "kosice_sidliska": { byt: 2500, dom: 1850, pozemi: 160, komercny: 1550 },
+        "kosice_okolie": { byt: 2100, dom: 1700, pozemi: 140, komercny: 1300 },
+        "michalovce_trebisov": { byt: 1550, dom: 1250, pozemi: 75, komercny: 950 },
+        "spisska_roznava": { byt: 1600, dom: 1300, pozemi: 80, komercny: 1000 },
+
+        // Iná lokalita (priemer SR)
+        "ina": { byt: 2000, dom: 1500, pozemi: 110, komercny: 1250 }
+    };
+
     // --- Kalkulačka trhovej ceny nehnuteľnosti ---
     const sellForm = document.getElementById("sellForm");
     const calcResult = document.getElementById("calculatorResult");
@@ -2393,25 +2448,18 @@ function setupEventListeners() {
             const areaVal = parseFloat(document.getElementById("ownerPropArea").value);
             const condVal = document.getElementById("ownerPropCond").value;
             
-            // Trhové koeficienty pre výpočet
-            let basePrice = 2200; // Byt
-            if (propType === "dom") basePrice = 1700;
-            else if (propType === "pozemi") basePrice = 130;
-            else if (propType === "komercny") basePrice = 1400;
+            // Získanie cenového základu (€/m²) podľa vybranej lokality a typu nehnuteľnosti
+            const locData = SLOVAKIA_LOCATION_PRICING[locVal] || SLOVAKIA_LOCATION_PRICING["ina"];
+            const basePrice = locData[propType] || (propType === "byt" ? 2000 : propType === "dom" ? 1500 : propType === "pozemi" ? 110 : 1250);
             
-            let locCoeff = 1.05; // Sekčov / Sídlisko II
-            if (locVal === "presov_centrum" || locVal === "kosice") locCoeff = 1.25;
-            else if (locVal === "lubotice") locCoeff = 0.90;
-            else if (locVal === "sigord") locCoeff = 0.75;
-            else if (locVal === "ina") locCoeff = 0.85;
-            
-            let condCoeff = 1.00; // Čiastočná rekonštrukcia
+            // Koeficient stavu nehnuteľnosti
+            let condCoeff = 1.00; // Čiastočná rekonštrukcia (neutrálna báza)
             if (condVal === "novostavba") condCoeff = 1.25;
             else if (condVal === "kompletna") condCoeff = 1.15;
             else if (condVal === "povodne") condCoeff = 0.80;
             
             // Algoritmus výpočtu orientačnej trhovej hodnoty
-            const calculatedPrice = areaVal * basePrice * locCoeff * condCoeff;
+            const calculatedPrice = areaVal * basePrice * condCoeff;
             
             // Cenové rozpätie (minimálna a maximálna odhadovaná hodnota)
             const priceMin = Math.round((calculatedPrice * 0.92) / 1000) * 1000;
@@ -2431,11 +2479,6 @@ function setupEventListeners() {
             document.getElementById("summaryLoc").innerText = locText;
             document.getElementById("summaryArea").innerText = areaVal;
             document.getElementById("summaryCond").innerText = condText;
-            
-            // Zobrazenie výsledku a skrytie formulára
-            sellForm.style.display = "none";
-            calcResult.style.display = "block";
-            calcResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
             
             // Zobrazenie výsledku a skrytie formulára (v kroku 1 sa neodosiela žiadny e-mail)
             sellForm.style.display = "none";
