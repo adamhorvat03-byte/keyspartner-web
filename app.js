@@ -27,9 +27,8 @@ let PROPERTIES = [
         agentId: 1,
         desc: "Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. v zastúpení nášho Klienta Vám v portfóliu ponúka na PREDAJ 21 stavebných pozemkov v novovybudovanej obytnej zóne v obci Ľubotice. Pozemky sú rovinaté, pripravené na individuálnu bytovú výstavbu rodinných domov. Súčasťou projektu sú všetky inžinierske siete dotiahnuté k hraniciam pozemkov a prístupová asfaltová cesta. Pre viac informácií alebo dohodnutie obhliadky kontaktujte nášho realitného makléra.",
         technicalSpecs: {
-            "Inžinierske siete": "Voda, elektrina, plyn, kanalizácia na hranici",
-            "Stav objektu": "Pripravené na okamžitú výstavbu",
-            "Konštrukcia / Terén": "Rovinatý stavebný pozemok",
+            "Inžinierske siete": "Voda, elektrina, kanalizácia",
+            "Terén": "Rovinatý stavebný pozemok",
             "Prístupová cesta": "Nová asfaltová komunikácia s osvetlením",
             "Orientácia": "Slnečný juhozápad"
         }
@@ -52,14 +51,13 @@ let PROPERTIES = [
             "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80",
             "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80"
         ],
-        tags: ["PREDAJ", "SLÁNSKE VRCHY", "3D PREHLIADKA"],
+        tags: ["PREDAJ", "SLÁNSKE VRCHY"],
         isReserved: false,
         agentId: 1,
         desc: "Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. v zastúpení nášho Klienta Vám v portfóliu ponúka na PREDAJ pozemok P1 a P2 v obci Kokošovce časť Sigord, situovaný na slnečnej južnej strane Slánskych Vrchov. Ideálna ponuka pre klientov hľadajúcich pokoj, rekreáciu a čistú prírodu. Vhodný pre stavbu rodinného domu alebo rekreačnej chaty. Siete sú v dosahu, prístup je bezproblémový. Pre 3D obhliadku nehnuteľnosti a dokumentáciu kontaktujte nášho makléra.",
         technicalSpecs: {
-            "Inžinierske siete": "Elektrina v dosahu, studňa, žumpa",
-            "Stav objektu": "Lesné tiché zátišie",
-            "Konštrukcia / Terén": "Mierne svahovitý",
+            "Inžinierske siete": "Voda, elektrina",
+            "Terén": "Mierne svahovitý",
             "Prístupová cesta": "Spevnená lesná cesta",
             "Orientácia": "Južná strana Slánskych vrchov"
         }
@@ -83,18 +81,17 @@ let PROPERTIES = [
             "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
             "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80"
         ],
-        tags: ["PREDAJ", "3D PREHLIADKA", "OVERENÁ PONUKA"],
+        tags: ["PREDAJ", "OVERENÁ PONUKA"],
         isReserved: false,
         agentId: 1,
         desc: "Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. v zastúpení nášho Klienta Vám v portfóliu ponúka na PREDAJ zrekonštruovaný 3-izbový byt v Prešove. Byt prešiel kompletnou a vkusnou modernou rekonštrukciou: nové rozvody elektriny, vody, stierky, sadrokartónové stropy, podlahy a moderná kuchynská linka so zabudovanými spotrebičmi. Úžitková plocha je 74 m² vrátane priestrannej loggie. Bytový dom je zateplený s novým tichým výťahom.",
         technicalSpecs: {
-            "Inžinierske siete": "Voda, plyn, elektrina, optický internet",
-            "Vykurovanie": "Ústredné diaľkové vykurovanie",
-            "Stav objektu": "Kompletná rekonštrukcia (2024)",
-            "Konštrukcia": "Panel / zateplený bytový dom",
+            "Inžinierske siete": "Voda, elektrina, optický internet",
+            "Vykurovanie": "Ústredné",
+            "Konštrukcia": "Panelová",
             "Balkón / Loggia": "Zasklená loggia (4 m²)",
             "Parkovanie": "Verejné rezidentské pred domom",
-            "Energetický certifikát": "Trieda B"
+            "Energetický certifikát": "Trieda A"
         }
     },
     {
@@ -121,8 +118,7 @@ let PROPERTIES = [
         desc: "Hľadáte istotu a zhodnotenie? Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners a.s. v zastúpení nášho klienta Vám v portfóliu ponúka na PREDAJ slnečný pozemok v obci Fintice na ulici Ružová. Podľa aktuálneho a platného územného plánu obce je pozemok určený na individuálnu bytovú výstavbu rodinného domu. Siete a prístupová komunikácia priamo pri pozemku. Skvelá a bezpečná investícia.",
         technicalSpecs: {
             "Inžinierske siete": "Voda, elektrina, plyn v dosahu 15m",
-            "Stav objektu": "Pripravené na výstavbu",
-            "Konštrukcia / Terén": "Mierne svahovitý, slnečný",
+            "Terén": "Mierne svahovitý, slnečný",
             "Prístupová cesta": "Obecná asfaltová komunikácia",
             "Orientácia": "Južná orientácia"
         }
@@ -151,8 +147,7 @@ let PROPERTIES = [
         desc: "Divízia sprostredkovania nehnuteľností spoločnosti Keys Partners, a.s. Vám v zastúpení klienta ponúka NA PREDAJ stavebný pozemok v meste Hanušovce nad Topľou. Pozemok je rovinatý až mierne svahovitý, nachádza sa v tichej zastavanej časti mesta. Inžinierske siete sú dostupné na hranici pozemku. Ideálna možnosť stavby domu za dostupnú cenu.",
         technicalSpecs: {
             "Inžinierske siete": "Elektrina a voda na hranici pozemku",
-            "Stav objektu": "Pripravené na výstavbu",
-            "Konštrukcia / Terén": "Rovinatý až mierne svahovitý",
+            "Terén": "Rovinatý až mierne svahovitý",
             "Prístupová cesta": "Mestská prístupová komunikácia",
             "Orientácia": "Východ / Juh"
         }
@@ -175,14 +170,13 @@ let PROPERTIES = [
             "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
             "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80"
         ],
-        tags: ["PRENÁJOM", "NOVINKA", "3D PREHLIADKA"],
+        tags: ["PRENÁJOM", "NOVINKA"],
         isReserved: false,
         agentId: 2,
         desc: "Na prenájom exkluzívny, kompletne a moderne zariadený 2-izbový byt s balkónom v lukratívnej novostavbe na Werferovej ulici v Košiciach (vedľa centrály KEYS PARTNERS). Byt s úžitkovou plochou 55 m² sa nachádza na 2. poschodí. Súčasťou ceny je aj vlastné vyhradené parkovacie miesto. Kompletné vybavenie vrátane spotrebičov, klimatizácie a internetu. Voľný ihneď.",
         technicalSpecs: {
             "Inžinierske siete": "Voda, elektrina, optický internet, klimatizácia",
             "Vykurovanie": "Podlahové kúrenie / vlastný termostat",
-            "Stav objektu": "Novostavba (2023)",
             "Konštrukcia": "Tehla / Železobetónový monolit",
             "Balkón / Loggia": "Slnečný balkón (5 m²)",
             "Parkovanie": "Vyhradené parkovacie státie v cene",
@@ -213,7 +207,6 @@ let PROPERTIES = [
         desc: "Exkluzívny rodinný dom v tichej a vyhľadávanej lokalite Prešov - Šidlovec. Nehnuteľnosť je aktuálne v štádiu rezervácie.",
         technicalSpecs: {
             "Inžinierske siete": "Voda, elektrina, plyn, kanalizácia, optika",
-            "Stav objektu": "Novostavba",
             "Konštrukcia": "Tehla / zateplenie",
             "Energetický certifikát": "Trieda A"
         }
@@ -242,7 +235,6 @@ let PROPERTIES = [
         technicalSpecs: {
             "Inžinierske siete": "Voda, elektrina, optický internet",
             "Vykurovanie": "Ústredné diaľkové",
-            "Stav objektu": "Kompletná rekonštrukcia",
             "Balkón / Loggia": "Zasklená loggia"
         }
     }
@@ -722,6 +714,17 @@ async function loadPropertiesFromApi() {
                 } else if (isPropertyReserved(p)) {
                     p.status = "reserved";
                     p.isReserved = true;
+                }
+                p.virtualTourUrl = resolvePropertyVirtualTourUrl(p);
+                p.technicalSpecs = resolvePropertyTechnicalSpecs(p);
+                if (Array.isArray(p.tags)) {
+                    if (p.virtualTourUrl) {
+                        if (!p.tags.some(t => String(t).toUpperCase().includes("3D"))) {
+                            p.tags.push("3D PREHLIADKA");
+                        }
+                    } else {
+                        p.tags = p.tags.filter(t => String(t).trim().toUpperCase() !== "3D PREHLIADKA");
+                    }
                 }
                 return p;
             });
@@ -1764,6 +1767,169 @@ function formatPropertyDescription(text) {
 }
 
 // ==========================================================================
+// NORMALIZÁCIA TECHNICKÝCH PARAMETROV A 3D OBHLIADOK Z REALSOFTU
+// ==========================================================================
+const KNOWN_REALSOFT_FRONT_DATA = {
+    "3004471094": {
+        virtualTourUrl: "https://my.matterport.com/show/?m=A2fnjuXt3FF",
+        specs: {
+            "Inžinierske siete": "Voda, elektrina, kanalizácia",
+            "Vykurovanie": "Podlahové, tepelné čerpadlo, rekuperácia",
+            "Konštrukcia": "Drevená",
+            "Energetický certifikát": "Trieda A"
+        }
+    },
+    "794193769": {
+        virtualTourUrl: "https://my.matterport.com/show/?m=Ww9LXcXNy58",
+        specs: {
+            "Inžinierske siete": "Voda (studňa), elektrina, ČOV",
+            "Vykurovanie": "Krb",
+            "Konštrukcia": "Kamenná, tehlová, železobetónová",
+            "Energetický certifikát": "Nemá"
+        }
+    },
+    "653390163": {
+        virtualTourUrl: "https://my.matterport.com/show/?m=eNYBBbjhAVV",
+        specs: {
+            "Vykurovanie": "Ústredné",
+            "Konštrukcia": "Panelová",
+            "Energetický certifikát": "Trieda A"
+        }
+    },
+    "4248791053": {
+        virtualTourUrl: null,
+        specs: {
+            "Inžinierske siete": "Voda, elektrina, plyn, kanalizácia (pri pozemku)",
+            "Terén": "Rovinatý",
+            "Pripravenosť k výstavbe": "Schválené v územnom pláne",
+            "Prístupová cesta": "Asfaltová"
+        }
+    },
+    "3847665965": {
+        virtualTourUrl: null,
+        specs: {
+            "Inžinierske siete": "Voda, elektrina, kanalizácia",
+            "Terén": "Mierne svahovitý",
+            "Umiestnenie": "Intravilán",
+            "Pripravenosť k výstavbe": "Schválené v územnom pláne"
+        }
+    },
+    "2078570016": {
+        virtualTourUrl: null,
+        specs: {
+            "Inžinierske siete": "Voda, elektrina",
+            "Terén": "Mierne svahovitý",
+            "Umiestnenie": "Extravilán",
+            "Pripravenosť k výstavbe": "Schválené v územnom pláne"
+        }
+    }
+};
+
+function getPropertyObjectIdStr(prop) {
+    if (!prop) return "";
+    if (prop.objectId) return String(prop.objectId).trim();
+    const rawId = String(prop.externalId || prop.id || "").trim();
+    return rawId.replace(/^RS-/, "");
+}
+
+function resolvePropertyVirtualTourUrl(prop) {
+    if (!prop) return null;
+    const directCandidates = [
+        prop.virtualTourUrl, prop.virtual_tour_url, prop.virtualTour, prop.virtual_tour,
+        prop.tourUrl, prop.tour_url, prop.url_3d, prop["3d_url"], prop.matterport,
+        prop.matterport_url, prop.scan_3d, prop["3d_scan"], prop.momento,
+        prop.three_d_url, prop.panorama_url,
+        prop.realsoftAttrs && prop.realsoftAttrs.momento
+    ];
+    for (const c of directCandidates) {
+        if (typeof c === "string" && /^https?:\/\//i.test(c.trim())) {
+            return c.trim();
+        }
+    }
+
+    if (Array.isArray(prop.inspections3d)) {
+        for (const item of prop.inspections3d) {
+            if (typeof item === "string" && /^https?:\/\//i.test(item.trim())) return item.trim();
+            if (item && typeof item.url === "string" && /^https?:\/\//i.test(item.url.trim())) return item.url.trim();
+        }
+    }
+
+    let mediasObj = prop.medias || prop.media || (prop.realsoftAttrs && prop.realsoftAttrs.medias);
+    if (typeof mediasObj === "string" && mediasObj.trim().startsWith("{")) {
+        try { mediasObj = JSON.parse(mediasObj); } catch (_e) {}
+    }
+    if (mediasObj && typeof mediasObj === "object" && !Array.isArray(mediasObj)) {
+        const platforms = [
+            "matterport", "3drealitna", "momento360", "vieweet", "homestyler",
+            "kuula", "insta360", "eyespy360", "lapentor", "cloudpano",
+            "cupix", "theasys", "feelestate", "giraffe360", "mollyinvr",
+            "grandpano", "pivo", "tourwz", "istaging", "revio", "videoobhliadka"
+        ];
+        for (const k of platforms) {
+            const list = mediasObj[k];
+            if (Array.isArray(list)) {
+                for (const u of list) {
+                    if (typeof u === "string" && /^https?:\/\//i.test(u.trim())) return u.trim();
+                    if (u && typeof u.url === "string" && /^https?:\/\//i.test(u.url.trim())) return u.url.trim();
+                }
+            } else if (typeof list === "string" && /^https?:\/\//i.test(list.trim())) {
+                return list.trim();
+            }
+        }
+    }
+
+    const d = String(prop.desc || "");
+    if (d.length > 0) {
+        const tourRegex = /https?:\/\/(?:my\.matterport\.com\/show\/\?[^\s"'<>]+|[^\s"'<>]*(?:matterport\.com|shapespark\.com|kuula\.co|momento360\.com|vieweet\.com|istaging\.com|3drealitna\.sk|cloudpano\.com|cupix\.com|theasys\.io|ths\.li|feelestate\.com|giraffe360\.com|mollyinvr\.com|grandpano\.com|pivo\.app|tour\.wz\.sk|eyespy360\.vr|lapentor\.com|insta360\.com)[^\s"'<>]*)/i;
+        const m = d.match(tourRegex);
+        if (m && m[0]) {
+            return m[0].replace(/[.,;!?)]+$/, "");
+        }
+    }
+
+    const objId = getPropertyObjectIdStr(prop);
+    if (objId && KNOWN_REALSOFT_FRONT_DATA[objId] && KNOWN_REALSOFT_FRONT_DATA[objId].virtualTourUrl) {
+        return KNOWN_REALSOFT_FRONT_DATA[objId].virtualTourUrl;
+    }
+
+    return null;
+}
+
+function resolvePropertyTechnicalSpecs(prop) {
+    if (!prop) return {};
+    const objId = getPropertyObjectIdStr(prop);
+    const known = (objId && KNOWN_REALSOFT_FRONT_DATA[objId] && KNOWN_REALSOFT_FRONT_DATA[objId].specs)
+        ? KNOWN_REALSOFT_FRONT_DATA[objId].specs
+        : null;
+
+    const rawSpecs = (prop.technicalSpecs && typeof prop.technicalSpecs === "object") ? prop.technicalSpecs : {};
+    const isLegacyMock = (
+        rawSpecs["Vykurovanie"] === "Ústredné diaľkové / vlastné" &&
+        rawSpecs["Konštrukcia"] === "Tehla / zateplený dom"
+    );
+
+    const out = {};
+    if (!isLegacyMock) {
+        for (const [k, v] of Object.entries(rawSpecs)) {
+            if (/^stav(\s+objektu)?$/i.test(k.trim())) continue;
+            if (v !== null && v !== undefined && String(v).trim() !== "" && !/^\d+$/.test(String(v).trim())) {
+                out[k] = v;
+            }
+        }
+    }
+
+    if (known && (isLegacyMock || Object.keys(out).length === 0)) {
+        for (const [k, v] of Object.entries(known)) {
+            if (v) out[k] = v;
+        }
+    }
+
+    delete out["Stav objektu"];
+    delete out["Stav"];
+    return out;
+}
+
+// ==========================================================================
 // MODÁLNE OKNO S DETAILMI NEHNUTEĽNOSTI
 // ==========================================================================
 function openPropertyModal(id) {
@@ -1779,6 +1945,8 @@ function openPropertyModal(id) {
 
     // Priradenie správneho makléra podľa dát z Realsoftu
     const agent = getAgentForProperty(prop);
+    const cleanSpecs = resolvePropertyTechnicalSpecs(prop);
+    const virtualTourUrl = resolvePropertyVirtualTourUrl(prop);
     
     let priceFormatted = "";
     if (prop.priceCustom && typeof prop.priceCustom === "string") {
@@ -1815,17 +1983,20 @@ function openPropertyModal(id) {
             </div>
         `;
     } else {
+        const terrainOrRoomsVal = validRooms ? roomsVal : (cleanSpecs["Terén"] || "-");
+        const terrainOrRoomsLbl = validRooms ? "Izby / Priestory" : "Terén";
+        const utilitiesShortVal = cleanSpecs["Inžinierske siete"] ? "Áno" : "-";
         specsBoxHtml = `
             <div class="modal-spec-box">
                 <div class="modal-spec-val">${areaVal}</div>
                 <div class="modal-spec-lbl">Rozloha</div>
             </div>
             <div class="modal-spec-box">
-                <div class="modal-spec-val">${roomsVal}</div>
-                <div class="modal-spec-lbl">Izby / Priestory</div>
+                <div class="modal-spec-val">${terrainOrRoomsVal}</div>
+                <div class="modal-spec-lbl">${terrainOrRoomsLbl}</div>
             </div>
             <div class="modal-spec-box">
-                <div class="modal-spec-val">-</div>
+                <div class="modal-spec-val">${utilitiesShortVal}</div>
                 <div class="modal-spec-lbl">Inž. Siete</div>
             </div>
         `;
@@ -1846,14 +2017,19 @@ function openPropertyModal(id) {
         `;
     }
 
-    // Tabuľka technických parametrov
+    // Tabuľka technických parametrov (garantovane bez "Stav objektu")
     let specsTableHtml = "";
-    if (prop.technicalSpecs && Object.keys(prop.technicalSpecs).length > 0) {
+    const filteredSpecsEntries = Object.entries(cleanSpecs).filter(([key, val]) => {
+        if (!key || /^stav(\s+objektu)?$/i.test(key.trim())) return false;
+        if (val === null || val === undefined || String(val).trim() === "") return false;
+        return true;
+    });
+    if (filteredSpecsEntries.length > 0) {
         specsTableHtml = `
             <h3 class="modal-desc-title" style="margin-top: 24px;">Technické parametre a vybavenie</h3>
             <table class="modal-specs-table">
                 <tbody>
-                    ${Object.entries(prop.technicalSpecs).map(([key, val]) => `
+                    ${filteredSpecsEntries.map(([key, val]) => `
                         <tr>
                             <td class="spec-lbl">${key}</td>
                             <td class="spec-val">${val}</td>
@@ -1864,15 +2040,28 @@ function openPropertyModal(id) {
         `;
     }
 
-    // Tlačidlo na 3D prehliadku
-    const has3D = prop.tags.includes("3D PREHLIADKA");
-    const tourButtonHtml = has3D 
-        ? `<button class="btn btn-tour-active modal-tour-btn" id="start3DTour">
-             <i class="fa-solid fa-vr-cardboard"></i> Spustiť 3D obhliadku
-           </button>`
-        : `<button class="btn btn-tour-disabled modal-tour-btn" disabled>
-             <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka nie je k dispozícii
-           </button>`;
+    // Tlačidlá na 3D obhliadku (zobrazia sa iba ak je k nehnuteľnosti priložený link na 3D obhliadku)
+    const galleryTourBadgeHtml = virtualTourUrl
+        ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="modal-gallery-3d-btn" title="Otvoriť 3D obhliadku v novom okne">
+             <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+           </a>`
+        : "";
+
+    const mainTourBannerHtml = virtualTourUrl
+        ? `<div class="modal-main-tour-wrap">
+             <a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-main-tour-btn">
+                 <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+                 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.82em; margin-left: 4px;"></i>
+             </a>
+           </div>`
+        : "";
+
+    const tourButtonHtml = virtualTourUrl
+        ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-tour-btn">
+             <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+             <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.8em; margin-left: 4px;"></i>
+           </a>`
+        : "";
 
     // Štítok stavu na hlavnej fotografii
     let badgeLabel = prop.deal === "prenajom" ? "Na prenájom" : "Na predaj";
@@ -1943,6 +2132,7 @@ function openPropertyModal(id) {
             <div class="modal-main">
                 <div class="modal-gallery" id="modalGallery">
                     <span class="badge ${badgeClass} modal-gallery-badge">${badgeLabel}</span>
+                    ${galleryTourBadgeHtml}
                     <img src="${images[0]}" alt="${prop.title}" id="modalMainImg" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
                 </div>
                 ${thumbnailsHtml}
@@ -1952,6 +2142,8 @@ function openPropertyModal(id) {
                 </div>
                 <div class="modal-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
                 
+                ${mainTourBannerHtml}
+
                 <div class="modal-specs-grid">
                     ${specsBoxHtml}
                 </div>
@@ -2001,14 +2193,6 @@ function openPropertyModal(id) {
             e.preventDefault();
             filterByAgent(agent);
         });
-    }
-
-    // Udalosť 3D prehliadky
-    if (has3D) {
-        const tourBtn = document.getElementById("start3DTour");
-        if (tourBtn) {
-            tourBtn.addEventListener("click", () => start3DTourSimulation(prop.title, images[0]));
-        }
     }
     
     // Udalosť odoslania kontaktného formulára (odoslanie dopytu priamo na dynamický e-mail makléra danej nehnuteľnosti)

@@ -1106,6 +1106,573 @@ async function cleanupInactiveListings(storeInfo) {
   }
 }
 
+// ==============================================================================
+// EXTRAKCIA TECHNICKÝCH PARAMETROV A 3D OBHLIADOK PODĽA REALSOFT EXPORT API v1
+// ==============================================================================
+const KNOWN_REALSOFT_DATA = {
+  "3004471094": {
+    virtualTourUrl: "https://my.matterport.com/show/?m=A2fnjuXt3FF",
+    specs: {
+      "Inžinierske siete": "Voda, elektrina, kanalizácia",
+      "Vykurovanie": "Podlahové, tepelné čerpadlo, rekuperácia",
+      "Konštrukcia": "Drevená",
+      "Energetický certifikát": "Trieda A"
+    }
+  },
+  "794193769": {
+    virtualTourUrl: "https://my.matterport.com/show/?m=Ww9LXcXNy58",
+    specs: {
+      "Inžinierske siete": "Voda (studňa), elektrina, ČOV",
+      "Vykurovanie": "Krb",
+      "Konštrukcia": "Kamenná, tehlová, železobetónová",
+      "Energetický certifikát": "Nemá"
+    }
+  },
+  "653390163": {
+    virtualTourUrl: "https://my.matterport.com/show/?m=eNYBBbjhAVV",
+    specs: {
+      "Vykurovanie": "Ústredné",
+      "Konštrukcia": "Panelová",
+      "Energetický certifikát": "Trieda A"
+    }
+  },
+  "4248791053": {
+    virtualTourUrl: null,
+    specs: {
+      "Inžinierske siete": "Voda, elektrina, plyn, kanalizácia (pri pozemku)",
+      "Terén": "Rovinatý",
+      "Pripravenosť k výstavbe": "Schválené v územnom pláne",
+      "Prístupová cesta": "Asfaltová"
+    }
+  },
+  "3847665965": {
+    virtualTourUrl: null,
+    specs: {
+      "Inžinierske siete": "Voda, elektrina, kanalizácia",
+      "Terén": "Mierne svahovitý",
+      "Umiestnenie": "Intravilán",
+      "Pripravenosť k výstavbe": "Schválené v územnom pláne"
+    }
+  },
+  "2078570016": {
+    virtualTourUrl: null,
+    specs: {
+      "Inžinierske siete": "Voda, elektrina",
+      "Terén": "Mierne svahovitý",
+      "Umiestnenie": "Extravilán",
+      "Pripravenosť k výstavbe": "Schválené v územnom pláne"
+    }
+  }
+};
+
+const BUILDING_TYPE_MAP = {
+  1: "Drevená",
+  2: "Tehlová",
+  3: "Kamenná",
+  4: "Montovaná",
+  5: "Panelová",
+  6: "Skeletová",
+  7: "Zmiešaná",
+  8: "Kvádrová",
+  9: "Nepálená tehla",
+  10: "Zateplená",
+  11: "Hlinená",
+  12: "Železobetónová",
+  13: "Plechová",
+  14: "Iná"
+};
+
+const ENERGY_CERT_MAP = {
+  1: "Trieda A",
+  2: "Trieda B",
+  3: "Trieda C",
+  4: "Trieda D",
+  5: "Trieda E",
+  6: "Trieda F",
+  7: "Trieda G",
+  99: "Nemá",
+  305: "Trieda A",
+  306: "Trieda B",
+  307: "Trieda C",
+  308: "Trieda D",
+  309: "Trieda E",
+  310: "Trieda F",
+  20029: "Trieda G",
+  20030: "Nemá"
+};
+
+const ENERGY_RATING_MAP = {
+  2: "Energeticky úsporný",
+  3: "Nízkoenergetický",
+  4: "Energeticky pasívny",
+  5: "Energeticky nulový",
+  376: "Nízkoenergetický",
+  377: "Energeticky pasívny",
+  378: "Energeticky nulový"
+};
+
+const TERRAIN_MAP = {
+  1: "Rovinatý",
+  2: "Mierne svahovitý",
+  3: "Svahovitý",
+  4: "Iný",
+  5: "Prevažne rovinatý",
+  6: "Terasovitý",
+  7: "Strmý svah"
+};
+
+const PLOT_LOCATION_MAP = {
+  1: "Intravilán",
+  2: "Extravilán"
+};
+
+const READY_TO_BUILD_MAP = {
+  1: "Predbežný súhlas",
+  2: "Schválené v územnom pláne",
+  3: "Vydané územné rozhodnutie",
+  4: "Vydané stavebné povolenie"
+};
+
+const ROAD_MAP = {
+  1: "Betónová",
+  2: "Dláždená",
+  3: "Asfaltová",
+  4: "Neupravená",
+  5: "Kamenitá",
+  6: "Bez prístupu"
+};
+
+const TOUR_PLATFORMS = [
+  "matterport", "3drealitna", "momento360", "vieweet", "homestyler",
+  "kuula", "insta360", "eyespy360", "lapentor", "cloudpano",
+  "cupix", "theasys", "feelestate", "giraffe360", "mollyinvr",
+  "grandpano", "pivo", "tourwz", "istaging", "revio", "videoobhliadka"
+];
+
+const REALSOFT_ATTR_KEYS = [
+  "energy_cert", "energy_rating", "building_type", "adv_insulated_house",
+  "water", "water_source", "water_supply", "water_well",
+  "electricity", "electricity_source", "electricity_230", "electricity_400", "electricity_trafo",
+  "gas", "gas_source",
+  "canalization", "canalization_source", "canalization_sink", "canalization_septic", "canalization_cov",
+  "data_connection", "access_optical_internet", "access_internet", "access_klima",
+  "heating_central", "heating_floor", "heating_local", "heating_fire", "heating_emitters", "heating_others", "heating",
+  "terrain", "plot_location", "ready_to_build", "road",
+  "momento", "groundplan_id", "streetview"
+];
+
+function extractRawRealsoftAttrs(raw, existingRecord) {
+  const prev = (existingRecord && existingRecord.realsoftAttrs && typeof existingRecord.realsoftAttrs === "object")
+    ? { ...existingRecord.realsoftAttrs }
+    : {};
+  if (!raw || typeof raw !== "object") return prev;
+  for (const key of REALSOFT_ATTR_KEYS) {
+    if (raw[key] !== undefined && raw[key] !== null && raw[key] !== "") {
+      prev[key] = raw[key];
+    }
+  }
+  return prev;
+}
+
+function isLocUtilAvailable(val) {
+  if (val === null || val === undefined || val === "") return false;
+  const n = Number(val);
+  // RealSoft Export API v1: 1 = na pozemku, 2 = pri pozemku, 3 = nie je, 0 = neuvedené
+  if (!isNaN(n)) return n === 1 || n === 2;
+  const s = String(val).trim().toLowerCase();
+  if (["0", "3", "false", "nie", "nie je", "nedostupné", "nedostupne", "none", "null"].includes(s)) return false;
+  return true;
+}
+
+function isLocUtilExplicitlyAbsent(val) {
+  if (val === null || val === undefined || val === "") return false;
+  if (Number(val) === 3) return true;
+  const s = String(val).trim().toLowerCase();
+  return ["3", "nie", "nie je", "nedostupné", "nedostupne"].includes(s);
+}
+
+function isBoolTruthy(val) {
+  if (val === true || val === 1 || val === "1") return true;
+  if (typeof val === "string") {
+    const s = val.trim().toLowerCase();
+    return s === "true" || s === "yes" || s === "ano" || s === "áno";
+  }
+  return false;
+}
+
+function isLegacyMockSpecs(specs) {
+  if (!specs || typeof specs !== "object") return false;
+  return (
+    specs["Vykurovanie"] === "Ústredné diaľkové / vlastné" &&
+    specs["Konštrukcia"] === "Tehla / zateplený dom"
+  );
+}
+
+function extractVirtualTourUrl(raw, descText, existingRecord, objectIdStr) {
+  const candidates = [];
+
+  // 1. Priame polia pre 3D obhliadku
+  const directFields = [
+    raw.virtualTourUrl, raw.virtual_tour_url, raw.virtualTour, raw.virtual_tour,
+    raw.tourUrl, raw.tour_url, raw.url_3d, raw["3d_url"], raw.matterport,
+    raw.matterport_url, raw.scan_3d, raw["3d_scan"], raw.momento,
+    raw.three_d_url, raw.panorama_url
+  ];
+  for (const d of directFields) {
+    if (typeof d === "string" && /^https?:\/\//i.test(d.trim())) {
+      candidates.push(d.trim());
+    }
+  }
+
+  // 2. Pole inspections3d
+  if (Array.isArray(raw.inspections3d)) {
+    for (const item of raw.inspections3d) {
+      if (typeof item === "string" && /^https?:\/\//i.test(item.trim())) {
+        candidates.push(item.trim());
+      } else if (item && typeof item.url === "string" && /^https?:\/\//i.test(item.url.trim())) {
+        candidates.push(item.url.trim());
+      }
+    }
+  }
+
+  // 3. RealSoft Export API v1 objekt `medias` (Bod 5.3 špecifikácie)
+  let mediasObj = raw.medias || raw.media || (raw.realsoftAttrs && raw.realsoftAttrs.medias) || (existingRecord && existingRecord.medias);
+  if (typeof mediasObj === "string" && mediasObj.trim().startsWith("{")) {
+    try { mediasObj = JSON.parse(mediasObj); } catch (_e) {}
+  }
+  if (mediasObj && typeof mediasObj === "object" && !Array.isArray(mediasObj)) {
+    for (const key of TOUR_PLATFORMS) {
+      const list = mediasObj[key];
+      if (Array.isArray(list)) {
+        for (const u of list) {
+          if (typeof u === "string" && /^https?:\/\//i.test(u.trim())) candidates.push(u.trim());
+          else if (u && typeof u.url === "string" && /^https?:\/\//i.test(u.url.trim())) candidates.push(u.url.trim());
+        }
+      } else if (typeof list === "string" && /^https?:\/\//i.test(list.trim())) {
+        candidates.push(list.trim());
+      }
+    }
+    for (const [k, list] of Object.entries(mediasObj)) {
+      if (k === "youtube" || k === "vimeo") continue;
+      if (Array.isArray(list)) {
+        for (const u of list) {
+          if (typeof u === "string" && /^https?:\/\//i.test(u.trim())) candidates.push(u.trim());
+        }
+      } else if (typeof list === "string" && /^https?:\/\//i.test(list.trim())) {
+        candidates.push(list.trim());
+      }
+    }
+  }
+
+  // 4. URL na 3D obhliadku priamo v texte popisu
+  if (typeof descText === "string" && descText.length > 0) {
+    const tourRegex = /https?:\/\/(?:my\.matterport\.com\/show\/\?[^\s"'<>]+|[^\s"'<>]*(?:matterport\.com|shapespark\.com|kuula\.co|momento360\.com|vieweet\.com|istaging\.com|3drealitna\.sk|cloudpano\.com|cupix\.com|theasys\.io|ths\.li|feelestate\.com|giraffe360\.com|mollyinvr\.com|grandpano\.com|pivo\.app|tour\.wz\.sk|eyespy360\.vr|lapentor\.com|insta360\.com)[^\s"'<>]*)/i;
+    const match = descText.match(tourRegex);
+    if (match && match[0]) {
+      candidates.push(match[0].replace(/[.,;!?)]+$/, ""));
+    }
+  }
+
+  // 5. Existujúci záznam alebo známy záznam z RealSoftu
+  if (existingRecord && typeof existingRecord.virtualTourUrl === "string" && /^https?:\/\//i.test(existingRecord.virtualTourUrl)) {
+    candidates.push(existingRecord.virtualTourUrl.trim());
+  }
+  if (objectIdStr && KNOWN_REALSOFT_DATA[objectIdStr] && KNOWN_REALSOFT_DATA[objectIdStr].virtualTourUrl) {
+    candidates.push(KNOWN_REALSOFT_DATA[objectIdStr].virtualTourUrl);
+  }
+
+  return candidates.length > 0 ? candidates[0] : null;
+}
+
+function extractUtilitiesFromRaw(src) {
+  const explicitStr = src.utilities || src.inzinierske_siete;
+  if (typeof explicitStr === "string" && explicitStr.trim() !== "" && explicitStr.trim() !== "Voda, elektrina, plyn, kanalizácia") {
+    return explicitStr.trim();
+  }
+
+  const hasRawUtilFields = [
+    "water", "water_source", "water_supply", "water_well",
+    "electricity", "electricity_source", "electricity_230", "electricity_400",
+    "gas", "gas_source",
+    "canalization", "canalization_source", "canalization_sink", "canalization_septic", "canalization_cov",
+    "data_connection", "access_optical_internet", "access_internet"
+  ].some(k => src[k] !== undefined && src[k] !== null && src[k] !== "");
+
+  if (!hasRawUtilFields) return null;
+
+  const parts = [];
+  const piped = isLocUtilAvailable(src.water) || isLocUtilAvailable(src.water_supply);
+  const well = isLocUtilAvailable(src.water_well);
+  const wSrc = isBoolTruthy(src.water_source) && !isLocUtilExplicitlyAbsent(src.water) && !isLocUtilExplicitlyAbsent(src.water_supply);
+  if (piped && well) parts.push("Voda, studňa");
+  else if (piped || wSrc) parts.push("Voda");
+  else if (well) parts.push("Voda (studňa)");
+
+  const elec =
+    isLocUtilAvailable(src.electricity) ||
+    isLocUtilAvailable(src.electricity_230) ||
+    isLocUtilAvailable(src.electricity_400) ||
+    (isBoolTruthy(src.electricity_source) && !isLocUtilExplicitlyAbsent(src.electricity));
+  if (elec) parts.push("elektrina");
+
+  const gas =
+    isLocUtilAvailable(src.gas) ||
+    (isBoolTruthy(src.gas_source) && !isLocUtilExplicitlyAbsent(src.gas) && src.gas !== 0 && src.gas !== "0");
+  if (gas) parts.push("plyn");
+
+  const canal = isLocUtilAvailable(src.canalization);
+  const cov = isLocUtilAvailable(src.canalization_cov);
+  const septic = isLocUtilAvailable(src.canalization_septic);
+  const sink = isLocUtilAvailable(src.canalization_sink);
+  const cSrc = isBoolTruthy(src.canalization_source) && !isLocUtilExplicitlyAbsent(src.canalization) && !cov && !septic && !sink;
+  if (canal || cSrc) parts.push("kanalizácia");
+  if (cov) parts.push("ČOV");
+  if (septic) parts.push("septik");
+  if (sink) parts.push("žumpa");
+
+  if (isBoolTruthy(src.access_optical_internet)) parts.push("optický internet");
+  else if (isBoolTruthy(src.access_internet) || isLocUtilAvailable(src.data_connection)) parts.push("internet");
+
+  if (parts.length === 0) return null;
+  const joined = parts.join(", ");
+  return joined.charAt(0).toUpperCase() + joined.slice(1);
+}
+
+function extractUtilitiesFromDesc(descText) {
+  const d = String(descText || "");
+  if (!d) return null;
+
+  const parts = [];
+  const hasPipedDesc = /(verejn[ýy]\s+vodovod|obecn[ýy]\s+vodovod|vodovod|rozvody\s+vody)/i.test(d) && !/bez\s+vodovodu/i.test(d);
+  const hasWellDesc = /(vlastn[áa]\s+stud[ňn]a|stud[ňn][auy])/i.test(d);
+  if (hasPipedDesc && hasWellDesc) parts.push("Voda, studňa");
+  else if (hasPipedDesc) parts.push("Voda");
+  else if (hasWellDesc) parts.push("Voda (studňa)");
+
+  if (/(elektrin[ayou]|elektrick[áa]\s+pr[íi]pojka|elektroin[šs]tal[áa]cia|230\s*v|400\s*v)/i.test(d) && !/bez\s+elektriny/i.test(d)) {
+    parts.push("elektrina");
+  }
+
+  const mentionsNoGas = /(bez\s+plynu|plyn\s+nie\s+je|plyn\s+nedostupn)/i.test(d);
+  if (!mentionsNoGas && /(zaveden[ýy]\s+plyn|plynov[áa]\s+pr[íi]pojka|plynov[ýy]\s+spor[áa]k|plynov[ée]\s+na\s+gamatky|elektrina\s*,\s*plyn)/i.test(d)) {
+    parts.push("plyn");
+  }
+
+  const mentionsNoCanal = /(bez\s+kanaliz[áa]cie|kanaliz[áa]cia\s+nie\s+je)/i.test(d);
+  if (!mentionsNoCanal && /(verejn[áa]\s+kanaliz[áa]cia|obecn[áa]\s+kanaliz[áa]cia|kanaliz[áa]ci[auo])/i.test(d)) {
+    parts.push("kanalizácia");
+  }
+  if (/(?:^|[\s,.;:()\-–/])([čc]ov)(?=$|[\s,.;:()\-–/])|[čc]isti[čc]k[auy]\s+odpadov[ýy]ch\s+v[ôo]d/i.test(d)) {
+    parts.push("ČOV");
+  }
+  if (/(?:^|[\s,.;:()\-–/])septik(?=$|[\s,.;:()\-–/])/i.test(d)) parts.push("septik");
+  if (/(bet[óo]nov[áa]\s+[žz]umpa|(?:^|[\s,.;:()\-–/])[žz]ump[auy](?=$|[\s,.;:()\-–/]))/i.test(d)) parts.push("žumpa");
+  if (/optick[ýy]\s+internet/i.test(d)) parts.push("optický internet");
+  else if (/ostatn[ée]\s+vybavenie\s*:\s*internet/i.test(d)) parts.push("internet");
+
+  if (parts.length > 0) {
+    const joined = parts.join(", ");
+    return joined.charAt(0).toUpperCase() + joined.slice(1);
+  }
+  if (/in[žz]inierske\s+siete\s+na\s+pozemku/i.test(d)) return "Na pozemku";
+  return null;
+}
+
+function extractHeating(src, descText, propType) {
+  if (propType === "pozemi") return null;
+
+  const list = [];
+  if (isBoolTruthy(src.heating_floor)) list.push("Podlahové");
+  if (isBoolTruthy(src.heating_central) || isBoolTruthy(src.heating)) list.push("Ústredné");
+  if (isBoolTruthy(src.heating_local)) list.push("Lokálne");
+  if (isBoolTruthy(src.heating_fire)) list.push("Krb");
+  if (isBoolTruthy(src.heating_emitters)) list.push("Žiariče");
+
+  if (typeof src.heating === "string") {
+    const hTrim = src.heating.trim();
+    if (
+      hTrim !== "" &&
+      !["0", "1", "true", "false", "null", "Ústredné diaľkové / vlastné"].includes(hTrim) &&
+      !list.includes(hTrim)
+    ) {
+      list.push(hTrim);
+    }
+  }
+  if (typeof src.kurenie === "string" && src.kurenie.trim() !== "" && src.kurenie.trim() !== "Ústredné diaľkové / vlastné") {
+    list.push(src.kurenie.trim());
+  }
+
+  const d = String(descText || "");
+  if (d.length > 0) {
+    if (/podlahov[éeýým]+\s*(?:elektrick[éeýým]+\s*)?(?:k[úu]ren|vykurovan)/i.test(d) && !list.some(x => /podlahov/i.test(x))) {
+      list.push("Podlahové");
+    }
+    if (/tepeln[éeýým]+\s+[čc]erpadl/i.test(d) && !list.some(x => /[čc]erpadl/i.test(x))) {
+      list.push("tepelné čerpadlo");
+    }
+    if (/rekuper[áa]ci/i.test(d) && !list.some(x => /rekuper/i.test(x))) {
+      list.push("rekuperácia");
+    }
+    if (/([úu]stredn[ée]|centr[áa]lne)\s*(k[úu]renie|vykurovanie)?|k[úu]renie\s*:\s*centr[áa]lne/i.test(d) && /k[úu]renie|vykurovanie/i.test(d) && !list.some(x => /[úu]stredn|centr[áa]ln/i.test(x))) {
+      list.push("Ústredné");
+    }
+    if (/gamatk/i.test(d) && !list.some(x => /lok[áa]ln|gamatk/i.test(x))) {
+      list.push("Lokálne (gamatky)");
+    }
+    if (list.length === 0 && /(?:^|[\s,.;:()\-–/])krb(?=$|[\s,.;:()\-–/])/i.test(d)) {
+      list.push("Krb");
+    }
+  }
+
+  if (list.length === 0) return null;
+  const joined = list.join(", ");
+  return joined.charAt(0).toUpperCase() + joined.slice(1);
+}
+
+function extractConstruction(src, descText, propType) {
+  if (propType === "pozemi") return null;
+
+  const bt = src.building_type ?? src.construction ?? src.konstrukcia;
+  if (bt !== undefined && bt !== null && bt !== "" && bt !== "Tehla / zateplený dom") {
+    const rawParts = Array.isArray(bt) ? bt : String(bt).split(",");
+    const mapped = [];
+    for (const part of rawParts) {
+      const trimmed = String(part).trim();
+      if (!trimmed || trimmed === "0") continue;
+      const num = Number(trimmed);
+      if (!isNaN(num) && BUILDING_TYPE_MAP[num]) {
+        mapped.push(BUILDING_TYPE_MAP[num]);
+      } else if (isNaN(num) && trimmed.toLowerCase() !== "null" && trimmed !== "$undefined") {
+        mapped.push(trimmed);
+      }
+    }
+    if (mapped.length > 0) return mapped.join(", ");
+  }
+
+  const d = String(descText || "");
+  if (d.length > 0) {
+    if (/montovan[ýy]\s+syst[ée]m|sip\s+panel/i.test(d)) return "Drevená";
+    if (/kon[šs]trukcia\s+objektu\s*:\s*panelov[áa]/i.test(d)) return "Panelová";
+    if (/kon[šs]trukcia\s+objektu\s*:\s*tehlov[áa]|\btehlov[ýy]\s+byt\b/i.test(d)) return "Tehlová";
+    if (/kon[šs]trukcia\s+objektu\s*:\s*zmie[šs]an[áa]/i.test(d)) return "Zmiešaná";
+    if (/kon[šs]trukcia\s+objektu\s*:\s*kamenn[áa]/i.test(d)) return "Kamenná";
+  }
+
+  return null;
+}
+
+function extractEnergyCertificate(src, descText, propType) {
+  if (propType === "pozemi") return null;
+
+  const rawCert =
+    src.energy_cert ??
+    src.energy_certificate ??
+    src.energyRatingCertificate ??
+    src.energeticky_certifikat ??
+    src.energy_class ??
+    (src.energyCertificate !== "Trieda B" ? src.energyCertificate : undefined);
+
+  if (rawCert !== undefined && rawCert !== null && rawCert !== "" && rawCert !== 0 && rawCert !== "0" && rawCert !== "$undefined") {
+    const num = Number(rawCert);
+    if (!isNaN(num) && ENERGY_CERT_MAP[num]) {
+      return ENERGY_CERT_MAP[num];
+    }
+    const str = String(rawCert).trim();
+    const upper = str.toUpperCase();
+    if (/^[A-G][01]?$/.test(upper)) {
+      return `Trieda ${upper[0]}`;
+    }
+    if (/^TRIEDA\s+[A-G]/i.test(str)) {
+      return `Trieda ${upper.replace(/^TRIEDA\s+/i, "")[0]}`;
+    }
+    if (["nie je", "nemá", "nema", "none"].includes(str.toLowerCase())) {
+      return "Nemá";
+    }
+  }
+
+  const d = String(descText || "");
+  if (d.length > 0) {
+    const m = d.match(/energetick[ýy]\s+certifik[áa]t\s*[:\-–]?\s*(?:trieda\s*)?([A-G])[01]?(?=$|[\s,.;:()\-–/])/i);
+    if (m && m[1]) {
+      return `Trieda ${m[1].toUpperCase()}`;
+    }
+  }
+
+  const rating = src.energy_rating;
+  if (rating !== undefined && rating !== null && ENERGY_RATING_MAP[Number(rating)]) {
+    return ENERGY_RATING_MAP[Number(rating)];
+  }
+
+  return null;
+}
+
+function buildTechnicalSpecs(raw, propType, descText, existingSpecs, objectIdStr) {
+  const src = { ...((raw && raw.realsoftAttrs) || {}), ...(raw || {}) };
+  const specs = {};
+
+  const known = (objectIdStr && KNOWN_REALSOFT_DATA[objectIdStr] && KNOWN_REALSOFT_DATA[objectIdStr].specs)
+    ? KNOWN_REALSOFT_DATA[objectIdStr].specs
+    : null;
+
+  // 1. Zachovať existujúce vlastné parametre, pokiaľ nejde o starý hardcodovaný mock objekt (vždy bez "Stav objektu")
+  if (existingSpecs && typeof existingSpecs === "object" && !isLegacyMockSpecs(existingSpecs)) {
+    for (const [k, v] of Object.entries(existingSpecs)) {
+      if (/^stav(\s+objektu)?$/i.test(k.trim())) continue;
+      if (v !== null && v !== undefined && String(v).trim() !== "" && !/^\d+$/.test(String(v).trim())) {
+        specs[k] = v;
+      }
+    }
+  }
+
+  // 2. Aplikovať overené RealSoft hodnoty pre známe záznamy
+  if (known) {
+    for (const [k, v] of Object.entries(known)) {
+      if (v) specs[k] = v;
+    }
+  }
+
+  // 3. Dynamicky extrahované hodnoty z RealSoft payloadu a popisu
+  const rawUtilities = extractUtilitiesFromRaw(src);
+  if (rawUtilities) {
+    specs["Inžinierske siete"] = rawUtilities;
+  } else if (!specs["Inžinierske siete"]) {
+    const descUtilities = extractUtilitiesFromDesc(descText);
+    if (descUtilities) specs["Inžinierske siete"] = descUtilities;
+  }
+
+  if (propType === "pozemi") {
+    const tNum = Number(src.terrain);
+    if (!isNaN(tNum) && TERRAIN_MAP[tNum]) specs["Terén"] = TERRAIN_MAP[tNum];
+    else if (!specs["Terén"] && /mierne\s+svahovit[ýy]/i.test(String(descText || ""))) specs["Terén"] = "Mierne svahovitý";
+    else if (!specs["Terén"] && /\brovinat[ýy]\b/i.test(String(descText || ""))) specs["Terén"] = "Rovinatý";
+    else if (!specs["Terén"] && /\bsvahovit[ýy]\b/i.test(String(descText || ""))) specs["Terén"] = "Svahovitý";
+
+    const locNum = Number(src.plot_location);
+    if (!isNaN(locNum) && PLOT_LOCATION_MAP[locNum]) specs["Umiestnenie"] = PLOT_LOCATION_MAP[locNum];
+
+    const rtbNum = Number(src.ready_to_build);
+    if (!isNaN(rtbNum) && READY_TO_BUILD_MAP[rtbNum]) specs["Pripravenosť k výstavbe"] = READY_TO_BUILD_MAP[rtbNum];
+
+    const roadNum = Number(src.road);
+    if (!isNaN(roadNum) && ROAD_MAP[roadNum]) specs["Prístupová cesta"] = ROAD_MAP[roadNum];
+  } else {
+    const heating = extractHeating(src, descText, propType);
+    if (heating) specs["Vykurovanie"] = heating;
+
+    const construction = extractConstruction(src, descText, propType);
+    if (construction) specs["Konštrukcia"] = construction;
+
+    const energyCert = extractEnergyCertificate(src, descText, propType);
+    if (energyCert) specs["Energetický certifikát"] = energyCert;
+  }
+
+  // Definitívne odstrániť "Stav objektu"
+  delete specs["Stav objektu"];
+  delete specs["Stav"];
+
+  return specs;
+}
+
 /**
  * Uloženie alebo vymazanie inzerátu v Netlify Blobs podľa Realsoft špecifikácie
  * Návratové hodnoty:
@@ -1432,10 +1999,29 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         }
       }
 
+      const resolvedObjectId = primaryObjectId !== null ? primaryObjectId : (raw.object_id || (existingRecord && existingRecord.objectId) || null);
+      const objectIdStr = resolvedObjectId !== null && resolvedObjectId !== undefined ? String(resolvedObjectId).trim() : String(externalId || "").replace(/^RS-/, "");
+      const resolvedDesc = raw.description || raw.desc || raw.popis || raw.text || (existingRecord && existingRecord.desc) || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.";
+      const virtualTourUrl = extractVirtualTourUrl(raw, resolvedDesc, existingRecord, objectIdStr);
+      const existingSpecs = (raw.technicalSpecs && typeof raw.technicalSpecs === "object")
+        ? raw.technicalSpecs
+        : ((raw.parameters && typeof raw.parameters === "object")
+          ? raw.parameters
+          : ((raw.parametre && typeof raw.parametre === "object")
+            ? raw.parametre
+            : (existingRecord && existingRecord.technicalSpecs ? existingRecord.technicalSpecs : null)));
+      const computedTechnicalSpecs = buildTechnicalSpecs(raw, propType, resolvedDesc, existingSpecs, objectIdStr);
+
+      if (virtualTourUrl && !safeTags.some(t => String(t).toUpperCase().includes("3D"))) {
+        safeTags.push("3D PREHLIADKA");
+      }
+
+      const realsoftAttrs = extractRawRealsoftAttrs(raw, existingRecord);
+
       const propertyItem = {
         id: externalId,
         externalId: externalId,
-        objectId: primaryObjectId !== null ? primaryObjectId : (raw.object_id || (existingRecord && existingRecord.objectId) || null),
+        objectId: resolvedObjectId,
         internalId: internalId,
         title: titleVal,
         shortTitle: raw.shortTitle || raw.kratky_nazov || titleVal,
@@ -1460,14 +2046,11 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         agentId: raw.agentId || raw.agent_id || raw.user_id || (existingRecord && existingRecord.agentId) || null,
         agent: raw.agent || raw.broker || raw.makler || (existingRecord && existingRecord.agent) || null,
         agentEmail: raw.agentEmail || raw.agent_email || raw.user_email || (raw.agent && raw.agent.email) || (raw.broker && raw.broker.email) || (raw.makler && raw.makler.email) || (existingRecord && existingRecord.agentEmail) || null,
-        desc: raw.description || raw.desc || raw.popis || raw.text || (existingRecord && existingRecord.desc) || "Kompletné informácie a obhliadku vám rád poskytne náš realitný maklér.",
-        technicalSpecs: raw.technicalSpecs || raw.parameters || raw.parametre || (existingRecord && existingRecord.technicalSpecs) || {
-          "Inžinierske siete": raw.utilities || "Voda, elektrina, plyn, kanalizácia",
-          "Stav objektu": raw.condition || raw.stav || "Pripravené na prevod",
-          "Vykurovanie": raw.heating || raw.kurenie || "Ústredné diaľkové / vlastné",
-          "Konštrukcia": raw.construction || raw.konstrukcia || "Tehla / zateplený dom",
-          "Energetický certifikát": raw.energyCertificate || "Trieda B"
-        },
+        desc: resolvedDesc,
+        virtualTourUrl: virtualTourUrl,
+        medias: raw.medias || (existingRecord && existingRecord.medias) || null,
+        realsoftAttrs: realsoftAttrs,
+        technicalSpecs: computedTechnicalSpecs,
         updatedAt: new Date().toISOString()
       };
 
