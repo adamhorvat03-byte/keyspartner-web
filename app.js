@@ -3759,7 +3759,81 @@ function initReviewsSystem() {
         }
     }
 
+    function formatReviewsCountText(count) {
+        return count === 1
+            ? "na základe 1 hodnotenia"
+            : `na základe ${count} hodnotení`;
+    }
+
+    function buildAverageStarsHtml(rating) {
+        const stepped = Math.round(rating * 2) / 2;
+        let html = "";
+        for (let i = 1; i <= 5; i++) {
+            if (stepped >= i) {
+                html += `<i class="fa-solid fa-star"></i>`;
+            } else if (stepped >= i - 0.5) {
+                html += `<i class="fa-solid fa-star-half-stroke"></i>`;
+            } else {
+                html += `<i class="fa-regular fa-star"></i>`;
+            }
+        }
+        return html;
+    }
+
+    function updateReviewsSummary(reviews) {
+        const badgeEl = document.getElementById("reviewsAvgBadge") || document.querySelector(".reviews-avg-badge");
+        const valueEl = document.getElementById("reviewsAverageValue");
+        const starsEl = document.getElementById("reviewsAverageStars") || document.querySelector(".reviews-avg-stars");
+        const countEl = document.getElementById("reviewsAverageCount");
+
+        const validRatings = (Array.isArray(reviews) ? reviews : [])
+            .map(r => (r && r.rating !== null && r.rating !== undefined && String(r.rating).trim() !== "") ? Number(r.rating) : NaN)
+            .filter(val => Number.isFinite(val) && val >= 1 && val <= 5);
+
+        if (validRatings.length === 0) {
+            if (badgeEl) {
+                badgeEl.classList.add("is-empty");
+                badgeEl.setAttribute("aria-label", "Zatiaľ bez hodnotení");
+            }
+            if (valueEl) {
+                valueEl.classList.add("is-empty");
+                valueEl.textContent = "Zatiaľ bez hodnotení";
+            }
+            if (starsEl) {
+                starsEl.classList.add("is-empty");
+                starsEl.innerHTML = buildAverageStarsHtml(0);
+            }
+            if (countEl) {
+                countEl.textContent = "";
+                countEl.style.display = "none";
+            }
+            return;
+        }
+
+        const sum = validRatings.reduce((acc, val) => acc + val, 0);
+        const roundedAvg = Math.round((sum / validRatings.length) * 10) / 10;
+        const avgText = roundedAvg.toFixed(1);
+
+        if (badgeEl) {
+            badgeEl.classList.remove("is-empty");
+            badgeEl.setAttribute("aria-label", `Priemerné hodnotenie ${avgText} z 5`);
+        }
+        if (valueEl) {
+            valueEl.classList.remove("is-empty");
+            valueEl.textContent = `${avgText} / 5`;
+        }
+        if (starsEl) {
+            starsEl.classList.remove("is-empty");
+            starsEl.innerHTML = buildAverageStarsHtml(roundedAvg);
+        }
+        if (countEl) {
+            countEl.textContent = formatReviewsCountText(validRatings.length);
+            countEl.style.display = "";
+        }
+    }
+
     function renderReviews(reviews) {
+        updateReviewsSummary(reviews);
         if (!grid) return;
 
         if (!reviews || reviews.length === 0) {

@@ -2616,6 +2616,23 @@ img {
     letter-spacing: 0.04em;
 }
 
+.reviews-avg-number.is-empty {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.reviews-avg-stars.is-empty {
+    opacity: 0.45;
+}
+
+.reviews-avg-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
 .reviews-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

@@ -784,18 +784,19 @@
                     <h2 class="section-title">Čo o nás povedali naši klienti / partneri</h2>
                 </div>
                 <div class="reviews-header-right">
-                    <div class="reviews-avg-badge" aria-label="Priemerné hodnotenie 4.8 z 5">
+                    <div class="reviews-avg-badge is-empty" id="reviewsAvgBadge" aria-label="Zatiaľ bez hodnotení">
                         <div class="reviews-avg-score-row">
-                            <span class="reviews-avg-number" id="reviewsAverageValue">4.8 / 5</span>
-                            <div class="reviews-avg-stars" aria-hidden="true">
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
+                            <span class="reviews-avg-number is-empty" id="reviewsAverageValue">Zatiaľ bez hodnotení</span>
+                            <div class="reviews-avg-stars is-empty" id="reviewsAverageStars" aria-hidden="true">
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
                             </div>
                         </div>
-                        <span class="reviews-avg-label">Priemerné hodnotenie</span>
+                        <span class="reviews-avg-label" id="reviewsAverageLabel">Priemerné hodnotenie</span>
+                        <span class="reviews-avg-count" id="reviewsAverageCount" style="display: none;"></span>
                     </div>
                     <button type="button" class="btn btn-secondary btn-open-review-form" id="btnOpenReviewForm">
                         <i class="fa-solid fa-pen-to-square text-gold"></i> <span>Napísať recenziu</span>
