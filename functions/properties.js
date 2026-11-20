@@ -402,7 +402,11 @@ const TOUR_PLATFORMS = [
   "matterport", "3drealitna", "momento360", "vieweet", "homestyler",
   "kuula", "insta360", "eyespy360", "lapentor", "cloudpano",
   "cupix", "theasys", "feelestate", "giraffe360", "mollyinvr",
-  "grandpano", "pivo", "tourwz", "istaging", "revio", "videoobhliadka"
+  "grandpano", "pivo", "tourwz", "istaging", "revio"
+];
+
+const VIDEO_PLATFORMS = [
+  "youtube", "vimeo", "videoobhliadka", "video", "mp4"
 ];
 
 function isLocUtilAvailable(val) {
@@ -481,7 +485,7 @@ function extractVirtualTourUrl(raw, descText, objectIdStr) {
       }
     }
     for (const [k, list] of Object.entries(mediasObj)) {
-      if (k === "youtube" || k === "vimeo") continue;
+      if (VIDEO_PLATFORMS.includes(String(k).toLowerCase())) continue;
       if (Array.isArray(list)) {
         for (const u of list) {
           if (typeof u === "string" && /^https?:\/\//i.test(u.trim())) candidates.push(u.trim());
@@ -505,6 +509,121 @@ function extractVirtualTourUrl(raw, descText, objectIdStr) {
   }
 
   return candidates.length > 0 ? candidates[0] : null;
+}
+
+function normalizeMediasObject(raw) {
+  let mediasObj = (raw && raw.medias) || (raw && raw.media) || (raw && raw.realsoftAttrs && raw.realsoftAttrs.medias) || null;
+  if (typeof mediasObj === "string" && mediasObj.trim().startsWith("{")) {
+    try { mediasObj = JSON.parse(mediasObj); } catch (_e) {}
+  }
+  return (mediasObj && typeof mediasObj === "object" && !Array.isArray(mediasObj)) ? mediasObj : null;
+}
+
+function extractVideoUrls(raw, descText) {
+  const candidates = [];
+  const pushUrl = (u) => {
+    if (typeof u !== "string") return;
+    const cleaned = u.trim().replace(/[.,;!?)]+$/, "");
+    if (/^https?:\/\//i.test(cleaned)) {
+      candidates.push(cleaned);
+    }
+  };
+
+  if (raw && Array.isArray(raw.videoUrls)) {
+    raw.videoUrls.forEach(pushUrl);
+  }
+
+  const mediasObj = normalizeMediasObject(raw);
+  if (mediasObj) {
+    for (const key of VIDEO_PLATFORMS) {
+      const list = mediasObj[key];
+      if (Array.isArray(list)) {
+        for (const item of list) {
+          if (typeof item === "string") pushUrl(item);
+          else if (item && typeof item.url === "string") pushUrl(item.url);
+        }
+      } else if (typeof list === "string") {
+        pushUrl(list);
+      }
+    }
+  }
+
+  const directFields = [
+    raw && raw.videoUrl, raw && raw.video_url, raw && raw.video,
+    raw && raw.youtube, raw && raw.youtube_url,
+    raw && raw.vimeo, raw && raw.vimeo_url,
+    raw && raw.marketingVideo, raw && raw.marketing_video
+  ];
+  for (const field of directFields) {
+    if (Array.isArray(field)) {
+      field.forEach(item => {
+        if (typeof item === "string") pushUrl(item);
+        else if (item && typeof item.url === "string") pushUrl(item.url);
+      });
+    } else if (typeof field === "string") {
+      pushUrl(field);
+    }
+  }
+  if (raw && Array.isArray(raw.videos)) {
+    for (const item of raw.videos) {
+      if (typeof item === "string") pushUrl(item);
+      else if (item && typeof item.url === "string") pushUrl(item.url);
+    }
+  }
+
+  if (typeof descText === "string" && descText.length > 0) {
+    const videoRegex = /https?:\/\/(?:(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s"'<>]+|shorts\/[^\s"'<>]+|embed\/[^\s"'<>]+)|youtu\.be\/[^\s"'<>]+)|(?:player\.)?vimeo\.com\/(?:video\/)?\d+[^\s"'<>]*|[^\s"'<>]+\.(?:mp4|webm|mov)(?:\?[^\s"'<>]*)?)/gi;
+    const matches = descText.match(videoRegex) || [];
+    for (const m of matches) {
+      pushUrl(m);
+    }
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+function parseValidIsoDate(val) {
+  if (!val) return null;
+  if (val instanceof Date && !isNaN(val.getTime())) return val.toISOString();
+  if (typeof val !== "string") return null;
+  let normalized = val.trim();
+  if (!normalized) return null;
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized.replace(/\s+/, "T");
+  }
+  const ts = Date.parse(normalized);
+  if (isNaN(ts)) return null;
+  return new Date(ts).toISOString();
+}
+
+function getEffectiveCreatedAt(p) {
+  if (!p || typeof p !== "object") return null;
+  return (
+    parseValidIsoDate(p.createdAt) ||
+    parseValidIsoDate(p.created_at) ||
+    parseValidIsoDate(p.dateCreated) ||
+    parseValidIsoDate(p.date_created) ||
+    parseValidIsoDate(p.publishedAt) ||
+    parseValidIsoDate(p.published_at) ||
+    parseValidIsoDate(p.addedAt) ||
+    parseValidIsoDate(p.added_at) ||
+    parseValidIsoDate(p.updatedAt) ||
+    parseValidIsoDate(p.updated_at) ||
+    null
+  );
+}
+
+function comparePropertiesByCreatedAtDesc(a, b) {
+  const isoA = getEffectiveCreatedAt(a);
+  const isoB = getEffectiveCreatedAt(b);
+  const tsA = isoA ? Date.parse(isoA) : 0;
+  const tsB = isoB ? Date.parse(isoB) : 0;
+  if (tsA !== tsB) return tsB - tsA;
+  if (tsA === 0 && tsB === 0) return 0;
+  const numA = parseInt(String(a && (a.objectId || a.id || "")).replace(/\D/g, ""), 10) || 0;
+  const numB = parseInt(String(b && (b.objectId || b.id || "")).replace(/\D/g, ""), 10) || 0;
+  if (numA !== numB) return numB - numA;
+  return String((b && b.id) || "").localeCompare(String((a && a.id) || ""));
 }
 
 function extractUtilitiesFromRaw(src) {
@@ -983,6 +1102,8 @@ async function fetchBlobsProperties(storeInfo) {
 
       const objectIdStr = String(p.objectId || idStr.replace(/^RS-/, "")).trim();
       const virtualTourUrl = extractVirtualTourUrl(p, p.desc, objectIdStr);
+      const videoUrls = extractVideoUrls(p, p.desc);
+      const effectiveCreatedAt = getEffectiveCreatedAt(p);
       const cleanTechnicalSpecs = buildTechnicalSpecs(p, p.type, p.desc, p.technicalSpecs, objectIdStr);
 
       if (virtualTourUrl) {
@@ -1006,9 +1127,14 @@ async function fetchBlobsProperties(storeInfo) {
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage],
         virtualTourUrl: virtualTourUrl,
+        videoUrl: videoUrls[0] || null,
+        videoUrls: videoUrls,
+        createdAt: effectiveCreatedAt,
         technicalSpecs: cleanTechnicalSpecs
       };
     });
+
+    cleanProperties.sort(comparePropertiesByCreatedAtDesc);
 
     return { properties: cleanProperties, keys, error: null };
   } catch (listErr) {
@@ -1044,10 +1170,10 @@ export default async (req, context) => {
   let source = "default";
 
   if (blobResult.properties && blobResult.properties.length > 0) {
-    properties = blobResult.properties;
+    properties = [...blobResult.properties].sort(comparePropertiesByCreatedAtDesc);
     source = "netlify-blobs";
   } else {
-    properties = DEFAULT_PROPERTIES;
+    properties = [...DEFAULT_PROPERTIES].sort(comparePropertiesByCreatedAtDesc);
   }
 
   // Filtrovanie

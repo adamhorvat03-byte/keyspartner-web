@@ -1246,7 +1246,11 @@ const TOUR_PLATFORMS = [
   "matterport", "3drealitna", "momento360", "vieweet", "homestyler",
   "kuula", "insta360", "eyespy360", "lapentor", "cloudpano",
   "cupix", "theasys", "feelestate", "giraffe360", "mollyinvr",
-  "grandpano", "pivo", "tourwz", "istaging", "revio", "videoobhliadka"
+  "grandpano", "pivo", "tourwz", "istaging", "revio"
+];
+
+const VIDEO_PLATFORMS = [
+  "youtube", "vimeo", "videoobhliadka", "video", "mp4"
 ];
 
 const REALSOFT_ATTR_KEYS = [
@@ -1353,7 +1357,7 @@ function extractVirtualTourUrl(raw, descText, existingRecord, objectIdStr) {
       }
     }
     for (const [k, list] of Object.entries(mediasObj)) {
-      if (k === "youtube" || k === "vimeo") continue;
+      if (VIDEO_PLATFORMS.includes(String(k).toLowerCase())) continue;
       if (Array.isArray(list)) {
         for (const u of list) {
           if (typeof u === "string" && /^https?:\/\//i.test(u.trim())) candidates.push(u.trim());
@@ -1382,6 +1386,115 @@ function extractVirtualTourUrl(raw, descText, existingRecord, objectIdStr) {
   }
 
   return candidates.length > 0 ? candidates[0] : null;
+}
+
+function parseValidIsoDate(val) {
+  if (!val || typeof val !== "string") {
+    if (val instanceof Date && !isNaN(val.getTime())) return val.toISOString();
+    return null;
+  }
+  let normalized = val.trim();
+  if (!normalized) return null;
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized.replace(/\s+/, "T");
+  }
+  const ts = Date.parse(normalized);
+  if (isNaN(ts)) return null;
+  return new Date(ts).toISOString();
+}
+
+function normalizeMediasObject(raw, existingRecord) {
+  const incoming = (raw && raw.medias !== undefined)
+    ? raw.medias
+    : (raw && raw.media !== undefined ? raw.media : undefined);
+  let mediasObj = incoming !== undefined
+    ? incoming
+    : ((raw && raw.realsoftAttrs && raw.realsoftAttrs.medias) || (existingRecord && existingRecord.medias) || null);
+  if (typeof mediasObj === "string" && mediasObj.trim().startsWith("{")) {
+    try { mediasObj = JSON.parse(mediasObj); } catch (_e) {}
+  }
+  return (mediasObj && typeof mediasObj === "object" && !Array.isArray(mediasObj)) ? mediasObj : null;
+}
+
+function extractVideoUrls(raw, descText, existingRecord, resolvedMedias) {
+  const candidates = [];
+  const pushUrl = (u) => {
+    if (typeof u !== "string") return;
+    const cleaned = u.trim().replace(/[.,;!?)]+$/, "");
+    if (/^https?:\/\//i.test(cleaned)) {
+      candidates.push(cleaned);
+    }
+  };
+
+  // 1. RealSoft Export API v1 objekt `medias` (Bod 5.3: youtube, vimeo, videoobhliadka, atď.)
+  const mediasObj = resolvedMedias || normalizeMediasObject(raw, existingRecord);
+  if (mediasObj) {
+    for (const key of VIDEO_PLATFORMS) {
+      const list = mediasObj[key];
+      if (Array.isArray(list)) {
+        for (const item of list) {
+          if (typeof item === "string") pushUrl(item);
+          else if (item && typeof item.url === "string") pushUrl(item.url);
+        }
+      } else if (typeof list === "string") {
+        pushUrl(list);
+      }
+    }
+  }
+
+  // 2. Priame polia pre video URL
+  const directVideoFields = [
+    raw && raw.videoUrl, raw && raw.video_url, raw && raw.video,
+    raw && raw.youtube, raw && raw.youtube_url,
+    raw && raw.vimeo, raw && raw.vimeo_url,
+    raw && raw.marketingVideo, raw && raw.marketing_video
+  ];
+  for (const field of directVideoFields) {
+    if (Array.isArray(field)) {
+      field.forEach(item => {
+        if (typeof item === "string") pushUrl(item);
+        else if (item && typeof item.url === "string") pushUrl(item.url);
+      });
+    } else if (typeof field === "string") {
+      pushUrl(field);
+    }
+  }
+  if (raw && Array.isArray(raw.videos)) {
+    for (const item of raw.videos) {
+      if (typeof item === "string") pushUrl(item);
+      else if (item && typeof item.url === "string") pushUrl(item.url);
+    }
+  }
+
+  // 3. URL videa priamo v texte popisu (YouTube, Vimeo, MP4/WebM)
+  if (typeof descText === "string" && descText.length > 0) {
+    const videoRegex = /https?:\/\/(?:(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s"'<>]+|shorts\/[^\s"'<>]+|embed\/[^\s"'<>]+)|youtu\.be\/[^\s"'<>]+)|(?:player\.)?vimeo\.com\/(?:video\/)?\d+[^\s"'<>]*|[^\s"'<>]+\.(?:mp4|webm|mov)(?:\?[^\s"'<>]*)?)/gi;
+    const matches = descText.match(videoRegex) || [];
+    for (const m of matches) {
+      pushUrl(m);
+    }
+  }
+
+  // 4. Fallback na existujúci záznam len ak v prichádzajúcom exporte nebol objekt medias ani video polia
+  const hasIncomingMediaField = Boolean(
+    raw && (
+      raw.medias !== undefined ||
+      raw.media !== undefined ||
+      raw.videoUrl !== undefined ||
+      raw.video_url !== undefined ||
+      raw.videos !== undefined
+    )
+  );
+  if (candidates.length === 0 && !hasIncomingMediaField && existingRecord) {
+    if (Array.isArray(existingRecord.videoUrls)) {
+      existingRecord.videoUrls.forEach(pushUrl);
+    }
+    if (typeof existingRecord.videoUrl === "string") {
+      pushUrl(existingRecord.videoUrl);
+    }
+  }
+
+  return Array.from(new Set(candidates));
 }
 
 function extractUtilitiesFromRaw(src) {
@@ -2017,6 +2130,17 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
       }
 
       const realsoftAttrs = extractRawRealsoftAttrs(raw, existingRecord);
+      const resolvedMedias = normalizeMediasObject(raw, existingRecord);
+      const videoUrls = extractVideoUrls(raw, resolvedDesc, existingRecord, resolvedMedias);
+      const nowIso = new Date().toISOString();
+      const payloadCreatedAt = parseValidIsoDate(
+        raw.createdAt || raw.created_at || raw.date_created || raw.dateCreated ||
+        raw.published_at || raw.publishedAt || raw.added_at || raw.addedAt ||
+        (nestedData && (nestedData.created_at || nestedData.date_created))
+      );
+      const resolvedCreatedAt = existingRecord
+        ? (parseValidIsoDate(existingRecord.createdAt) || payloadCreatedAt || parseValidIsoDate(existingRecord.updatedAt) || nowIso)
+        : (payloadCreatedAt || nowIso);
 
       const propertyItem = {
         id: externalId,
@@ -2048,10 +2172,13 @@ async function saveOrDeleteListing(storeInfo, rawItem, actionOverride, postActio
         agentEmail: raw.agentEmail || raw.agent_email || raw.user_email || (raw.agent && raw.agent.email) || (raw.broker && raw.broker.email) || (raw.makler && raw.makler.email) || (existingRecord && existingRecord.agentEmail) || null,
         desc: resolvedDesc,
         virtualTourUrl: virtualTourUrl,
-        medias: raw.medias || (existingRecord && existingRecord.medias) || null,
+        videoUrl: videoUrls[0] || null,
+        videoUrls: videoUrls,
+        medias: resolvedMedias,
         realsoftAttrs: realsoftAttrs,
         technicalSpecs: computedTechnicalSpecs,
-        updatedAt: new Date().toISOString()
+        createdAt: resolvedCreatedAt,
+        updatedAt: nowIso
       };
 
       if (typeof storeInfo.store.setJSON === "function") {

@@ -716,6 +716,9 @@ async function loadPropertiesFromApi() {
                     p.isReserved = true;
                 }
                 p.virtualTourUrl = resolvePropertyVirtualTourUrl(p);
+                p.videoUrls = resolvePropertyVideoUrls(p);
+                p.videoUrl = p.videoUrls[0] || null;
+                p.createdAt = p.createdAt || p.created_at || p.dateCreated || p.date_created || p.publishedAt || p.published_at || p.addedAt || p.added_at || p.updatedAt || null;
                 p.technicalSpecs = resolvePropertyTechnicalSpecs(p);
                 if (Array.isArray(p.tags)) {
                     if (p.virtualTourUrl) {
@@ -727,7 +730,7 @@ async function loadPropertiesFromApi() {
                     }
                 }
                 return p;
-            });
+            }).sort(comparePropertiesByCreatedAtDesc);
             renderListings();
             renderAgents();
             if (activeFilters.agentId) {
@@ -1248,6 +1251,8 @@ function renderListings() {
             items: []
         }
     ];
+
+    filtered.sort(comparePropertiesByCreatedAtDesc);
 
     filtered.forEach(prop => {
         const grpKey = getPropertyStatusGroup(prop);
@@ -1880,7 +1885,7 @@ function resolvePropertyVirtualTourUrl(prop) {
             "matterport", "3drealitna", "momento360", "vieweet", "homestyler",
             "kuula", "insta360", "eyespy360", "lapentor", "cloudpano",
             "cupix", "theasys", "feelestate", "giraffe360", "mollyinvr",
-            "grandpano", "pivo", "tourwz", "istaging", "revio", "videoobhliadka"
+            "grandpano", "pivo", "tourwz", "istaging", "revio"
         ];
         for (const k of platforms) {
             const list = mediasObj[k];
@@ -1910,6 +1915,189 @@ function resolvePropertyVirtualTourUrl(prop) {
     }
 
     return null;
+}
+
+function parseValidDateMs(val) {
+    if (!val) return 0;
+    if (val instanceof Date) return isNaN(val.getTime()) ? 0 : val.getTime();
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    if (typeof val !== "string") return 0;
+    let normalized = val.trim();
+    if (!normalized) return 0;
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+        normalized = normalized.replace(/\s+/, "T");
+    }
+    const ts = Date.parse(normalized);
+    return isNaN(ts) ? 0 : ts;
+}
+
+function getPropertyCreatedTimestamp(prop) {
+    if (!prop || typeof prop !== "object") return 0;
+    const candidates = [
+        prop.createdAt,
+        prop.created_at,
+        prop.dateCreated,
+        prop.date_created,
+        prop.publishedAt,
+        prop.published_at,
+        prop.addedAt,
+        prop.added_at,
+        prop.updatedAt,
+        prop.updated_at
+    ];
+    for (const c of candidates) {
+        const ms = parseValidDateMs(c);
+        if (ms > 0) return ms;
+    }
+    return 0;
+}
+
+function comparePropertiesByCreatedAtDesc(a, b) {
+    const tsA = getPropertyCreatedTimestamp(a);
+    const tsB = getPropertyCreatedTimestamp(b);
+    if (tsA !== tsB) return tsB - tsA;
+    if (tsA === 0 && tsB === 0) return 0;
+    const numA = parseInt(String(a && (a.objectId || a.id || "")).replace(/\D/g, ""), 10) || 0;
+    const numB = parseInt(String(b && (b.objectId || b.id || "")).replace(/\D/g, ""), 10) || 0;
+    if (numA !== numB) return numB - numA;
+    return String((b && b.id) || "").localeCompare(String((a && a.id) || ""));
+}
+
+function resolvePropertyVideoUrls(prop) {
+    if (!prop) return [];
+    const candidates = [];
+    const pushUrl = (u) => {
+        if (typeof u !== "string") return;
+        const cleaned = u.trim().replace(/[.,;!?)]+$/, "");
+        if (/^https?:\/\//i.test(cleaned)) {
+            candidates.push(cleaned);
+        }
+    };
+
+    if (Array.isArray(prop.videoUrls)) {
+        prop.videoUrls.forEach(pushUrl);
+    }
+
+    let mediasObj = prop.medias || prop.media || (prop.realsoftAttrs && prop.realsoftAttrs.medias);
+    if (typeof mediasObj === "string" && mediasObj.trim().startsWith("{")) {
+        try { mediasObj = JSON.parse(mediasObj); } catch (_e) {}
+    }
+    if (mediasObj && typeof mediasObj === "object" && !Array.isArray(mediasObj)) {
+        const videoKeys = ["youtube", "vimeo", "videoobhliadka", "video", "mp4"];
+        for (const k of videoKeys) {
+            const list = mediasObj[k];
+            if (Array.isArray(list)) {
+                list.forEach(u => {
+                    if (typeof u === "string") pushUrl(u);
+                    else if (u && typeof u.url === "string") pushUrl(u.url);
+                });
+            } else if (typeof list === "string") {
+                pushUrl(list);
+            }
+        }
+    }
+
+    const directCandidates = [
+        prop.videoUrl, prop.video_url, prop.video,
+        prop.youtube, prop.youtube_url,
+        prop.vimeo, prop.vimeo_url,
+        prop.marketingVideo, prop.marketing_video
+    ];
+    directCandidates.forEach(field => {
+        if (Array.isArray(field)) {
+            field.forEach(item => {
+                if (typeof item === "string") pushUrl(item);
+                else if (item && typeof item.url === "string") pushUrl(item.url);
+            });
+        } else if (typeof field === "string") {
+            pushUrl(field);
+        }
+    });
+    if (Array.isArray(prop.videos)) {
+        prop.videos.forEach(item => {
+            if (typeof item === "string") pushUrl(item);
+            else if (item && typeof item.url === "string") pushUrl(item.url);
+        });
+    }
+
+    const d = String(prop.desc || "");
+    if (d.length > 0) {
+        const videoRegex = /https?:\/\/(?:(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s"'<>]+|shorts\/[^\s"'<>]+|embed\/[^\s"'<>]+)|youtu\.be\/[^\s"'<>]+)|(?:player\.)?vimeo\.com\/(?:video\/)?\d+[^\s"'<>]*|[^\s"'<>]+\.(?:mp4|webm|mov)(?:\?[^\s"'<>]*)?)/gi;
+        const matches = d.match(videoRegex) || [];
+        matches.forEach(pushUrl);
+    }
+
+    return Array.from(new Set(candidates));
+}
+
+function parseVideoEmbedInfo(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== "string") return null;
+    const url = rawUrl.trim();
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./i, "").toLowerCase();
+
+        // YouTube (youtube.com/watch?v=..., youtu.be/..., youtube.com/shorts/..., youtube.com/embed/...)
+        let ytId = null;
+        if (host === "youtu.be") {
+            ytId = u.pathname.replace(/^\/+/, "").split("/")[0] || null;
+        } else if (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") {
+            if (u.pathname === "/watch") {
+                ytId = u.searchParams.get("v");
+            } else if (u.pathname.startsWith("/shorts/") || u.pathname.startsWith("/embed/") || u.pathname.startsWith("/live/")) {
+                ytId = u.pathname.split("/")[2] || null;
+            }
+        }
+        if (ytId) {
+            return {
+                type: "iframe",
+                embedUrl: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(ytId)}?rel=0`,
+                originalUrl: url,
+                label: "Otvoriť na YouTube"
+            };
+        }
+
+        // Vimeo (vimeo.com/123456 or vimeo.com/123456/hash or player.vimeo.com/video/123456)
+        if (host === "vimeo.com" || host === "player.vimeo.com") {
+            const parts = u.pathname.replace(/^\/+/, "").split("/").filter(Boolean);
+            let vimeoId = null;
+            let hashParam = u.searchParams.get("h") || "";
+            if (parts[0] === "video" && /^\d+$/.test(parts[1] || "")) {
+                vimeoId = parts[1];
+            } else if (/^\d+$/.test(parts[0] || "")) {
+                vimeoId = parts[0];
+                if (parts[1] && !hashParam) hashParam = parts[1];
+            } else {
+                const numericPart = parts.find(p => /^\d+$/.test(p));
+                if (numericPart) vimeoId = numericPart;
+            }
+            if (vimeoId) {
+                const hQuery = hashParam ? `?h=${encodeURIComponent(hashParam)}` : "";
+                return {
+                    type: "iframe",
+                    embedUrl: `https://player.vimeo.com/video/${encodeURIComponent(vimeoId)}${hQuery}`,
+                    originalUrl: url,
+                    label: "Otvoriť na Vimeo"
+                };
+            }
+        }
+    } catch (_e) {}
+
+    if (/\.(?:mp4|webm|ogg|mov)(?:[?#].*)?$/i.test(url)) {
+        return {
+            type: "video",
+            src: url,
+            originalUrl: url,
+            label: "Otvoriť video"
+        };
+    }
+
+    return {
+        type: "link",
+        href: url,
+        originalUrl: url,
+        label: "Spustiť video prezentáciu"
+    };
 }
 
 function resolvePropertyTechnicalSpecs(prop) {
@@ -1964,6 +2152,8 @@ function openPropertyModal(id) {
     const agent = getAgentForProperty(prop);
     const cleanSpecs = resolvePropertyTechnicalSpecs(prop);
     const virtualTourUrl = resolvePropertyVirtualTourUrl(prop);
+    const videoUrls = resolvePropertyVideoUrls(prop);
+    const primaryVideoUrl = videoUrls[0] || null;
     
     let priceFormatted = "";
     if (prop.priceCustom && typeof prop.priceCustom === "string") {
@@ -2019,12 +2209,19 @@ function openPropertyModal(id) {
         `;
     }
     
-    // Miniatúry fotogalérie (odfiltrovanie fotografií maklérov)
+    // Miniatúry fotogalérie (odfiltrovanie fotografií maklérov) + rýchly odkaz na video
     const images = getSafePropertyImages(prop);
     let thumbnailsHtml = "";
-    if (images.length > 1) {
+    if (images.length > 1 || videoUrls.length > 0) {
+        const videoThumbHtml = primaryVideoUrl
+            ? `<button class="modal-thumb-btn modal-thumb-video" id="modalThumbVideoBtn" type="button" aria-label="Prejsť na video prezentáciu" title="Prehrať marketingové video">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Video</span>
+                </button>`
+            : "";
         thumbnailsHtml = `
             <div class="modal-thumbnails" id="modalThumbnails">
+                ${videoThumbHtml}
                 ${images.map((img, idx) => `
                     <button class="modal-thumb-btn ${idx === 0 ? 'active' : ''}" data-idx="${idx}" type="button" aria-label="Fotografia ${idx + 1}">
                         <img src="${img}" alt="Náhľad ${idx + 1}" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
@@ -2057,17 +2254,17 @@ function openPropertyModal(id) {
         `;
     }
 
-    // Tlačidlá na 3D obhliadku (zobrazia sa iba ak je k nehnuteľnosti priložený link na 3D obhliadku)
+    // Tlačidlá na 3D prehliadku (zobrazia sa iba ak je k nehnuteľnosti priložený link na 3D obhliadku)
     const galleryTourBadgeHtml = virtualTourUrl
-        ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="modal-gallery-3d-btn" title="Otvoriť 3D obhliadku v novom okne">
-             <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+        ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="modal-gallery-3d-btn" title="Otvoriť 3D prehliadku v novom okne">
+             <i class="fa-solid fa-vr-cardboard"></i> 3D Prehliadka
            </a>`
         : "";
 
     const mainTourBannerHtml = virtualTourUrl
         ? `<div class="modal-main-tour-wrap">
              <a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-main-tour-btn">
-                 <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+                 <i class="fa-solid fa-vr-cardboard"></i> Klik pre 3D virtuálnu prehliadku
                  <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.82em; margin-left: 4px;"></i>
              </a>
            </div>`
@@ -2075,10 +2272,57 @@ function openPropertyModal(id) {
 
     const tourButtonHtml = virtualTourUrl
         ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-tour-btn">
-             <i class="fa-solid fa-vr-cardboard"></i> 3D obhliadka
+             <i class="fa-solid fa-vr-cardboard"></i> Klik pre 3D virtuálnu prehliadku
              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.8em; margin-left: 4px;"></i>
            </a>`
         : "";
+
+    // Marketingové video z RealSoftu (zobrazuje sa hneď pod galériou / titulkom a tlačidlom 3D prehliadky)
+    let videoSectionHtml = "";
+    if (videoUrls.length > 0) {
+        const videoBlocksHtml = videoUrls.map((vUrl, vIdx) => {
+            const info = parseVideoEmbedInfo(vUrl);
+            if (!info) return "";
+            const headerTitle = videoUrls.length > 1
+                ? `Video prezentácia nehnuteľnosti #${vIdx + 1}`
+                : "Video prezentácia nehnuteľnosti";
+            let playerBodyHtml = "";
+            if (info.type === "iframe") {
+                playerBodyHtml = `
+                    <div class="modal-video-frame-wrap">
+                        <iframe src="${info.embedUrl}" title="${prop.title} - Video prezentácia" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                `;
+            } else if (info.type === "video") {
+                playerBodyHtml = `
+                    <div class="modal-video-frame-wrap">
+                        <video src="${info.src}" controls playsinline preload="metadata"></video>
+                    </div>
+                `;
+            } else {
+                playerBodyHtml = `
+                    <a href="${info.href}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-video-fallback-btn">
+                        <i class="fa-solid fa-circle-play"></i> ${info.label}
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.82em; margin-left: 4px;"></i>
+                    </a>
+                `;
+            }
+            return `
+                <div class="modal-video-item">
+                    <div class="modal-video-header">
+                        <div class="modal-video-title"><i class="fa-solid fa-circle-play"></i> ${headerTitle}</div>
+                        <a href="${info.originalUrl}" target="_blank" rel="noopener noreferrer" class="modal-video-ext-link">
+                            ${info.label} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                    ${playerBodyHtml}
+                </div>
+            `;
+        }).filter(Boolean).join("");
+        if (videoBlocksHtml) {
+            videoSectionHtml = `<div class="modal-video-section" id="modalVideoSection">${videoBlocksHtml}</div>`;
+        }
+    }
 
     // Štítok stavu na hlavnej fotografii
     let badgeLabel = prop.deal === "prenajom" ? "Na prenájom" : "Na predaj";
@@ -2173,6 +2417,7 @@ function openPropertyModal(id) {
                 <div class="modal-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
                 
                 ${mainTourBannerHtml}
+                ${videoSectionHtml}
 
                 <div class="modal-specs-grid">
                     ${specsBoxHtml}
@@ -2206,6 +2451,15 @@ function openPropertyModal(id) {
     const thumbBtns = modalBody.querySelectorAll(".modal-thumb-btn");
     const mainImg = document.getElementById("modalMainImg");
     thumbBtns.forEach(btn => {
+        if (btn.id === "modalThumbVideoBtn") {
+            btn.addEventListener("click", () => {
+                const videoSec = document.getElementById("modalVideoSection");
+                if (videoSec) {
+                    videoSec.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            });
+            return;
+        }
         btn.addEventListener("click", () => {
             const idx = parseInt(btn.getAttribute("data-idx"), 10);
             if (!isNaN(idx) && images[idx] && mainImg) {
@@ -2312,7 +2566,14 @@ function openPropertyModal(id) {
 
 function closePropertyModal() {
     const modal = document.getElementById("propertyModal");
-    modal.classList.remove("active");
+    const modalBody = document.getElementById("modalBody");
+    if (modalBody) {
+        modalBody.querySelectorAll("video").forEach(v => {
+            try { v.pause(); } catch (_e) {}
+        });
+        modalBody.innerHTML = "";
+    }
+    if (modal) modal.classList.remove("active");
     document.body.style.overflow = "";
 }
 

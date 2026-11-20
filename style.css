@@ -40,7 +40,7 @@
     --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.08);
     --shadow-glow: 0 0 25px rgba(181, 137, 32, 0.08);
     
-    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.72) 26%, rgba(248, 250, 252, 0.16) 55%, rgba(248, 250, 252, 0.65) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.86) 0%, rgba(248, 250, 252, 0.64) 20%, rgba(248, 250, 252, 0.14) 34%, rgba(248, 250, 252, 0) 44%, rgba(248, 250, 252, 0) 100%);
     --card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
     
     --brand-yellow: #B58920; 
@@ -67,7 +67,7 @@ html[data-theme="dark"] {
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 0 25px rgba(223, 186, 115, 0.15);
     
-    --hero-overlay: linear-gradient(180deg, rgba(5, 8, 15, 0.90) 0%, rgba(5, 8, 15, 0.70) 26%, rgba(5, 8, 15, 0.18) 55%, rgba(5, 8, 15, 0.65) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(5, 8, 15, 0.84) 0%, rgba(5, 8, 15, 0.58) 20%, rgba(5, 8, 15, 0.12) 36%, rgba(5, 8, 15, 0) 48%, rgba(5, 8, 15, 0) 100%);
     --card-gradient: linear-gradient(180deg, rgba(22, 31, 52, 0) 0%, rgba(11, 16, 32, 0.5) 100%);
     
     --brand-yellow: #DFBA73; 
@@ -94,7 +94,7 @@ html[data-theme="light"] {
     --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.08);
     --shadow-glow: 0 0 25px rgba(181, 137, 32, 0.08);
     
-    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(248, 250, 252, 0.72) 26%, rgba(248, 250, 252, 0.16) 55%, rgba(248, 250, 252, 0.65) 100%);
+    --hero-overlay: linear-gradient(180deg, rgba(248, 250, 252, 0.86) 0%, rgba(248, 250, 252, 0.64) 20%, rgba(248, 250, 252, 0.14) 34%, rgba(248, 250, 252, 0) 44%, rgba(248, 250, 252, 0) 100%);
     --card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
     
     --brand-yellow: #B58920; 
@@ -3112,8 +3112,8 @@ img {
     color: #05080f !important;
     font-size: 0.82rem;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    text-transform: none;
+    letter-spacing: 0.02em;
     padding: 7px 14px;
     border-radius: 8px;
     text-decoration: none;
@@ -3143,6 +3143,91 @@ img {
     gap: 10px;
     text-decoration: none;
     transition: var(--transition);
+}
+
+/* Marketingové video z RealSoftu */
+.modal-video-section {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal-video-item {
+    background-color: #050813;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.modal-video-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.modal-video-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.modal-video-title i {
+    color: var(--brand-yellow);
+    font-size: 1.05rem;
+}
+
+.modal-video-ext-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-yellow);
+    text-decoration: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-video-ext-link:hover {
+    color: #f3d474;
+    text-decoration: underline;
+}
+
+.modal-video-frame-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-video-frame-wrap iframe,
+.modal-video-frame-wrap video {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+.modal-video-fallback-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .modal-title-row {
@@ -3292,6 +3377,8 @@ img {
     border-radius: 12px;
     font-weight: 700;
     font-size: 0.92rem;
+    line-height: 1.3;
+    text-align: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3524,6 +3611,36 @@ img {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.modal-thumb-video {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: linear-gradient(135deg, #161f34 0%, #0b1020 100%);
+    border: 1.5px solid rgba(212, 175, 55, 0.55);
+    color: var(--brand-yellow);
+    opacity: 0.95;
+}
+
+.modal-thumb-video i {
+    font-size: 0.85rem;
+}
+
+.modal-thumb-video span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.modal-thumb-video:hover {
+    border-color: var(--brand-yellow);
+    background: linear-gradient(135deg, #1f2b47 0%, #111930 100%);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
 }
 
 /* --- Tabuľka technických parametrov --- */
