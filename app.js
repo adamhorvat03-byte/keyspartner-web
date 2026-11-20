@@ -2277,13 +2277,6 @@ function openPropertyModal(id) {
            </div>`
         : "";
 
-    const tourButtonHtml = virtualTourUrl
-        ? `<a href="${virtualTourUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-tour-active modal-tour-btn">
-             <i class="fa-solid fa-vr-cardboard"></i> Klik pre 3D virtuálnu prehliadku
-             <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.8em; margin-left: 4px;"></i>
-           </a>`
-        : "";
-
     // Marketingové video z RealSoftu (zobrazuje sa hneď pod galériou / titulkom a tlačidlom 3D prehliadky)
     let videoSectionHtml = "";
     if (videoUrls.length > 0) {
@@ -2442,7 +2435,6 @@ function openPropertyModal(id) {
                 <div class="modal-price-card">
                     <div class="modal-price-lbl">Ponuková cena</div>
                     <div class="modal-price-val">${priceFormatted}</div>
-                    ${tourButtonHtml}
                 </div>
                 
                 ${agentSidebarHtml}
