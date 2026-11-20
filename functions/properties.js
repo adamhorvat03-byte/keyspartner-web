@@ -1101,7 +1101,7 @@ async function fetchBlobsProperties(storeInfo) {
       }
 
       const objectIdStr = String(p.objectId || idStr.replace(/^RS-/, "")).trim();
-      const virtualTourUrl = extractVirtualTourUrl(p, p.desc, objectIdStr);
+      const virtualTourUrl = statusVal === "sold" ? null : extractVirtualTourUrl(p, p.desc, objectIdStr);
       const videoUrls = extractVideoUrls(p, p.desc);
       const effectiveCreatedAt = getEffectiveCreatedAt(p);
       const cleanTechnicalSpecs = buildTechnicalSpecs(p, p.type, p.desc, p.technicalSpecs, objectIdStr);
@@ -1111,7 +1111,7 @@ async function fetchBlobsProperties(storeInfo) {
           finalTags.push("3D PREHLIADKA");
         }
       } else {
-        finalTags = finalTags.filter(t => String(t).trim().toUpperCase() !== "3D PREHLIADKA");
+        finalTags = finalTags.filter(t => !String(t).toUpperCase().includes("3D"));
       }
 
       return {

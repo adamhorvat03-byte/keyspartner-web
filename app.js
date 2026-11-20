@@ -715,18 +715,19 @@ async function loadPropertiesFromApi() {
                     p.status = "reserved";
                     p.isReserved = true;
                 }
-                p.virtualTourUrl = resolvePropertyVirtualTourUrl(p);
+                const isSoldProp = p.status === "sold" || p.isSold === true || isPropertySoldOrCompleted(p);
+                p.virtualTourUrl = isSoldProp ? null : resolvePropertyVirtualTourUrl(p);
                 p.videoUrls = resolvePropertyVideoUrls(p);
                 p.videoUrl = p.videoUrls[0] || null;
                 p.createdAt = p.createdAt || p.created_at || p.dateCreated || p.date_created || p.publishedAt || p.published_at || p.addedAt || p.added_at || p.updatedAt || null;
                 p.technicalSpecs = resolvePropertyTechnicalSpecs(p);
                 if (Array.isArray(p.tags)) {
-                    if (p.virtualTourUrl) {
+                    if (!isSoldProp && p.virtualTourUrl) {
                         if (!p.tags.some(t => String(t).toUpperCase().includes("3D"))) {
                             p.tags.push("3D PREHLIADKA");
                         }
                     } else {
-                        p.tags = p.tags.filter(t => String(t).trim().toUpperCase() !== "3D PREHLIADKA");
+                        p.tags = p.tags.filter(t => !String(t).toUpperCase().includes("3D"));
                     }
                 }
                 return p;
@@ -1026,8 +1027,11 @@ function createPropertyCardElement(prop) {
     let cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
 
     if (grp === "sold") {
-        // Pre kategóriu Sprostredkované odstránime zavádzajúci štítok "PREDAJ" a pridáme zelené štítky
-        cleanTags = cleanTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        // Pre kategóriu Sprostredkované odstránime zavádzajúci štítok "PREDAJ" a štítok 3D prehliadky, a pridáme zelené štítky
+        cleanTags = cleanTags.filter(t => {
+            const up = String(t).trim().toUpperCase();
+            return up !== "PREDAJ" && !up.includes("3D");
+        });
         const isRent = String(prop.deal).includes("prenaj") || /prenaj|n[aá]jm/i.test(`${prop.title || ""} ${prop.status || ""}`);
         const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
         if (!cleanTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) {
@@ -1856,6 +1860,9 @@ function getPropertyObjectIdStr(prop) {
 
 function resolvePropertyVirtualTourUrl(prop) {
     if (!prop) return null;
+    if (prop.status === "sold" || prop.isSold === true || isPropertySoldOrCompleted(prop)) {
+        return null;
+    }
     const directCandidates = [
         prop.virtualTourUrl, prop.virtual_tour_url, prop.virtualTour, prop.virtual_tour,
         prop.tourUrl, prop.tour_url, prop.url_3d, prop["3d_url"], prop.matterport,
@@ -2151,7 +2158,7 @@ function openPropertyModal(id) {
     // Priradenie správneho makléra podľa dát z Realsoftu
     const agent = getAgentForProperty(prop);
     const cleanSpecs = resolvePropertyTechnicalSpecs(prop);
-    const virtualTourUrl = resolvePropertyVirtualTourUrl(prop);
+    const virtualTourUrl = isSold ? null : resolvePropertyVirtualTourUrl(prop);
     const videoUrls = resolvePropertyVideoUrls(prop);
     const primaryVideoUrl = videoUrls[0] || null;
     
