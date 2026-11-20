@@ -265,14 +265,14 @@ const AGENTS = [
         role: "Realitný maklér",
         phone: "+421 949 424 377",
         email: "samuel_hrivnak@keyspartners.sk",
-        image: "samuel.jpg"
+        image: "samuel.webp"
     },
     {
         id: 5,
         name: "Bc. Adam HORVÁT",
         role: "Marketing / Fin. sprostredkovateľ",
-        phone: "+421 915 865 664",
-        email: "dbre_obchod@keyspartners.sk",
+        phone: null,
+        email: "dbre_marketing@keyspartners.sk",
         image: "adam.webp",
         imagePosition: "center 0%"
     },
@@ -282,7 +282,7 @@ const AGENTS = [
         role: "Inžiniering",
         phone: "+421 917 817 207",
         email: "peter_pella@keyspartners.sk",
-        image: "pella.jpg"
+        image: "pella.webp"
     }
 ];
 
@@ -799,10 +799,12 @@ function isAgentPhoto(url) {
         lower.includes("portrait") ||
         lower.includes("face") ||
         lower.endsWith("pella.jpg") ||
+        lower.endsWith("pella.webp") ||
         lower.endsWith("duda.jpg") ||
         lower.endsWith("brano.jpg") ||
         lower.endsWith("brano.webp") ||
         lower.endsWith("samuel.jpg") ||
+        lower.endsWith("samuel.webp") ||
         lower.endsWith("adam.webp")
     );
 }
@@ -1498,9 +1500,27 @@ function renderAgents() {
         const card = document.createElement("div");
         card.className = "agent-card";
         
-        const telHref = agent.phone.startsWith("+") 
-            ? agent.phone.replace(/\s/g, '') 
-            : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
+        const phoneText = agent.phone ? String(agent.phone).trim() : "";
+        const emailText = agent.email ? String(agent.email).trim() : "";
+
+        const telHref = phoneText
+            ? (phoneText.startsWith("+")
+                ? phoneText.replace(/\s/g, "")
+                : "+421" + phoneText.replace(/^0/, "").replace(/\s/g, ""))
+            : "";
+
+        const phoneLinkHtml = phoneText
+            ? `<a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${phoneText}</a>`
+            : "";
+        const emailLinkHtml = emailText
+            ? `<a href="mailto:${emailText}"><i class="fa-solid fa-envelope"></i> ${emailText}</a>`
+            : "";
+        const contactItemsHtml = [phoneLinkHtml, emailLinkHtml].filter(Boolean).join("\n                    ");
+        const contactHtml = contactItemsHtml
+            ? `<div class="agent-contact">
+                    ${contactItemsHtml}
+                </div>`
+            : "";
         
         const imgStyle = agent.imagePosition ? ` style="object-position: ${agent.imagePosition};"` : "";
         const imgWrapperHtml = agent.image
@@ -1518,10 +1538,7 @@ function renderAgents() {
             <div class="agent-info">
                 <h3>${agent.name}</h3>
                 <div class="agent-role">${roleHtml}</div>
-                <div class="agent-contact">
-                    <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
-                    <a href="mailto:${agent.email}"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
-                </div>
+                ${contactHtml}
             </div>
         `;
         grid.appendChild(card);
@@ -2078,9 +2095,29 @@ function openPropertyModal(id) {
     // Pravý bočný panel s maklérom (zobrazuje sa aj v sekcii Sprostredkované; pri predaných ponukách sa skryje iba dopytový formulár)
     let agentSidebarHtml = "";
     if (agent) {
-        const telHref = agent.phone.startsWith("+") 
-            ? agent.phone.replace(/\s/g, '') 
-            : "+421" + agent.phone.replace(/^0/, '').replace(/\s/g, '');
+        const phoneText = agent.phone ? String(agent.phone).trim() : "";
+        const emailText = agent.email ? String(agent.email).trim() : "";
+        const telHref = phoneText
+            ? (phoneText.startsWith("+")
+                ? phoneText.replace(/\s/g, "")
+                : "+421" + phoneText.replace(/^0/, "").replace(/\s/g, ""))
+            : "";
+        const phoneItemHtml = phoneText
+            ? `<div class="modal-agent-contact-item">
+                        <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${phoneText}</a>
+                    </div>`
+            : "";
+        const emailItemHtml = emailText
+            ? `<div class="modal-agent-contact-item">
+                        <a href="mailto:${emailText}" class="text-gold"><i class="fa-solid fa-envelope"></i> ${emailText}</a>
+                    </div>`
+            : "";
+        const contactItemsHtml = [phoneItemHtml, emailItemHtml].filter(Boolean).join("\n                    ");
+        const modalContactHtml = contactItemsHtml
+            ? `<div class="modal-agent-contact">
+                    ${contactItemsHtml}
+                </div>`
+            : "";
         agentSidebarHtml = `
             <div class="modal-agent-card">
                 <h4>Vzťahový manažér</h4>
@@ -2094,18 +2131,11 @@ function openPropertyModal(id) {
                         <div class="modal-agent-role">${agent.role.includes("Fin. sprostredkovateľ") ? `<span class="role-full">${agent.role}</span><span class="role-short">${agent.role.replace("Fin. sprostredkovateľ", "Fin. sprostred.")}</span>` : agent.role}</div>
                     </div>
                 </div>
-                <div class="modal-agent-contact">
-                    <div class="modal-agent-contact-item">
-                        <a href="tel:${telHref}"><i class="fa-solid fa-phone"></i> ${agent.phone}</a>
-                    </div>
-                    <div class="modal-agent-contact-item">
-                        <a href="mailto:${agent.email}" class="text-gold"><i class="fa-solid fa-envelope"></i> ${agent.email}</a>
-                    </div>
-                </div>
+                ${modalContactHtml}
                 ${!isSold ? `
                 <form id="modalContactForm" class="modal-compact-form">
                     <input type="hidden" name="propId" value="${prop.internalId || prop.externalId || prop.id}">
-                    <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${agent.email}">
+                    <input type="hidden" id="modalAgentEmail" name="agentEmail" value="${emailText}">
                     <input type="hidden" id="modalAgentName" name="agentName" value="${agent.name}">
                     <div class="form-group">
                         <input type="text" id="modalClientName" placeholder="Vaše meno" required class="modal-compact-input">
