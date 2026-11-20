@@ -304,6 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initTheme();
     initHeroSlider(); // Automatický background slider v hero sekcii (každé 4s)
     initAboutModal(); // Modálne okná pre sekciu O nás / Kto sme / Desatoro / Etický kódex
+    initPhotoLightbox(); // Celoobrazovkový prehliadač fotografií nehnuteľností
     renderListings();
     renderAgents();
     initScrollReveal(); // Spustenie animácií pri skrollovaní
@@ -2407,7 +2408,10 @@ function openPropertyModal(id) {
                 <div class="modal-gallery" id="modalGallery">
                     <span class="badge ${badgeClass} modal-gallery-badge">${badgeLabel}</span>
                     ${galleryTourBadgeHtml}
-                    <img src="${images[0]}" alt="${prop.title}" id="modalMainImg" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
+                    <img src="${images[0]}" alt="${prop.title}" id="modalMainImg" class="modal-gallery-clickable-img" title="Kliknutím zobrazíte fotografiu na celú obrazovku" onerror="if(this.src!=='${NEUTRAL_PROPERTY_PLACEHOLDER}')this.src='${NEUTRAL_PROPERTY_PLACEHOLDER}';">
+                    <button type="button" class="modal-gallery-zoom-btn" id="modalGalleryZoomBtn" aria-label="Zväčšiť fotografiu na celú obrazovku" title="Zobraziť na celú obrazovku">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
                 </div>
                 ${thumbnailsHtml}
                 
@@ -2446,9 +2450,26 @@ function openPropertyModal(id) {
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
     
-    // Udalosti miniatúr (prepínanie fotografií)
+    // Udalosti miniatúr (prepínanie fotografií) a otvorenie celoobrazovkového prehliadača
     const thumbBtns = modalBody.querySelectorAll(".modal-thumb-btn");
     const mainImg = document.getElementById("modalMainImg");
+    const zoomBtn = document.getElementById("modalGalleryZoomBtn");
+    let currentImageIndex = 0;
+
+    const setActiveGalleryPhoto = (idx) => {
+        const safeIdx = Number(idx);
+        if (!Number.isInteger(safeIdx) || safeIdx < 0 || safeIdx >= images.length) return;
+        currentImageIndex = safeIdx;
+        if (mainImg) {
+            mainImg.src = images[safeIdx];
+        }
+        thumbBtns.forEach(b => {
+            if (b.id === "modalThumbVideoBtn") return;
+            const bIdx = parseInt(b.getAttribute("data-idx"), 10);
+            b.classList.toggle("active", bIdx === safeIdx);
+        });
+    };
+
     thumbBtns.forEach(btn => {
         if (btn.id === "modalThumbVideoBtn") {
             btn.addEventListener("click", () => {
@@ -2461,13 +2482,27 @@ function openPropertyModal(id) {
         }
         btn.addEventListener("click", () => {
             const idx = parseInt(btn.getAttribute("data-idx"), 10);
-            if (!isNaN(idx) && images[idx] && mainImg) {
-                mainImg.src = images[idx];
-                thumbBtns.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
+            if (!isNaN(idx) && images[idx]) {
+                setActiveGalleryPhoto(idx);
             }
         });
     });
+
+    const triggerLightboxOpen = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (images.length > 0) {
+            openPhotoLightbox(images, currentImageIndex, prop.title, setActiveGalleryPhoto);
+        }
+    };
+    if (mainImg) {
+        mainImg.addEventListener("click", triggerLightboxOpen);
+    }
+    if (zoomBtn) {
+        zoomBtn.addEventListener("click", triggerLightboxOpen);
+    }
 
     // Udalosť kliknutia na makléra pre vyfiltrovanie jeho aktívneho portfólia (Požiadavka 3)
     const agentTrigger = document.getElementById("modalAgentProfileTrigger");
@@ -2564,6 +2599,9 @@ function openPropertyModal(id) {
 }
 
 function closePropertyModal() {
+    if (isPhotoLightboxOpen()) {
+        closePhotoLightbox();
+    }
     const modal = document.getElementById("propertyModal");
     const modalBody = document.getElementById("modalBody");
     if (modalBody) {
@@ -2574,6 +2612,204 @@ function closePropertyModal() {
     }
     if (modal) modal.classList.remove("active");
     document.body.style.overflow = "";
+}
+
+// ==========================================
+// CELOOBRAZOVKOVÝ PREHLIADAČ FOTOGRAFIÍ (LIGHTBOX)
+// ==========================================
+const photoLightboxState = {
+    images: [],
+    index: 0,
+    title: "",
+    onChange: null,
+    initialized: false,
+    touchStartX: null,
+    touchStartY: null,
+    suppressStageClickUntil: 0
+};
+
+function isPhotoLightboxOpen() {
+    const lightbox = document.getElementById("photoLightbox");
+    return Boolean(lightbox && lightbox.classList.contains("active"));
+}
+
+function renderPhotoLightbox() {
+    const total = photoLightboxState.images.length;
+    if (total === 0) return;
+
+    photoLightboxState.index = ((photoLightboxState.index % total) + total) % total;
+    const currentSrc = photoLightboxState.images[photoLightboxState.index];
+
+    const imgEl = document.getElementById("lightboxImg");
+    const counterEl = document.getElementById("lightboxCounter");
+    const prevBtn = document.getElementById("lightboxPrev");
+    const nextBtn = document.getElementById("lightboxNext");
+
+    if (imgEl) {
+        imgEl.onerror = () => {
+            if (imgEl.src && imgEl.src !== NEUTRAL_PROPERTY_PLACEHOLDER) {
+                imgEl.src = NEUTRAL_PROPERTY_PLACEHOLDER;
+            }
+        };
+        imgEl.src = currentSrc;
+        imgEl.alt = photoLightboxState.title
+            ? `${photoLightboxState.title} - fotografia ${photoLightboxState.index + 1} z ${total}`
+            : `Fotografia ${photoLightboxState.index + 1} z ${total}`;
+    }
+
+    if (counterEl) {
+        counterEl.textContent = `${photoLightboxState.index + 1} / ${total}`;
+    }
+
+    const singlePhoto = total <= 1;
+    if (prevBtn) {
+        prevBtn.hidden = singlePhoto;
+        prevBtn.disabled = singlePhoto;
+    }
+    if (nextBtn) {
+        nextBtn.hidden = singlePhoto;
+        nextBtn.disabled = singlePhoto;
+    }
+}
+
+function openPhotoLightbox(images, startIndex = 0, title = "", onChange = null) {
+    const validImages = Array.isArray(images) ? images.filter(Boolean) : [];
+    if (validImages.length === 0) return;
+
+    if (!photoLightboxState.initialized) {
+        initPhotoLightbox();
+    }
+
+    const parsedIndex = parseInt(startIndex, 10);
+    const safeStart = !isNaN(parsedIndex)
+        ? Math.max(0, Math.min(parsedIndex, validImages.length - 1))
+        : 0;
+
+    photoLightboxState.images = validImages;
+    photoLightboxState.index = safeStart;
+    photoLightboxState.title = title || "";
+    photoLightboxState.onChange = typeof onChange === "function" ? onChange : null;
+
+    renderPhotoLightbox();
+
+    const lightbox = document.getElementById("photoLightbox");
+    if (lightbox) {
+        lightbox.classList.add("active");
+        lightbox.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+    }
+}
+
+function navigatePhotoLightbox(delta) {
+    if (!isPhotoLightboxOpen() || photoLightboxState.images.length <= 1) return;
+    const total = photoLightboxState.images.length;
+    photoLightboxState.index = (photoLightboxState.index + delta + total) % total;
+    renderPhotoLightbox();
+    if (typeof photoLightboxState.onChange === "function") {
+        photoLightboxState.onChange(photoLightboxState.index);
+    }
+}
+
+function closePhotoLightbox() {
+    const lightbox = document.getElementById("photoLightbox");
+    const imgEl = document.getElementById("lightboxImg");
+    if (lightbox) {
+        lightbox.classList.remove("active");
+        lightbox.setAttribute("aria-hidden", "true");
+    }
+    if (imgEl) {
+        imgEl.onerror = null;
+        imgEl.src = "";
+    }
+    photoLightboxState.onChange = null;
+    photoLightboxState.touchStartX = null;
+    photoLightboxState.touchStartY = null;
+
+    const anyModalActive = Boolean(document.querySelector(".modal.active"));
+    document.body.style.overflow = anyModalActive ? "hidden" : "";
+}
+
+function initPhotoLightbox() {
+    if (photoLightboxState.initialized) return;
+    photoLightboxState.initialized = true;
+
+    const closeBtn = document.getElementById("lightboxClose");
+    const backdrop = document.getElementById("lightboxBackdrop");
+    const stage = document.getElementById("lightboxStage");
+    const prevBtn = document.getElementById("lightboxPrev");
+    const nextBtn = document.getElementById("lightboxNext");
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closePhotoLightbox();
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener("click", closePhotoLightbox);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            navigatePhotoLightbox(-1);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            navigatePhotoLightbox(1);
+        });
+    }
+
+    if (stage) {
+        stage.addEventListener("click", (e) => {
+            if (Date.now() < photoLightboxState.suppressStageClickUntil) return;
+            if (e.target === stage) {
+                closePhotoLightbox();
+            }
+        });
+
+        stage.addEventListener("touchstart", (e) => {
+            if (e.touches.length !== 1) {
+                photoLightboxState.touchStartX = null;
+                photoLightboxState.touchStartY = null;
+                return;
+            }
+            photoLightboxState.touchStartX = e.touches[0].clientX;
+            photoLightboxState.touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        stage.addEventListener("touchend", (e) => {
+            if (photoLightboxState.touchStartX === null || e.changedTouches.length === 0) return;
+            const dx = e.changedTouches[0].clientX - photoLightboxState.touchStartX;
+            const dy = e.changedTouches[0].clientY - photoLightboxState.touchStartY;
+            photoLightboxState.touchStartX = null;
+            photoLightboxState.touchStartY = null;
+
+            if (Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy)) {
+                photoLightboxState.suppressStageClickUntil = Date.now() + 300;
+                navigatePhotoLightbox(dx < 0 ? 1 : -1);
+            }
+        }, { passive: true });
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (!isPhotoLightboxOpen()) return;
+        if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            closePhotoLightbox();
+        } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            navigatePhotoLightbox(-1);
+        } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            navigatePhotoLightbox(1);
+        }
+    });
 }
 
 // --- Simulátor 3D Panoramatickej Obhliadky ---
@@ -2754,7 +2990,9 @@ function setupEventListeners() {
     document.getElementById("modalClose").addEventListener("click", closePropertyModal);
     document.getElementById("modalBackdrop").addEventListener("click", closePropertyModal);
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closePropertyModal();
+        if (e.key === "Escape" && !e.defaultPrevented && !isPhotoLightboxOpen()) {
+            closePropertyModal();
+        }
     });
 
     // --- Filtrovanie podľa Tabs (kategórie) ---
