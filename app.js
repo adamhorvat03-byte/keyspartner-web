@@ -709,20 +709,36 @@ async function loadPropertiesFromApi() {
                         p.rooms = parseInt(mRooms[1], 10);
                     }
                 }
-                if (isPropertySoldOrCompleted(p)) {
-                    p.status = "sold";
-                    p.isReserved = false;
-                } else if (isPropertyReserved(p)) {
-                    p.status = "reserved";
-                    p.isReserved = true;
-                }
-                const isSoldProp = p.status === "sold" || p.isSold === true || isPropertySoldOrCompleted(p);
+                const resolvedStatus = resolvePropertyStatus(p);
+                p.status = resolvedStatus;
+                p.substatus = resolvedStatus === "sold" ? "predane" : (resolvedStatus === "reserved" ? "rezervovany" : "volny");
+                p.isReserved = resolvedStatus === "reserved";
+                p.isSold = resolvedStatus === "sold";
+                p.statusLabel = getPropertyStatusLabel(p);
+
+                const isSoldProp = resolvedStatus === "sold";
                 p.virtualTourUrl = isSoldProp ? null : resolvePropertyVirtualTourUrl(p);
                 p.videoUrls = resolvePropertyVideoUrls(p);
                 p.videoUrl = p.videoUrls[0] || null;
                 p.createdAt = p.createdAt || p.created_at || p.dateCreated || p.date_created || p.publishedAt || p.published_at || p.addedAt || p.added_at || p.updatedAt || null;
                 p.technicalSpecs = resolvePropertyTechnicalSpecs(p);
                 if (Array.isArray(p.tags)) {
+                    if (resolvedStatus === "sold") {
+                        p.tags = p.tags.filter(t => {
+                            const up = String(t).trim().toUpperCase();
+                            return !["PREDAJ", "PRENÁJOM", "PRENAJOM", "REZERVOVANÉ", "REZERVOVANE"].includes(up) && !up.includes("3D");
+                        });
+                    } else if (resolvedStatus === "reserved") {
+                        p.tags = p.tags.filter(t => !["PREDAJ", "PREDANÉ", "PREDANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
+                        if (!p.tags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) {
+                            p.tags.unshift("REZERVOVANÉ");
+                        }
+                    } else {
+                        p.tags = p.tags.filter(t => !["PREDANÉ", "PREDANE", "PRENAJATÉ", "PRENAJATE", "REZERVOVANÉ", "REZERVOVANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
+                        if (p.tags.length === 0) {
+                            p.tags.push(p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ");
+                        }
+                    }
                     if (!isSoldProp && p.virtualTourUrl) {
                         if (!p.tags.some(t => String(t).toUpperCase().includes("3D"))) {
                             p.tags.push("3D PREHLIADKA");
@@ -861,97 +877,133 @@ function cleanTextForStatusCheck(str) {
         .trim();
 }
 
-// --- Detekcia ukončených obchodov (Sprostredkované: predané, prenajaté, v nájme, sprostredkované) ---
-function isPropertySoldOrCompleted(item) {
-    if (!item) return false;
+// --- Jednotná autoritatívna funkcia pre určenie stavu dostupnosti (Voľná / Rezervovaná / Predaná) ---
+// Priorita: 1. explicitné polia stavu (Stav / Dostupnosť z RealSoftu), 2. sekundárne príznaky, 3. záložný nadpis/tagy.
+// Text "NA PREDAJ" v nadpise určuje len typ transakcie, nikdy nie nedostupnosť či rezerváciu.
+function resolvePropertyStatus(item) {
+    if (!item) return "active";
 
     const idStr = String(item.id || item.externalId || "").trim();
-    // Zabezpečenie okamžitého zaradenia pre konkrétnu zákazku 'PREDANÝ - Stavebný pozemok TIMEA'
-    if (idStr === "RS-3253858396" || idStr === "3253858396") {
-        return true;
+    const internalStr = String(item.internalId || "").trim();
+
+    // Jednorazová samoexpirujúca oprava pre pre-fix blob RS-2078570016 (ID: 09 08 77 00 09)
+    if (
+        (idStr === "RS-2078570016" || idStr === "2078570016" || internalStr === "09 08 77 00 09") &&
+        !item.statusSource &&
+        item.updatedAt === "2026-11-24T11:48:01.094Z"
+    ) {
+        return "active";
     }
 
+    // Zabezpečenie okamžitého zaradenia pre konkrétnu zákazku 'PREDANÝ - Stavebný pozemok TIMEA'
+    if (idStr === "RS-3253858396" || idStr === "3253858396") {
+        return "sold";
+    }
+
+    const soldWordRegex = /\s(predan[a-z]*|sprostredkovan[a-z]*|prenajat[a-z]*|sold|rented|zrealizovan[a-z]*)\b/i;
+    const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
+    const endSalePhraseRegex = /\spredaj\s+ukoncen/i;
+    const reservedWordRegex = /\s(rezervovan[a-z]*|reserved)\b/i;
+    const volnyRegex = /\s(voln[a-z]*|free|available|aktivn[a-z]*|active)\b/i;
+
+    // 1. Primárne explicitné polia stavu (zhodné s poľom Stav v detaile a v RealSoft Export API v1)
+    const primaryFields = [
+        item.realsoftStatus,
+        item.status,
+        item.stav,
+        item.stav_zakazky,
+        item.availability,
+        item.dostupnost,
+        item.dostupnosť,
+        item.statusLabel,
+        item.status_name,
+        item.deal_status,
+        item.dovod_ukoncenia
+    ].filter(v => v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "-");
+
+    const numRaw = item.realsoftStatus !== undefined && item.realsoftStatus !== null
+        ? Number(item.realsoftStatus)
+        : (item.status !== undefined && item.status !== null && /^\d+$/.test(String(item.status).trim()) ? Number(item.status) : NaN);
+    const primaryClean = " " + cleanTextForStatusCheck(primaryFields.join(" ")) + " ";
+
     if (
-        item.status === "sold" ||
-        item.status === "rented" ||
-        Number(item.status) === 4 ||
-        item.status === "4" ||
+        numRaw === 4 ||
+        numRaw === 9 ||
+        soldWordRegex.test(primaryClean) ||
+        rentPhraseRegex.test(primaryClean) ||
+        endSalePhraseRegex.test(primaryClean)
+    ) {
+        return "sold";
+    }
+
+    if (numRaw === 3 || reservedWordRegex.test(primaryClean)) {
+        return "reserved";
+    }
+
+    if (numRaw === 1 || volnyRegex.test(primaryClean)) {
+        return "active";
+    }
+
+    // 2. Sekundárny fallback (substatus, booleany, tagy, historický nadpis pre statické/staršie záznamy)
+    const subClean = " " + cleanTextForStatusCheck(item.substatus || "") + " ";
+    const titleText = `${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`;
+    const tagsText = Array.isArray(item.tags) ? item.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT").join(" ") : String(item.tags || "");
+    const fallbackCombined = `${item.substatus || ""} ${tagsText} ${titleText}`;
+    const fallbackClean = " " + cleanTextForStatusCheck(fallbackCombined) + " ";
+    const directSoldRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|prenajat[eéyýaáou]?|sold|rented|zrealizovan[eéyýaáou]?|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en)/i;
+    const directReservedRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(rezervovan[eéyýaáou]?|reserved)/i;
+
+    if (
         item.isSold === true ||
         item.is_sold === true ||
         item.is_rented === true ||
         item.sold === 1 ||
         item.sold === true ||
         item.rented === 1 ||
-        item.rented === true
+        item.rented === true ||
+        soldWordRegex.test(subClean) ||
+        soldWordRegex.test(fallbackClean) ||
+        rentPhraseRegex.test(fallbackClean) ||
+        endSalePhraseRegex.test(fallbackClean) ||
+        directSoldRegex.test(fallbackCombined)
     ) {
-        return true;
+        return "sold";
     }
-
-    const titleText = `${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`;
-    const statusText = `${item.status || ""} ${item.substatus || ""} ${item.stav || ""} ${item.stav_zakazky || ""} ${item.status_name || ""} ${item.deal_status || ""} ${item.dovod_ukoncenia || ""}`;
-    const tagsText = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
-    const combined = `${titleText} ${statusText} ${tagsText}`;
-
-    // 1. Kontrola na normalizovanom texte (bez úvodzoviek, interpunkcie a diakritiky)
-    const cleaned = " " + cleanTextForStatusCheck(combined) + " ";
-    const soldWordRegex = /\s(predan|sprostredkovan|prenajat|sold|rented|zrealizovan)/i;
-    const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
-    const endSalePhraseRegex = /\spredaj\s+ukoncen/i;
-
-    if (soldWordRegex.test(cleaned) || rentPhraseRegex.test(cleaned) || endSalePhraseRegex.test(cleaned)) {
-        return true;
-    }
-
-    // 2. Záložná kontrola na pôvodnom texte (ignorovanie akýchkoľvek obalujúcich úvodzoviek, pomlčiek a znakov)
-    const directSoldRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|prenajat[eéyýaáou]?|sold|rented|zrealizovan[eéyýaáou]?|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en)/i;
-    if (directSoldRegex.test(combined)) {
-        return true;
-    }
-
-    return false;
-}
-
-// --- Detekcia rezervovaných ponúk ---
-function isPropertyReserved(item) {
-    if (!item) return false;
-    if (isPropertySoldOrCompleted(item)) return false;
 
     if (
         item.isReserved === true ||
         item.is_reserved === true ||
         item.rezervovane === true ||
-        item.status === "reserved" ||
-        Number(item.status) === 3 ||
-        item.status === "3"
+        reservedWordRegex.test(subClean) ||
+        reservedWordRegex.test(fallbackClean) ||
+        directReservedRegex.test(fallbackCombined)
     ) {
-        return true;
+        return "reserved";
     }
 
-    const titleText = `${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`;
-    const statusText = `${item.status || ""} ${item.substatus || ""} ${item.stav || ""} ${item.stav_zakazky || ""}`;
-    const tagsText = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
-    const combined = `${titleText} ${statusText} ${tagsText}`;
+    return "active";
+}
 
-    const cleaned = " " + cleanTextForStatusCheck(combined) + " ";
-    const reservedWordRegex = /\s(rezervovan|reserved)/i;
-    if (reservedWordRegex.test(cleaned)) {
-        return true;
-    }
+// --- Detekcia ukončených obchodov (Sprostredkované: predané, prenajaté, v nájme, sprostredkované) ---
+function isPropertySoldOrCompleted(item) {
+    return resolvePropertyStatus(item) === "sold";
+}
 
-    const directReservedRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(rezervovan[eéyýaáou]?|reserved)/i;
-    if (directReservedRegex.test(combined)) {
-        return true;
-    }
-
-    return false;
+// --- Detekcia rezervovaných ponúk ---
+function isPropertyReserved(item) {
+    return resolvePropertyStatus(item) === "reserved";
 }
 
 // --- Pomocná funkcia: Rozdelenie nehnuteľnosti do 3 skupín podľa stavu transakcie ---
 function getPropertyStatusGroup(prop) {
-    if (!prop) return "active";
-    if (isPropertySoldOrCompleted(prop)) return "sold";
-    if (isPropertyReserved(prop)) return "reserved";
-    return "active";
+    return resolvePropertyStatus(prop);
+}
+
+function getPropertyStatusLabel(prop) {
+    const grp = resolvePropertyStatus(prop);
+    if (grp === "sold") return "Predaná";
+    if (grp === "reserved") return "Rezervovaná";
+    return "Voľná";
 }
 
 // --- Pomocné funkcie pre bezpečné triedenie kategórií / typov nehnuteľností ---
@@ -1028,10 +1080,10 @@ function createPropertyCardElement(prop) {
     let cleanTags = (prop.tags || []).filter(tag => tag && String(tag).trim().toUpperCase() !== "REALSOFT");
 
     if (grp === "sold") {
-        // Pre kategóriu Sprostredkované odstránime zavádzajúci štítok "PREDAJ" a štítok 3D prehliadky, a pridáme zelené štítky
+        // Pre kategóriu Sprostredkované odstránime zavádzajúci štítok "PREDAJ", zastaraný "REZERVOVANÉ" a štítok 3D prehliadky, a pridáme zelené štítky
         cleanTags = cleanTags.filter(t => {
             const up = String(t).trim().toUpperCase();
-            return up !== "PREDAJ" && !up.includes("3D");
+            return !["PREDAJ", "PRENÁJOM", "PRENAJOM", "REZERVOVANÉ", "REZERVOVANE"].includes(up) && !up.includes("3D");
         });
         const isRent = String(prop.deal).includes("prenaj") || /prenaj|n[aá]jm/i.test(`${prop.title || ""} ${prop.status || ""}`);
         const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
@@ -1043,9 +1095,15 @@ function createPropertyCardElement(prop) {
         }
     } else if (grp === "reserved") {
         // Pre kategóriu Rezervované odstránime štítok "PREDAJ" a zabezpečíme červený štítok "REZERVOVANÉ"
-        cleanTags = cleanTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        cleanTags = cleanTags.filter(t => !["PREDAJ", "PREDANÉ", "PREDANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
         if (!cleanTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) {
             cleanTags.unshift("REZERVOVANÉ");
+        }
+    } else {
+        // Pre dostupné (Voľné) ponuky v hlavnej sekcii odstránime prípadné staré štítky REZERVOVANÉ / PREDANÉ / SPROSTREDKOVANÉ
+        cleanTags = cleanTags.filter(t => !["PREDANÉ", "PREDANE", "PRENAJATÉ", "PRENAJATE", "REZERVOVANÉ", "REZERVOVANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
+        if (cleanTags.length === 0) {
+            cleanTags.push(prop.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ");
         }
     }
 
@@ -2151,10 +2209,10 @@ function openPropertyModal(id) {
     const prop = PROPERTIES.find(p => String(p.id) === String(id) || String(p.externalId) === String(id) || (p.internalId && String(p.internalId) === String(id)));
     if (!prop) return;
 
-    // Zistenie stavu nehnuteľnosti
+    // Zistenie stavu nehnuteľnosti (zjednotený stav s kartou na hlavnej stránke)
     const grp = getPropertyStatusGroup(prop);
-    const isSold = (grp === "sold") || isPropertySoldOrCompleted(prop);
-    const isReserved = (grp === "reserved") || isPropertyReserved(prop);
+    const isSold = grp === "sold";
+    const isReserved = grp === "reserved";
 
     // Priradenie správneho makléra podľa dát z Realsoftu
     const agent = getAgentForProperty(prop);

@@ -978,6 +978,152 @@ async function fetchBlobsProperties(storeInfo) {
       })
     );
 
+    // Zjednotené vyhodnotenie dostupnosti nehnuteľnosti s prioritou explicitného stavu pred nadpisom/štítkami
+    function resolvePropertyAvailability(p) {
+      const idStr = String(p.id || p.externalId || "").trim();
+      const internalStr = String(p.internalId || "").trim();
+
+      // Jednorazová samoexpirujúca oprava pre záznam RS-2078570016 (ID: 09 08 77 00 09) uložený pred opravou webhooku:
+      // po najbližšej aktualizácii z RealSoftu sa doplní p.statusSource a zmení p.updatedAt, čím sa táto oprava automaticky vypne.
+      if (
+        (idStr === "RS-2078570016" || idStr === "2078570016" || internalStr === "09 08 77 00 09") &&
+        !p.statusSource &&
+        p.updatedAt === "2026-11-24T11:48:01.094Z"
+      ) {
+        return {
+          status: "active",
+          substatus: "volny",
+          isReserved: false,
+          isSold: false,
+          statusLabel: "Voľná"
+        };
+      }
+
+      if (idStr === "RS-3253858396" || idStr === "3253858396") {
+        return {
+          status: "sold",
+          substatus: "predane",
+          isReserved: false,
+          isSold: true,
+          statusLabel: "Predaná"
+        };
+      }
+
+      const soldWordRegex = /\s(predan[a-z]*|sprostredkovan[a-z]*|prenajat[a-z]*|sold|rented|zrealizovan[a-z]*)\b/i;
+      const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
+      const endSalePhraseRegex = /\spredaj\s+ukoncen/i;
+      const reservedWordRegex = /\s(rezervovan[a-z]*|reserved)\b/i;
+      const volnyRegex = /\s(voln[a-z]*|free|available|aktivn[a-z]*|active)\b/i;
+
+      // 1. Primárne explicitné polia stavu dostupnosti (ignorujú nadpis a zastarané štítky)
+      const primaryFields = [
+        p.realsoftStatus,
+        p.status,
+        p.stav,
+        p.stav_zakazky,
+        p.availability,
+        p.dostupnost,
+        p.dostupnosť,
+        p.statusLabel,
+        p.status_name,
+        p.deal_status,
+        p.dovod_ukoncenia
+      ].filter(v => v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "-");
+
+      const numRaw = p.realsoftStatus !== undefined && p.realsoftStatus !== null
+        ? Number(p.realsoftStatus)
+        : (p.status !== undefined && p.status !== null && /^\d+$/.test(String(p.status).trim()) ? Number(p.status) : NaN);
+      const primaryClean = " " + cleanTextForStatusCheck(primaryFields.join(" ")) + " ";
+
+      if (
+        numRaw === 4 ||
+        numRaw === 9 ||
+        soldWordRegex.test(primaryClean) ||
+        rentPhraseRegex.test(primaryClean) ||
+        endSalePhraseRegex.test(primaryClean)
+      ) {
+        return {
+          status: "sold",
+          substatus: "predane",
+          isReserved: false,
+          isSold: true,
+          statusLabel: "Predaná"
+        };
+      }
+
+      if (numRaw === 3 || reservedWordRegex.test(primaryClean)) {
+        return {
+          status: "reserved",
+          substatus: "rezervovany",
+          isReserved: true,
+          isSold: false,
+          statusLabel: "Rezervovaná"
+        };
+      }
+
+      if (numRaw === 1 || volnyRegex.test(primaryClean)) {
+        return {
+          status: "active",
+          substatus: "volny",
+          isReserved: false,
+          isSold: false,
+          statusLabel: "Voľná"
+        };
+      }
+
+      // 2. Sekundárny fallback (substatus, booleany, tagy, historický nadpis – "NA PREDAJ" nikdy neznamená predaný/rezervovaný)
+      const subClean = " " + cleanTextForStatusCheck(p.substatus || "") + " ";
+      const tagsText = Array.isArray(p.tags) ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT").join(" ") : "";
+      const titleText = `${p.title || ""} ${p.shortTitle || ""} ${p.name || ""}`;
+      const fallbackCombined = `${p.substatus || ""} ${tagsText} ${titleText}`;
+      const fallbackClean = " " + cleanTextForStatusCheck(fallbackCombined) + " ";
+      const directSoldRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|prenajat[eéyýaáou]?|sold|rented|zrealizovan[eéyýaáou]?|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en)/i;
+      const directReservedRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(rezervovan[eéyýaáou]?|reserved)/i;
+
+      if (
+        p.isSold === true ||
+        p.is_sold === true ||
+        soldWordRegex.test(subClean) ||
+        soldWordRegex.test(fallbackClean) ||
+        rentPhraseRegex.test(fallbackClean) ||
+        endSalePhraseRegex.test(fallbackClean) ||
+        directSoldRegex.test(fallbackCombined)
+      ) {
+        return {
+          status: "sold",
+          substatus: "predane",
+          isReserved: false,
+          isSold: true,
+          statusLabel: "Predaná"
+        };
+      }
+
+      if (
+        p.isReserved === true ||
+        p.is_reserved === true ||
+        p.rezervovane === true ||
+        reservedWordRegex.test(subClean) ||
+        reservedWordRegex.test(fallbackClean) ||
+        directReservedRegex.test(fallbackCombined)
+      ) {
+        return {
+          status: "reserved",
+          substatus: "rezervovany",
+          isReserved: true,
+          isSold: false,
+          statusLabel: "Rezervovaná"
+        };
+      }
+
+      return {
+        status: "active",
+        substatus: "volny",
+        isReserved: false,
+        isSold: false,
+        statusLabel: "Voľná"
+      };
+    }
+
     // Zabezpečiť, že do výstupu sa nedostane žiadny prázdny alebo testovací objekt ani export makléra
     const cleanProperties = items.filter(Boolean).filter(p => {
       const idStr = String(p.id || p.externalId || "");
@@ -999,60 +1145,31 @@ async function fetchBlobsProperties(storeInfo) {
         ? p.tags.filter(t => t && String(t).trim().toUpperCase() !== "REALSOFT")
         : [p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ"];
       const idStr = String(p.id || p.externalId || "").trim();
-      const titleText = `${p.title || ""} ${p.shortTitle || ""} ${p.name || ""}`;
-      const statusText = `${p.status || ""} ${p.substatus || ""} ${p.stav || ""}`;
-      const tagsText = safeTags.join(" ");
-      const combined = `${titleText} ${statusText} ${tagsText}`;
+      const combined = `${p.title || ""} ${p.shortTitle || ""} ${p.name || ""} ${p.status || ""} ${p.substatus || ""} ${p.stav || ""} ${safeTags.join(" ")}`;
 
-      const cleaned = " " + cleanTextForStatusCheck(combined) + " ";
-      const soldWordRegex = /\s(predan|sprostredkovan|prenajat|sold|rented|zrealizovan)/i;
-      const rentPhraseRegex = /\sv\s+(?:pre)?najm/i;
-      const endSalePhraseRegex = /\spredaj\s+ukoncen/i;
-      const directSoldRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(predan[eéyýaáou]?|sprostredkovan[eéyýaáou]?|prenajat[eéyýaáou]?|sold|rented|zrealizovan[eéyýaáou]?|v\s+(?:pre)?n[aá]jm[ie]|predaj\s+ukon[cč]en)/i;
-
-      const reservedWordRegex = /\s(rezervovan|reserved)/i;
-      const directReservedRegex = /(?:^|[^a-zA-Z0-9\u00C0-\u017F])(rezervovan[eéyýaáou]?|reserved)/i;
-
-      let statusVal = "active";
-      let isReserved = false;
-
-      if (
-        idStr === "RS-3253858396" ||
-        idStr === "3253858396" ||
-        soldWordRegex.test(cleaned) ||
-        rentPhraseRegex.test(cleaned) ||
-        endSalePhraseRegex.test(cleaned) ||
-        directSoldRegex.test(combined) ||
-        p.status === "sold" ||
-        p.status === "rented" ||
-        Number(p.status) === 4 ||
-        p.status === "4" ||
-        p.isSold === true
-      ) {
-        statusVal = "sold";
-        isReserved = false;
-      } else if (
-        reservedWordRegex.test(cleaned) ||
-        directReservedRegex.test(combined) ||
-        p.isReserved === true ||
-        p.status === "reserved" ||
-        Number(p.status) === 3 ||
-        p.status === "3"
-      ) {
-        statusVal = "reserved";
-        isReserved = true;
-      }
+      const avail = resolvePropertyAvailability(p);
+      const statusVal = avail.status;
+      const isReserved = avail.isReserved;
 
       let finalTags = [...safeTags];
       if (statusVal === "sold") {
-        finalTags = finalTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
-        const isRent = combined.includes("prenaj") || combined.includes("nájm") || combined.includes("najm") || p.deal === "prenajom";
+        finalTags = finalTags.filter(t => {
+          const up = String(t).trim().toUpperCase();
+          return !["PREDAJ", "PRENÁJOM", "PRENAJOM", "REZERVOVANÉ", "REZERVOVANE"].includes(up) && !up.includes("3D");
+        });
+        const isRent = combined.toLowerCase().includes("prenaj") || combined.toLowerCase().includes("nájm") || combined.toLowerCase().includes("najm") || p.deal === "prenajom";
         const statusTag = isRent ? "PRENAJATÉ" : "PREDANÉ";
         if (!finalTags.some(t => String(t).toUpperCase().includes("SPROSTREDKOVANÉ"))) finalTags.unshift("SPROSTREDKOVANÉ");
         if (!finalTags.some(t => String(t).toUpperCase().includes("PREDANÉ") || String(t).toUpperCase().includes("PRENAJATÉ"))) finalTags.unshift(statusTag);
       } else if (statusVal === "reserved") {
-        finalTags = finalTags.filter(t => !["PREDAJ"].includes(String(t).trim().toUpperCase()));
+        finalTags = finalTags.filter(t => !["PREDAJ", "PREDANÉ", "PREDANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
         if (!finalTags.some(t => String(t).toUpperCase().includes("REZERVOVANÉ"))) finalTags.unshift("REZERVOVANÉ");
+      } else {
+        finalTags = finalTags.filter(t => !["PREDANÉ", "PREDANE", "PRENAJATÉ", "PRENAJATE", "REZERVOVANÉ", "REZERVOVANE", "SPROSTREDKOVANÉ", "SPROSTREDKOVANE"].includes(String(t).trim().toUpperCase()));
+        const defaultDealTag = p.deal === "prenajom" ? "PRENÁJOM" : "PREDAJ";
+        if (finalTags.length === 0) {
+          finalTags.push(defaultDealTag);
+        }
       }
 
       const agentIdStr = String(p.agentId || p.agent_id || p.user_id || "").trim();
@@ -1123,7 +1240,10 @@ async function fetchBlobsProperties(storeInfo) {
         agentId: cleanAgentId,
         tags: finalTags,
         status: statusVal,
+        substatus: avail.substatus,
         isReserved: isReserved,
+        isSold: avail.isSold,
+        statusLabel: avail.statusLabel,
         image: safeImage,
         images: safeImages.length > 0 ? safeImages : [safeImage],
         virtualTourUrl: virtualTourUrl,
