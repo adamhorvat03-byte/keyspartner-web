@@ -1052,6 +1052,19 @@ async function fetchBlobsProperties(storeInfo) {
       }
 
       if (numRaw === 3 || reservedWordRegex.test(primaryClean)) {
+        // Legacy pre-v2 záznamy bez p.statusSource (napr. RS-2903591420), kde starý webhook uprednostnil "Rezervovaný" pred "Predaný" v nadpise
+        if (!p.statusSource) {
+          const rawTitleClean = " " + cleanTextForStatusCheck(`${p.title || ""} ${p.shortTitle || ""} ${p.name || ""}`) + " ";
+          if (soldWordRegex.test(rawTitleClean) || rentPhraseRegex.test(rawTitleClean) || endSalePhraseRegex.test(rawTitleClean)) {
+            return {
+              status: "sold",
+              substatus: "predane",
+              isReserved: false,
+              isSold: true,
+              statusLabel: "Predaná"
+            };
+          }
+        }
         return {
           status: "reserved",
           substatus: "rezervovany",
@@ -1268,7 +1281,10 @@ export default async (req, context) => {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+    "Netlify-CDN-Cache-Control": "no-store"
   };
 
   if (req.method === "OPTIONS") {

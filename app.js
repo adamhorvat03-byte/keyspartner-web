@@ -937,6 +937,12 @@ function resolvePropertyStatus(item) {
     }
 
     if (numRaw === 3 || reservedWordRegex.test(primaryClean)) {
+        if (!item.statusSource) {
+            const rawTitleClean = " " + cleanTextForStatusCheck(`${item.title || ""} ${item.shortTitle || ""} ${item.name || ""} ${item.nazov || ""} ${item.headline || ""}`) + " ";
+            if (soldWordRegex.test(rawTitleClean) || rentPhraseRegex.test(rawTitleClean) || endSalePhraseRegex.test(rawTitleClean)) {
+                return "sold";
+            }
+        }
         return "reserved";
     }
 
